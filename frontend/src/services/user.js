@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getCsrfToken } from "./auth";
+import { ensureCsrfToken, getCsrfToken } from "./auth";
 
 const API_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
@@ -29,11 +29,13 @@ export async function fetchUserSettings() {
 }
 
 export async function updateUserProfile(payload) {
+    await ensureCsrfToken();
     const response = await axios.patch(`${API_URL}/users/me`, payload, { withCredentials: true });
     return response.data;
 }
 
 export async function updateProfileImage(file) {
+    await ensureCsrfToken();
     const formData = new FormData();
     formData.append("file", file);
 
@@ -47,6 +49,7 @@ export async function updateProfileImage(file) {
 }
 
 export async function verifyUserPassword(password) {
+    await ensureCsrfToken();
     const response = await axios.post(
         `${API_URL}/users/verify-password`,
         { password },
@@ -56,6 +59,7 @@ export async function verifyUserPassword(password) {
 }
 
 export async function unlinkOAuthAccount(provider) {
+    await ensureCsrfToken();
     const response = await axios.delete(`${API_URL}/users/unlink-accounts/${provider}`, {
         withCredentials: true,
     });

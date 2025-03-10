@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCsrfToken } from "./auth";
+import { ensureCsrfToken, getCsrfToken } from "./auth";
 
 
 const API_URL =
@@ -50,6 +50,7 @@ export async function getUserSessions(params = {}) {
 }
 
 export async function registerForSession(sessionUuid, reminder = []) {
+  await ensureCsrfToken();
   const params = { reminder_minutes_before: reminder };
   const res = await axios.post(
     `${API_URL}/sessions/${sessionUuid}/registration`,
@@ -76,6 +77,7 @@ export async function registerForSession(sessionUuid, reminder = []) {
 }
 
 export async function confirmSession(sessionUuid, reminder = []) {
+  await ensureCsrfToken();
   const params = { reminder_minutes_before: reminder };
   const res = await axios.post(
     `${API_URL}/sessions/${sessionUuid}/confirm`,
@@ -102,6 +104,7 @@ export async function confirmSession(sessionUuid, reminder = []) {
 }
 
 export async function unregisterUserByHost(sessionUuid, userId) {
+  await ensureCsrfToken();
   const res = await axios.delete(`${API_URL}/sessions/${sessionUuid}/registrations/${userId}`);
   return res;
 }
@@ -120,6 +123,7 @@ export async function getSessionByUuid(sessionUuid) {
 }
 
 export async function cancelSession(sessionUuid) {
+  await ensureCsrfToken();
   const res = await axios.delete(
     `${API_URL}/sessions/${sessionUuid}/registration`
   );
