@@ -2,8 +2,10 @@
 # fastapi/app/routers/auth.py
 import logging
 import secrets
+from typing import Annotated
 from fastapi import APIRouter, Request, Depends, HTTPException, status
-from app.security import create_access_token
+from sqlalchemy import func, select
+from app.security import create_access_token, hash_password
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -16,6 +18,8 @@ from datetime import datetime, timedelta
 from httpx import AsyncClient
 
 from app.dependencies.auth import get_current_user
+from app.schemas.user import UserCreate, UserPrivate
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -42,7 +46,39 @@ async def hello():
     return {"message": "From auth.py: Hello World!"}
 
 
-@router.get("/login", response_description="Redirects to Google OAuth")
+@router.post("/signup", response_model=UserPrivate)
+def create_user(
+    user: UserCreate,
+    db: Annotated[Session, Depends(get_db)],
+    status_code=status.HTTP_201_CREATED,
+):
+    result = db.execute(
+        select(User).filter(func.lower(User.email) == user.email.lower())
+    )
+    existing_user = result.scalars().first()
+
+    if existing_user:
+        logger.warning(f"Attempt to create user with existing email: {user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    new_user = User(
+        email=user.email,
+        full_name=user.full_name,
+        password_hash=hash_password(user.password),
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    logger.info(f"Created new user: {new_user.email}")
+
+    return new_user
+
+
+@router.get("/login/google", response_description="Redirects to Google OAuth")
 async def login(request: Request):
     """
     **Initiate Google OAuth Login**
