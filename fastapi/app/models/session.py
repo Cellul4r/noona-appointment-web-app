@@ -6,7 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
-from event import Event
+
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -37,4 +37,6 @@ class Session(Base):
         default=lambda: datetime.utcnow()
     )
 
-    event: Mapped[Event] = relationship(back_populate="sessions")
+    event: Mapped["Event"] = relationship("Event", back_populate="sessions")
+
+    sessions_registered: Mapped[list["SessionRegistration"]] = relationship("SessionRegistration", back_populate="session", cascade="all, delete-orphan")
