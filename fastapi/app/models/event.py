@@ -7,6 +7,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from user import User
 
 from app.db import Base
+from session import Session
+
 class Event(Base):
     __tablename__ = "events"
 
@@ -30,3 +32,4 @@ class Event(Base):
     )
 
     host: Mapped[User] = relationship(back_populates="events")
+    sessions: Mapped[list[Session]] = relationship(back_populate="event", cascade="all, delete-orphan")
