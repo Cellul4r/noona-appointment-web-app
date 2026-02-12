@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models.authuser import AuthUser
+from app.security import verify_access_token
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -27,9 +28,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         logger.error("Missing JWT cookie in get_current_user")
         raise HTTPException(status_code=401, detail="Missing JWT cookie")
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.debug(f"JWT payload: {payload}")
-        user_id: str = payload.get("sub")
+        user_id: str | None = verify_access_token
         logger.debug(f"Extracted user_id from sub: {user_id}")
         if user_id is None:
             logger.error("Invalid token: subject missing")
