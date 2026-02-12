@@ -4,10 +4,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from user import User
 
 from app.db import Base
-from session import Session
 
 class Event(Base):
     __tablename__ = "events"
@@ -31,5 +29,5 @@ class Event(Base):
         default=lambda: datetime.now(UTC)
     )
 
-    host: Mapped[User] = relationship(back_populates="events")
-    sessions: Mapped[list[Session]] = relationship(back_populate="event", cascade="all, delete-orphan")
+    host: Mapped["User"] = relationship("User", back_populates="events")
+    sessions: Mapped[list["Session"]] = relationship("Session", back_populate="event", cascade="all, delete-orphan")
