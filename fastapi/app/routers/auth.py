@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # fastapi/app/routers/auth.py
-
 import logging
 import secrets
 from fastapi import APIRouter, Request, Depends, HTTPException, status
+from app.security import create_access_token
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -15,15 +15,12 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from httpx import AsyncClient
 
+from app.dependencies.auth import get_current_user
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
 
 router = APIRouter()
-
-# JWT Configuration
-SECRET_KEY = settings.jwt_secret_key
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 1 day (1440 minutes)
 
 # Google OAuth Configuration
 GOOGLE_CLIENT_ID = settings.google_client_id or "your-google-client-id"
@@ -33,41 +30,6 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
 
-
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    csrf_token = secrets.token_hex(16)
-    to_encode["csrf_token"] = csrf_token
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
-
-
-async def get_current_user(request: Request, db: Session = Depends(get_db)):
-    logger.debug(f"Checking JWT cookie in get_current_user")
-    token = request.cookies.get("jwt")
-    logger.debug(f"JWT cookie: {token}")
-    if not token:
-        logger.error("Missing JWT cookie in get_current_user")
-        raise HTTPException(status_code=401, detail="Missing JWT cookie")
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.debug(f"JWT payload: {payload}")
-        user_id: str = payload.get("sub")
-        logger.debug(f"Extracted user_id from sub: {user_id}")
-        if user_id is None:
-            logger.error("Invalid token: subject missing")
-            raise HTTPException(
-                status_code=401, detail="Invalid token: subject missing")
-        user = db.query(AuthUser).filter(AuthUser.id == int(user_id)).first()
-        if user is None:
-            logger.error(f"User not found for id: {user_id}")
-            raise HTTPException(status_code=401, detail="User not found")
-        logger.debug(f"User found: {user.email}")
-        return user
-    except JWTError as e:
-        logger.error(f"JWT decoding failed: {e}")
-        raise HTTPException(status_code=401, detail="Invalid token")
 
 @router.get("/", response_model=Message)
 async def hello():
@@ -98,7 +60,11 @@ async def login(request: Request):
     return RedirectResponse(url=auth_url)
 
 
-@router.get("/google/auth", name="google_auth", response_description="Redirects to Frontend with JWT")
+@router.get(
+    "/google/auth",
+    name="google_auth",
+    response_description="Redirects to Frontend with JWT",
+)
 async def google_auth(request: Request, db: Session = Depends(get_db)):
     """
     **Google OAuth Callback**
@@ -113,8 +79,8 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
     # ... implementation details ...
     try:
         code = request.query_params.get("code")
-    # ... rest of the function ...
-        # (This is a large block, I will strictly follow replacement rules in next step, 
+        # ... rest of the function ...
+        # (This is a large block, I will strictly follow replacement rules in next step,
         # simplifying here for the thought process)
         if not code:
             raise ValueError("No authorization code provided")
@@ -142,14 +108,13 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
             user_info = user_info_response.json()
             logger.debug(f"Google profile: {user_info}")
 
-        user = db.query(AuthUser).filter(
-            AuthUser.email == user_info["email"]).first()
+        user = db.query(AuthUser).filter(AuthUser.email == user_info["email"]).first()
         if not user:
             logger.debug("User not found, creating one")
             user = AuthUser(
                 email=user_info["email"],
                 name=user_info["name"],
-                avatar_url=user_info.get("picture")
+                avatar_url=user_info.get("picture"),
             )
             db.add(user)
             db.commit()
@@ -161,9 +126,13 @@ async def google_auth(request: Request, db: Session = Depends(get_db)):
             db.commit()
 
         jwt_token = create_access_token(
-            data={"sub": str(user.id), "name": user.name,
-                  "email": user.email, "avatar_url": user.avatar_url},
-            expires_delta=timedelta(days=1)
+            data={
+                "sub": str(user.id),
+                "name": user.name,
+                "email": user.email,
+                "avatar_url": user.avatar_url,
+            },
+            expires_delta=timedelta(days=1),
         )
         frontend_url = settings.frontend_login_success_uri
         logger.info(f"Redirecting to frontend with token for {user.email}")
@@ -183,7 +152,9 @@ async def logout():
     Note: Real server-side logout would require a token blacklist.
     """
     logger.info("User logged out")
-    return JSONResponse(content={"message": "Logout successful. Remove JWT token on frontend."})
+    return JSONResponse(
+        content={"message": "Logout successful. Remove JWT token on frontend."}
+    )
 
 
 @router.get("/me", response_model=UserResponse)
@@ -195,9 +166,8 @@ async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
     Requires a valid JWT token in the `jwt` cookie or Authorization header (logic depends on `get_current_user`).
     """
     logger.info(f"Fetching profile for {current_user.email}")
-    return {"email": current_user.email, "name": current_user.name, "avatar_url": current_user.avatar_url}
-
-
-def register_routes(router_instance: APIRouter):
-    router_instance.include_router(router)
-
+    return {
+        "email": current_user.email,
+        "name": current_user.name,
+        "avatar_url": current_user.avatar_url,
+    }

@@ -12,9 +12,17 @@ logging.basicConfig(level=logging.INFO)
 
 
 class CustomEnvSettingsSource(EnvSettingsSource):
-    def __init__(self, settings_cls, env_nested_delimiter: str | None = None, env_prefix: str = ""):
-        super().__init__(settings_cls,
-                         env_nested_delimiter=env_nested_delimiter, env_prefix=env_prefix)
+    def __init__(
+        self,
+        settings_cls,
+        env_nested_delimiter: str | None = None,
+        env_prefix: str = "",
+    ):
+        super().__init__(
+            settings_cls,
+            env_nested_delimiter=env_nested_delimiter,
+            env_prefix=env_prefix,
+        )
 
     def __call__(self) -> dict[str, Any]:
         # Use os.environ directly or a method to get env vars, since _env_vars isn’t available
@@ -38,6 +46,8 @@ class Settings(BaseSettings):
     jwt_cookie_samesite: str = "Lax"
     jwt_cookie_csrf_protect: bool = False
     secret_key: str = "df0331cefc6c2b9a5d0208a726a5d1c0fd37324feba25506"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440  # 1 day (1440 minutes)
     json_as_ascii: bool = False
     database_url: str = "sqlite:///./app.db"  # Default; overridden by .env
     use_supabase: bool = False
@@ -53,16 +63,19 @@ class Settings(BaseSettings):
         use_supabase = values.get("use_supabase")
         # If use_supabase was not in values (maybe distinct validation order), check env
         if use_supabase is None:
-             use_supabase = os.getenv("USE_SUPABASE", "false").lower() == "true"
-        
+            use_supabase = os.getenv("USE_SUPABASE", "false").lower() == "true"
+
         if use_supabase:
             supabase_url = values.get("supabase_db_url") or os.getenv("SUPABASE_DB_URL")
             if supabase_url:
-                logging.info("USE_SUPABASE is True: Swapping DATABASE_URL to SUPABASE_DB_URL")
+                logging.info(
+                    "USE_SUPABASE is True: Swapping DATABASE_URL to SUPABASE_DB_URL"
+                )
                 return supabase_url
             else:
                 logging.warning("USE_SUPABASE is True but SUPABASE_DB_URL is missing!")
         return v
+
     allowed_origins: Union[List[str], str, None] = ["*"]
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
@@ -111,7 +124,12 @@ class Settings(BaseSettings):
         dotenv_settings: Callable[[], dict[str, Any]],
         file_secret_settings: Callable[[], dict[str, Any]],
     ):
-        return (init_settings, CustomEnvSettingsSource(settings_cls), dotenv_settings, file_secret_settings)
+        return (
+            init_settings,
+            CustomEnvSettingsSource(settings_cls),
+            dotenv_settings,
+            file_secret_settings,
+        )
 
 
 try:
