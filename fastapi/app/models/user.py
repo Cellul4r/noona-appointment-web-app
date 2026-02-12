@@ -13,7 +13,6 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
-    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(200), nullable=False)
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
     profile_image: Mapped[str | None] = mapped_column(
@@ -21,18 +20,17 @@ class User(Base):
         nullable=True,
         default=None,
     )
-    timezone: Mapped[str] = mapped_column(
-        default="UTC", 
-        nullable=False
-    )
+    timezone: Mapped[str] = mapped_column(default="UTC", nullable=False)
     email_notifications: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
-    
 
-    events: Mapped[list["Event"]] = relationship("Event", back_populates="host", cascade="all, delete-orphan",)
+    events: Mapped[list["Event"]] = relationship(
+        "Event",
+        back_populates="host",
+        cascade="all, delete-orphan",
+    )
     """
     @property
     def image_path(self) -> str:
