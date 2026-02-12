@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from user import User
 
 from app.db import Base
 class Event(Base):
@@ -20,10 +21,12 @@ class Event(Base):
     share_uuid: Mapped[str] = mapped_column(String(100), nullable=False)
     max_sessions_per_user: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        Datetime(timezone=True),
+        DateTime(timezone=True),
         default=lambda: datetime.now(UTC)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        Datetime(timezone=True),
+        DateTime(timezone=True),
         default=lambda: datetime.now(UTC)
     )
+
+    host: Mapped[User] = relationship(back_populates="events")

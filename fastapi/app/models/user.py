@@ -6,6 +6,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+from event import Event
 
 
 class User(Base):
@@ -27,13 +28,12 @@ class User(Base):
     )
     email_notifications: Mapped[bool]
     created_at: Mapped[datetime] = mapped_column(
-        Datetime(timezone=True),
+        DateTime(timezone=True),
         default=lambda: datetime.now(UTC)
     )
     
 
-
-    #posts: Mapped[list[Post]] = relationship(back_populates="author", cascade="all, delete-orphan",)
+    events: Mapped[list[Event]] = relationship(back_populates="host", cascade="all, delete-orphan",)
     """
     @property
     def image_path(self) -> str:
