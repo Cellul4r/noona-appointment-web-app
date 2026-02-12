@@ -24,7 +24,7 @@ class User(Base):
     )
     timezone: Mapped[str] = mapped_column(
         default="UTC", 
-        nulllable=False
+        nullable=False
     )
     email_notifications: Mapped[bool]
     created_at: Mapped[datetime] = mapped_column(
