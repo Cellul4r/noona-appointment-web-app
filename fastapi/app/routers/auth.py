@@ -5,7 +5,7 @@ import secrets
 from typing import Annotated
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_sso import GoogleSSO
+from fastapi_sso import GithubSSO, GoogleSSO
 from sqlalchemy import func, select
 from app.security import (
     create_access_token,
@@ -28,7 +28,7 @@ from app.dependencies.auth import get_current_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
 from app.schemas.auth import Token
-from app.dependencies.sso import get_google_sso
+from app.dependencies.sso import get_github_sso, get_google_sso
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -115,8 +115,8 @@ def login_for_access_token(
     return Token(access_token=access_token, token_type="bearer")
 
 
-@router.get("/google/login", response_description="Redirects to Google OAuth")
-async def login(google_sso: GoogleSSO = Depends(get_google_sso)):
+@router.get("/google/login", response_description="Redirects to Google Callback")
+async def google_login(google_sso: GoogleSSO = Depends(get_google_sso)):
     return await google_sso.get_login_redirect()
 
 
@@ -130,7 +130,7 @@ async def google_auth(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            description="Google authentication failed or user has not verified email.",
+            detail="Google authentication failed or user has not verified email.",
         )
 
     result = db.execute(
@@ -150,6 +150,51 @@ async def google_auth(
         db.refresh(new_user)
         existing_user = new_user
         logger.info(f"Created new user from Google SSO: {new_user.email}")
+
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": str(existing_user.id)}, expires_delta=access_token_expires
+    )
+
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/github/login", response_description="Redirects to Github Callback")
+async def github_login(github_sso: GithubSSO = Depends(get_github_sso)):
+    return await github_sso.get_login_redirect()
+
+
+@router.get("/github/callback", response_model=Token)
+async def github_auth(
+    request: Request,
+    github_sso: GithubSSO = Depends(get_github_sso),
+    db: Session = Depends(get_db),
+):
+    user = await github_sso.verify_and_process(request)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Github authentication failed or user has not verified email.",
+        )
+
+    result = db.execute(
+        select(User).where(func.lower(User.email) == user.email.lower())
+    )
+
+    existing_user = result.scalars().first()
+
+    if not existing_user:
+        new_user = User(
+            email=user.email,
+            full_name=user.display_name,
+            password_hash=hash_password(secrets.token_urlsafe(16)),
+            profile_image=user.picture,
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        existing_user = new_user
+        logger.info(f"Created new user from Github SSO: {new_user.email}")
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
