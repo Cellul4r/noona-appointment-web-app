@@ -4,8 +4,15 @@ import logging
 import secrets
 from typing import Annotated
 from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_sso import GoogleSSO
 from sqlalchemy import func, select
-from app.security import create_access_token, hash_password
+from app.security import (
+    create_access_token,
+    hash_password,
+    oauth2_scheme,
+    verify_password,
+)
 from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -20,6 +27,8 @@ from httpx import AsyncClient
 from app.dependencies.auth import get_current_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
+from app.schemas.auth import Token
+from app.dependencies.sso import get_google_sso
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -46,11 +55,14 @@ async def hello():
     return {"message": "From auth.py: Hello World!"}
 
 
-@router.post("/signup", response_model=UserPrivate)
+@router.post(
+    "/signup",
+    response_model=UserPrivate,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_user(
     user: UserCreate,
     db: Annotated[Session, Depends(get_db)],
-    status_code=status.HTTP_201_CREATED,
 ):
     result = db.execute(
         select(User).filter(func.lower(User.email) == user.email.lower())
@@ -78,105 +90,73 @@ def create_user(
     return new_user
 
 
-@router.get("/login/google", response_description="Redirects to Google OAuth")
-async def login(request: Request):
-    """
-    **Initiate Google OAuth Login**
-
-    Constructs the Google OAuth URL with identifying scopes (openid, email, profile)
-    and redirects the user to Google's consent page.
-    """
-    # ... implementation details ...
-    redirect_uri = str(request.url_for("google_auth"))
-    auth_url = (
-        f"{GOOGLE_AUTH_URL}?response_type=code&client_id={GOOGLE_CLIENT_ID}"
-        f"&redirect_uri={redirect_uri}&scope=openid%20email%20profile"
+@router.post("/token", response_model=Token)
+def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Annotated[Session, Depends(get_db)],
+):
+    result = db.execute(
+        select(User).where(func.lower(User.email) == form_data.username.lower())
     )
-    logger.info("Redirecting to Google OAuth")
-    return RedirectResponse(url=auth_url)
+    user = result.scalars().first()
 
-
-@router.get(
-    "/google/auth",
-    name="google_auth",
-    response_description="Redirects to Frontend with JWT",
-)
-async def google_auth(request: Request, db: Session = Depends(get_db)):
-    """
-    **Google OAuth Callback**
-
-    Handles the callback from Google:
-    1. Exchanges the authorization code for an access token.
-    2. Fetches user profile information from Google.
-    3. Creates or updates the user in the local database.
-    4. Generates a valid JWT for the session.
-    5. Redirects the user back to the frontend with the JWT query parameter.
-    """
-    # ... implementation details ...
-    try:
-        code = request.query_params.get("code")
-        # ... rest of the function ...
-        # (This is a large block, I will strictly follow replacement rules in next step,
-        # simplifying here for the thought process)
-        if not code:
-            raise ValueError("No authorization code provided")
-
-        async with AsyncClient() as client:
-            token_response = await client.post(
-                GOOGLE_TOKEN_URL,
-                data={
-                    "code": code,
-                    "client_id": GOOGLE_CLIENT_ID,
-                    "client_secret": GOOGLE_CLIENT_SECRET,
-                    "redirect_uri": str(request.url_for("google_auth")),
-                    "grant_type": "authorization_code",
-                },
-            )
-            token_data = token_response.json()
-            if "error" in token_data:
-                raise ValueError(f"Google OAuth error: {token_data['error']}")
-            access_token = token_data.get("access_token")
-
-            user_info_response = await client.get(
-                GOOGLE_USERINFO_URL,
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            user_info = user_info_response.json()
-            logger.debug(f"Google profile: {user_info}")
-
-        user = db.query(AuthUser).filter(AuthUser.email == user_info["email"]).first()
-        if not user:
-            logger.debug("User not found, creating one")
-            user = AuthUser(
-                email=user_info["email"],
-                name=user_info["name"],
-                avatar_url=user_info.get("picture"),
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        else:
-            logger.debug("User found, updating details")
-            user.name = user_info["name"]
-            user.avatar_url = user_info.get("picture")
-            db.commit()
-
-        jwt_token = create_access_token(
-            data={
-                "sub": str(user.id),
-                "name": user.name,
-                "email": user.email,
-                "avatar_url": user.avatar_url,
-            },
-            expires_delta=timedelta(days=1),
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        frontend_url = settings.frontend_login_success_uri
-        logger.info(f"Redirecting to frontend with token for {user.email}")
-        return RedirectResponse(url=f"{frontend_url}?token={jwt_token}")
 
-    except Exception as e:
-        logger.error(f"Error processing Google auth callback: {e}")
-        return RedirectResponse(url=settings.frontend_login_failure_uri)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
+    )
+    logger.info(f"User logged in: {user.email}")
+    return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/google/login", response_description="Redirects to Google OAuth")
+async def login(google_sso: GoogleSSO = Depends(get_google_sso)):
+    return await google_sso.get_login_redirect()
+
+
+@router.get("/google/callback", response_model=Token)
+async def google_auth(
+    request: Request,
+    google_sso: GoogleSSO = Depends(get_google_sso),
+    db: Session = Depends(get_db),
+):
+    user = await google_sso.verify_and_process(request)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            description="Google authentication failed or user has not verified email.",
+        )
+
+    result = db.execute(
+        select(User).where(func.lower(User.email) == user.email.lower())
+    )
+    existing_user = result.scalars().first()
+
+    if not existing_user:
+        new_user = User(
+            email=user.email,
+            full_name=user.first_name + " " + user.last_name,
+            password_hash=hash_password(secrets.token_urlsafe(16)),
+            profile_image=user.picture,
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        existing_user = new_user
+        logger.info(f"Created new user from Google SSO: {new_user.email}")
+
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": str(existing_user.id)}, expires_delta=access_token_expires
+    )
+
+    return Token(access_token=access_token, token_type="bearer")
 
 
 @router.get("/logout", response_model=Message)

@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+import os
 import secrets
 
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
 from app.config import settings
@@ -11,6 +13,9 @@ import bcrypt
 SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
+
+api_prefix = "/api" if os.getenv("VERCEL") else ""
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{api_prefix}/auth/token")
 
 
 def hash_password(password: str) -> str:

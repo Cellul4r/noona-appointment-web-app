@@ -35,8 +35,8 @@ class Session(Base):
         DateTime(timezone=True), default=lambda: datetime.utcnow()
     )
 
-    event: Mapped["Event"] = relationship("Event", back_populates="sessions")
+    event: Mapped["Event"] = relationship(back_populates="sessions")
 
     sessions_registered: Mapped[list["SessionRegistration"]] = relationship(
-        "SessionRegistration", back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade="all, delete-orphan"
     )

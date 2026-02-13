@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
 
 class JWTAndCSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):
-        excluded_paths = ["/", "/login", "/google/auth", "/logout"]
+        excluded_paths = ["/", "/login", "/google/auth", "/logout", "/signup"]
         logger.debug(f"Request method: {request.method}, path: {request.url.path}")
         if (
             request.method not in ["POST", "PUT", "DELETE"]

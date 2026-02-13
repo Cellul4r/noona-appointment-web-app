@@ -1,6 +1,8 @@
 # FastAPI framework and ASGI server
-fastapi==0.115.11
+fastapi[standard]==0.115.11
 uvicorn==0.34.0
+# SSO
+fastapi-sso==0.20.0
 
 # ORM and Database tools
 SQLAlchemy==2.0.29
