@@ -87,7 +87,7 @@ def create_user(
     return new_user
 
 
-@router.post("/token", response_model=Token)
+@router.post("/token")
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
@@ -162,13 +162,13 @@ async def github_auth(
 async def logout(response: Response):
     # To logout remove jwt token from cookies
 
-    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="jwt")
     logger.info("User logged out")
-    return JSONResponse(content={"message": "Logout successful. JWT cookies removed."})
+    return {"message": "Logout successful. JWT cookies removed."}
 
 
 @router.get("/me")
-async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
+async def read_users_me(current_user: User = Depends(get_current_user)):
     """
     **Get Current User Profile**
 
@@ -178,6 +178,6 @@ async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
     logger.info(f"Fetching profile for {current_user.email}")
     return {
         "email": current_user.email,
-        "name": current_user.name,
-        "avatar_url": current_user.avatar_url,
+        "full_name": current_user.full_name,
+        "profile_image": current_user.profile_image,
     }

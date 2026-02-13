@@ -8,7 +8,7 @@ from app.config import settings
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models.authuser import AuthUser
+from app.models.user import User
 from app.security import verify_access_token
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
             raise HTTPException(
                 status_code=401, detail="Invalid token: subject missing"
             )
-        user = db.query(AuthUser).filter(AuthUser.id == int(user_id)).first()
+        user = db.query(User).filter(User.id == int(user_id)).first()
         if user is None:
             logger.error(f"User not found for id: {user_id}")
             raise HTTPException(status_code=401, detail="User not found")
