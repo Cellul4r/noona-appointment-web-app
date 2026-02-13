@@ -12,6 +12,7 @@ psycopg2-binary==2.9.9
 
 # Data validation and settings management
 pydantic[email,timezone]==2.10.6
+pydantic-extra-types==2.10.6
 pydantic-settings==2.8.1
 python-dotenv==1.0.1
 

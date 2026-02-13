@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 
 from datetime import datetime
 
+
+import uuid
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -22,7 +25,9 @@ class Event(Base):
     location: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_draft: Mapped[bool] = mapped_column(default=True)
-    share_uuid: Mapped[str] = mapped_column(String(100), nullable=False)
+    share_uuid: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), default=uuid.uuid4
+    )
     max_sessions_per_user: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.utcnow()

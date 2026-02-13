@@ -1,4 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic_extra_types.timezone_name import TimeZoneName
+
 from datetime import datetime
 
 
@@ -22,7 +24,7 @@ class UserPublic(BaseModel):
 class UserPrivate(UserPublic):
     id: int
     email: EmailStr = Field(max_length=120)
-    timezone: str
+    timezone: TimeZoneName = Field(default="UTC", max_length=64)
     email_notifications: bool
     created_at: datetime
 
@@ -31,5 +33,5 @@ class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=100)
     email: EmailStr | None = Field(default=None, max_length=120)
     profile_image: str | None = None
-    timezone: str | None = None
+    timezone: TimeZoneName | None = Field(default="UTC", max_length=64)
     email_notifications: bool | None = None
