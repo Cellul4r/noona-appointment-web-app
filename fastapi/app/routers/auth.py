@@ -158,21 +158,16 @@ async def github_auth(
     return response
 
 
-@router.get("/logout", response_model=Message)
-async def logout():
-    """
-    **Logout User**
+@router.get("/logout")
+async def logout(response: Response):
+    # To logout remove jwt token from cookies
 
-    Instructs the client to clear the JWT token.
-    Note: Real server-side logout would require a token blacklist.
-    """
+    response.delete_cookie(key="access_token")
     logger.info("User logged out")
-    return JSONResponse(
-        content={"message": "Logout successful. Remove JWT token on frontend."}
-    )
+    return JSONResponse(content={"message": "Logout successful. JWT cookies removed."})
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 async def read_users_me(current_user: AuthUser = Depends(get_current_user)):
     """
     **Get Current User Profile**
