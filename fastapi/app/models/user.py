@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,7 +23,7 @@ class User(Base):
     timezone: Mapped[str] = mapped_column(default="UTC", nullable=False)
     email_notifications: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+        DateTime(timezone=True), default=lambda: datetime.utcnow()
     )
 
     events: Mapped[list["Event"]] = relationship(
