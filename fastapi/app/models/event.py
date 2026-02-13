@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from datetime import datetime
 
@@ -6,6 +7,10 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.user import User
+    from app.models.session import Session
 
 
 class Event(Base):
@@ -28,5 +33,5 @@ class Event(Base):
 
     host: Mapped["User"] = relationship("User", back_populates="events")
     sessions: Mapped[list["Session"]] = relationship(
-        "Session", back_populate="event", cascade="all, delete-orphan"
+        "Session", back_populates="event", cascade="all, delete-orphan"
     )
