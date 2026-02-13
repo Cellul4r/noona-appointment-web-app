@@ -1,12 +1,13 @@
+import secrets
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from fastapi import Depends, HTTPException, status
-from app.db import get_db
+from fastapi import HTTPException, Response, status
 
 from app.models.user import User
 from app.security import hash_password, verify_password
 from app.schemas.user import UserPrivate
+from app.config import settings
 
 
 # Check user authentication validate with email and password
@@ -25,6 +26,7 @@ def authenticate_user(email: str, password: str, db: Session):
     return user
 
 
+# register or login with this sso login
 def get_or_create_oauth_user(
     oauth_user,
     provider: str,
@@ -47,7 +49,7 @@ def get_or_create_oauth_user(
         user = User(
             email=oauth_user.email,
             full_name=full_name,
-            password_hash=hash_password(oauth_user.password),
+            password_hash=secrets.token_hex(16),
             profile_image=oauth_user.picture,
         )
 
@@ -56,3 +58,16 @@ def get_or_create_oauth_user(
         db.refresh(user)
 
     return user
+
+
+# save cookies on client with jwt token
+def attach_token_cookie(response: Response, token: str):
+    response.set_cookie(
+        key="jwt",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes
+        * 60,  # seconds to expire of this cookies
+    )

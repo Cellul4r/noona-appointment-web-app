@@ -3,7 +3,7 @@
 import logging
 import secrets
 from typing import Annotated
-from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi import APIRouter, Request, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_sso import GithubSSO, GoogleSSO
 from sqlalchemy import func, select
@@ -29,7 +29,11 @@ from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
 from app.schemas.auth import Token
 from app.dependencies.sso import get_github_sso, get_google_sso
-from app.services.auth import authenticate_user, get_or_create_oauth_user
+from app.services.auth import (
+    attach_token_cookie,
+    authenticate_user,
+    get_or_create_oauth_user,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -95,8 +99,11 @@ def login_for_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
+    response = RedirectResponse(settings.frontend_login_success_uri)
+
+    attach_token_cookie(response, access_token)
     logger.info(f"User logged in: {user.email}")
-    return Token(access_token=access_token, token_type="bearer")
+    return response
 
 
 @router.get("/google/login", response_description="Redirects to Google Callback")
@@ -119,7 +126,10 @@ async def google_auth(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return Token(access_token=access_token, token_type="bearer")
+    response = RedirectResponse(settings.frontend_login_success_uri)
+
+    attach_token_cookie(response, access_token)
+    return response
 
 
 @router.get("/github/login", response_description="Redirects to Github Callback")
@@ -142,7 +152,10 @@ async def github_auth(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return Token(access_token=access_token, token_type="bearer")
+    response = RedirectResponse(settings.frontend_login_success_uri)
+
+    attach_token_cookie(response, access_token)
+    return response
 
 
 @router.get("/logout", response_model=Message)
