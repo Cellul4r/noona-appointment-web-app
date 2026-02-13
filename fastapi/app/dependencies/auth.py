@@ -28,7 +28,7 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
         logger.error("Missing JWT cookie in get_current_user")
         raise HTTPException(status_code=401, detail="Missing JWT cookie")
     try:
-        user_id: str | None = verify_access_token
+        user_id: str | None = verify_access_token(token)
         logger.debug(f"Extracted user_id from sub: {user_id}")
         if user_id is None:
             logger.error("Invalid token: subject missing")
