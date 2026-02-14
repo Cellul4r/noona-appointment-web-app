@@ -1,4 +1,5 @@
 import secrets
+from fastapi_sso import OpenID
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -28,7 +29,7 @@ def authenticate_user(email: str, password: str, db: Session):
 
 # register or login with this sso login
 def get_or_create_oauth_user(
-    oauth_user,
+    oauth_user: OpenID,
     provider: str,
     db: Session,
 ) -> UserPrivate:
