@@ -10,6 +10,7 @@ from app.db import Base
 
 if TYPE_CHECKING:
     from app.models.event import Event
+    from app.models.oauth_user import OAuthUser
 
 
 class User(Base):
@@ -33,6 +34,11 @@ class User(Base):
     events: Mapped[list["Event"]] = relationship(
         back_populates="host",
         cascade="all, delete-orphan",
+    )
+
+    oauth_accounts: Mapped[list["OAuthUser"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan"
     )
     """
     @property
