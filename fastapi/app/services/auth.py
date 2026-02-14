@@ -9,6 +9,7 @@ from app.models.user import User
 from app.security import hash_password, verify_password
 from app.schemas.user import UserPrivate
 from app.config import settings
+from app.models.oauth_user import OAuthUser
 
 
 # Check user authentication validate with email and password
@@ -34,10 +35,18 @@ def get_or_create_oauth_user(
     db: Session,
 ) -> UserPrivate:
 
-    result = db.execute(
-        select(User).where(func.lower(User.email) == oauth_user.email.lower())
+    existing_oauth_user = (
+        db.execute(
+            select(OAuthUser)
+            .where(OAuthUser.provider == oauth_user.provider)
+            .where(OAuthUser.provider_user_id == oauth_user.id)
+        )
+        .scalars()
+        .first()
     )
-    user = result.scalars().first()
+
+    if existing_oauth_user:
+        return existing_oauth_user.user
 
     if provider == "google":
         full_name = oauth_user.first_name + " " + oauth_user.last_name
@@ -46,19 +55,34 @@ def get_or_create_oauth_user(
     else:
         full_name = "Annonymous"
 
-    if not user:
-        user = User(
+    existing_user = (
+        db.execute(
+            select(User).where(func.lower(User.email) == oauth_user.email.lower())
+        )
+        .scalars()
+        .first()
+    )
+
+    # user never link with This OAuth Account and No email in user database
+    if not existing_user:
+        # create new user and link to OAuth Account
+        existing_user = User(
             email=oauth_user.email,
             full_name=full_name,
             password_hash=secrets.token_hex(16),
             profile_image=oauth_user.picture,
         )
+        db.add(existing_user)
+        db.flush()  # to get existing_user id
 
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+    new_oauth_user = OAuthUser(
+        provider=oauth_user.provider, provider_user_id=oauth_user.id, user=existing_user
+    )
 
-    return user
+    db.add(new_oauth_user)
+    db.commit()
+    db.refresh(existing_user)
+    return existing_user
 
 
 # save cookies on client with jwt token

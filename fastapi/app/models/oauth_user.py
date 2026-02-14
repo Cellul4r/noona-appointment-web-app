@@ -17,12 +17,13 @@ class OAuthUser(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id",ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     provider: Mapped[str] = mapped_column(String(50), nullable=False)
     provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    __table_args__ = (UniqueConstraint('provider', 'provider_user_id', name='unique_oauth_provider'))
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_user_id", name="unique_oauth_provider"),
+    )
 
     user: Mapped["User"] = relationship(back_populates="oauth_accounts")

@@ -108,7 +108,7 @@ def login_for_access_token(
 
 @router.get("/google/login", response_description="Redirects to Google Callback")
 async def google_login(google_sso: GoogleSSO = Depends(get_google_sso)):
-    return await google_sso.get_login_redirect()
+    return await google_sso.get_login_redirect(params={"prompt": "consent"})
 
 
 @router.get("/google/callback", response_model=Token)
@@ -134,7 +134,7 @@ async def google_auth(
 
 @router.get("/github/login", response_description="Redirects to Github Callback")
 async def github_login(github_sso: GithubSSO = Depends(get_github_sso)):
-    return await github_sso.get_login_redirect()
+    return await github_sso.get_login_redirect(params={"prompt": "consent"})
 
 
 @router.get("/github/callback", response_model=Token)
