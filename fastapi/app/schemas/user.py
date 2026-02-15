@@ -36,3 +36,7 @@ class UserUpdate(BaseModel):
     profile_image: str | None = None
     timezone: str | None = None
     email_notifications: bool | None = None
+
+class UserSignIn(BaseModel):
+    email: EmailStr = Field(max_length=120)
+    password: str = Field(min_length=8)
