@@ -88,7 +88,11 @@ def login_for_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    response = RedirectResponse(settings.frontend_login_success_uri)
+    response = JSONResponse(
+        content={
+            "message": "Login successful",
+        }
+    )
 
     auth_service.attach_token_cookie(response, access_token)
     logger.info(f"User logged in: {user.email}")
@@ -117,7 +121,11 @@ async def google_auth(
             data={"sub": str(user.id)}, expires_delta=access_token_expires
         )
 
-        response = RedirectResponse(settings.frontend_login_success_uri)
+        response = JSONResponse(
+            content={
+                "message": "Login successful",
+            }
+        )
 
         auth_service.attach_token_cookie(response, access_token)
         return response
@@ -145,7 +153,11 @@ async def github_auth(
             data={"sub": str(user.id)}, expires_delta=access_token_expires
         )
 
-        response = RedirectResponse(settings.frontend_login_success_uri)
+        response = JSONResponse(
+            content={
+                "message": "Login successful",
+            }
+        )
 
         auth_service.attach_token_cookie(response, access_token)
         return response
