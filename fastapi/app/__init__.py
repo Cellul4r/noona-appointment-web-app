@@ -7,6 +7,8 @@ from app.routers import auth, phonebook
 from app.env_detector import should_auto_create_tables
 from app.middlewares.jwt_csrf_middleware import JWTAndCSRFMiddleware
 
+from app.models import *
+
 import logging
 import os
 from fastapi.responses import JSONResponse
@@ -47,7 +49,7 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-fastapi_app.add_middleware(JWTAndCSRFMiddleware)
+# fastapi_app.add_middleware(JWTAndCSRFMiddleware)
 
 # config settings of fastapi app
 fastapi_app.state.settings = settings
@@ -64,7 +66,7 @@ except Exception as e:
     # Don't fail the app if table creation fails
 
 # set all router api
-fastapi_app.include_router(auth.router, prefix=api_prefix, tags=["Auth"])
+fastapi_app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Auth"])
 fastapi_app.include_router(
     phonebook.router, prefix=f"{api_prefix}/lab10", tags=["Phonebook"]
 )

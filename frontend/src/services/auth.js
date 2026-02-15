@@ -26,7 +26,7 @@ axios.interceptors.request.use(
 
 // Login with Google OAuth
 export async function loginWithGoogle() {
-  window.location.href = `${API_URL}/login`;
+  window.location.href = `${API_URL}/google/login`;
 }
 
 // Fetch Profile (JWT sent via cookie)

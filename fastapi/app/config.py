@@ -80,7 +80,10 @@ class Settings(BaseSettings):
     google_client_id: Optional[str] = None
     google_client_secret: Optional[str] = None
     google_discovery_url: Optional[str] = None
+    github_client_id: str | None
+    github_client_secret: str | None
     frontend_login_success_uri: str = "http://localhost:8080/login-success"  # Default
+    vite_api_base_url: str = "http://localhost:56733/api"  # Default
 
     @validator("allowed_origins", pre=True, always=True)
     def assemble_allowed_origins(cls, v):

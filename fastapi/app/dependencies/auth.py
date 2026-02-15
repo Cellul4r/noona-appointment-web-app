@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 
 from app.config import settings
@@ -8,7 +8,8 @@ from app.config import settings
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models.authuser import AuthUser
+from app.models.user import User
+from app.security import verify_access_token
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -25,23 +26,28 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
     logger.debug(f"JWT cookie: {token}")
     if not token:
         logger.error("Missing JWT cookie in get_current_user")
-        raise HTTPException(status_code=401, detail="Missing JWT cookie")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing JWT cookie"
+        )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.debug(f"JWT payload: {payload}")
-        user_id: str = payload.get("sub")
+        user_id: str | None = verify_access_token(token)
         logger.debug(f"Extracted user_id from sub: {user_id}")
         if user_id is None:
             logger.error("Invalid token: subject missing")
             raise HTTPException(
-                status_code=401, detail="Invalid token: subject missing"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: subject missing",
             )
-        user = db.query(AuthUser).filter(AuthUser.id == int(user_id)).first()
+        user = db.query(User).filter(User.id == int(user_id)).first()
         if user is None:
             logger.error(f"User not found for id: {user_id}")
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            )
         logger.debug(f"User found: {user.email}")
         return user
     except JWTError as e:
         logger.error(f"JWT decoding failed: {e}")
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )

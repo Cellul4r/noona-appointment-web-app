@@ -1,6 +1,8 @@
 # FastAPI framework and ASGI server
-fastapi==0.115.11
+fastapi[standard]==0.115.11
 uvicorn==0.34.0
+# SSO
+fastapi-sso==0.20.0
 
 # ORM and Database tools
 SQLAlchemy==2.0.29
@@ -9,7 +11,8 @@ alembic==1.14.1
 psycopg2-binary==2.9.9
 
 # Data validation and settings management
-pydantic==2.10.6
+pydantic[email,timezone]==2.10.6
+pydantic-extra-types==2.10.6
 pydantic-settings==2.8.1
 python-dotenv==1.0.1
 
