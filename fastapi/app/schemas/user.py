@@ -36,6 +36,7 @@ class UserUpdate(BaseModel):
     timezone: TimeZoneName | None = Field(default="UTC", max_length=64)
     email_notifications: bool | None = None
 
+
 class UserSignIn(BaseModel):
     email: EmailStr = Field(max_length=120)
     password: str = Field(min_length=8)
