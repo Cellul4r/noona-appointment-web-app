@@ -74,13 +74,6 @@ class UserService:
             )
             db.add(existing_user)
             db.flush()  # to get existing_user id
-        else:
-            # but if there exist email in our user database raise 400 error
-            # the user must sign in with that email first and later on link with this OAuth Account
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Account is already existed. Please sign in first",
-            )
 
         new_oauth_user = OAuthUser(
             provider=oauth_user.provider,
