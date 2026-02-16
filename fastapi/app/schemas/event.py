@@ -1,42 +1,48 @@
+from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from uuid import UUID
 
+from app.schemas.user import UserPublic
+
+if TYPE_CHECKING:
+    from app.schemas.session import SessionCreate
+    from app.schemas.session import SessionPublic
+
 
 class EventBase(BaseModel):
     title: str = Field(min_length=1, max_length=255)
-    location: str | None = None
-    description: str | None = None
-    limit_sessions_per_user: bool = False
+    location: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=5000)
     max_sessions_per_user: int | None = Field(default=None, ge=1)
+
 
 class EventCreate(EventBase):
     is_draft: bool = True
+    sessions: list["SessionCreate"]
 
 
-class EventPublic(BaseModel):
+class EventPublic(EventBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    title: str
-    location: str | None
-    description: str | None
     share_uuid: UUID
+    owner: UserPublic
+
+
+class EventSessionPublic(EventPublic):
+    sessions: list["SessionPublic"]
 
 
 class EventPrivate(EventPublic):
-    owner_id: int
     is_draft: bool
-    limit_sessions_per_user: bool
-    max_sessions_per_user: int | None
     created_at: datetime
     updated_at: datetime
 
 
 class EventUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
-    location: str | None = None
-    description: str | None = None
+    location: str | None = Field(default=None, max_length=255)
+    description: str | None = Field(default=None, max_length=5000)
     is_draft: bool | None = None
-    limit_sessions_per_user: bool | None = None
     max_sessions_per_user: int | None = Field(default=None, ge=1)
