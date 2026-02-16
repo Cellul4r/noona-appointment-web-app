@@ -19,7 +19,8 @@ if TYPE_CHECKING:
 class Event(Base):
     __tablename__ = "events"
 
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    share_uuid: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))

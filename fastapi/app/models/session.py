@@ -25,12 +25,6 @@ class Session(Base):
         DateTime(timezone=True), nullable=False
     )
     seat_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
-    recurrence_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    recurrence_interval: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    recurrence_until: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    recurrence_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.utcnow()
     )
