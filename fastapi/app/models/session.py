@@ -25,6 +25,7 @@ class Session(Base):
         DateTime(timezone=True), nullable=False
     )
     seat_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+    seat_taken: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.utcnow()
     )
