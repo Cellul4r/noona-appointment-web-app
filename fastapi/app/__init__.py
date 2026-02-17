@@ -1,11 +1,11 @@
 # fastapi/app/__init__.py
 from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_pagination import add_pagination
 from app.config import settings
 from app.db import Base, engine
-from app.routers import auth, phonebook
+from app.routers import auth, session_router
 from app.env_detector import should_auto_create_tables
-from app.middlewares.jwt_csrf_middleware import JWTAndCSRFMiddleware
 
 from app.models import *
 
@@ -17,6 +17,8 @@ from jose.exceptions import ExpiredSignatureError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 from jose import jwt
+
+from app.routers import calendar_router, event_router
 
 # Configure logging
 logging.basicConfig(
@@ -36,10 +38,10 @@ fastapi_app = FastAPI(
     debug=settings.debug,
     docs_url=f"{api_prefix}/docs",
     redoc_url=f"{api_prefix}/redoc",
-    openapi_url=f"{api_prefix}/openapi.json",
 )
 
 fastapi_app.logger = logger
+add_pagination(fastapi_app)  # Add pagination support to fastAPI app
 
 # add middlewares
 fastapi_app.add_middleware(
@@ -68,7 +70,13 @@ except Exception as e:
 # set all router api
 fastapi_app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Auth"])
 fastapi_app.include_router(
-    phonebook.router, prefix=f"{api_prefix}/lab10", tags=["Phonebook"]
+    event_router.router, prefix=f"{api_prefix}/events", tags=["Events"]
+)
+fastapi_app.include_router(
+    session_router.router, prefix=f"{api_prefix}/sessions", tags=["Sessions"]
+)
+fastapi_app.include_router(
+    calendar_router.router, prefix=f"{api_prefix}/calendar", tags=["Calendar"]
 )
 
 
