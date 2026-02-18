@@ -47,14 +47,14 @@ class SessionService:
     def get_upcoming_sessions_by_event_uuid(
         self,
         event_uuid: uuid.UUID,
-        db: Session,
         now: datetime | None = None,
-        cursor: str | None = None,
-        size: int = 10,
     ) -> tuple[SessionModel, int | None, int | None]:
+        # default current time
         if not now:
             now = datetime.utcnow()
 
+        # get sessions that is upcoming or ongoing (end_datetime >= now)
+        # we order by start_datetime and then by id
         query = (
             select(SessionModel)
             .where(
@@ -64,22 +64,21 @@ class SessionService:
             .order_by(SessionModel.start_datetime.asc(), SessionModel.id.asc())
         )
 
-        cursor_params = CursorParams(cursor=cursor, size=size)
-
-        return paginate(db, query, params=cursor_params)
+        return query
 
     def get_past_sessions_by_event_uuid(
         self,
         event_uuid: uuid.UUID,
-        db: Session,
         now: datetime | None = None,
-        cursor: str | None = None,
-        size: int = 10,
-    ) -> CursorPage[SessionPrivate]:
+    ):
 
+        # default current time
         if not now:
             now = datetime.utcnow()
 
+        # get sessions that is already ended
+        # we order by start_datetime desc and then by id desc
+        # recent ended session show first
         query = (
             select(SessionModel)
             .where(
@@ -89,9 +88,7 @@ class SessionService:
             .order_by(SessionModel.start_datetime.desc(), SessionModel.id.desc())
         )
 
-        cursor_params = CursorParams(cursor=cursor, size=size)
-
-        return paginate(db, query, params=cursor_params)
+        return query
 
     # get sessions within a date range and filter by registration status
     def get_all_sessions(

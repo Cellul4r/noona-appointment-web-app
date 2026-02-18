@@ -83,9 +83,8 @@ def get_event_past_sessions(
     cursor: str | None = None,
     size: int = 10,
 ):
-    return session_service.get_past_sessions_by_event_uuid(
-        event_uuid, db, cursor=cursor, size=size
-    )
+    query = session_service.get_past_sessions_by_event_uuid(event_uuid)
+    return paginate(db, query, params=CursorParams(cursor=cursor, size=size))
 
 
 @router.get("/{event_uuid}/sessions/upcoming", response_model=CursorPage[SessionPublic])
@@ -95,9 +94,8 @@ def get_event_upcoming_sessions(
     cursor: str | None = None,
     size: int = 10,
 ):
-    return session_service.get_upcoming_sessions_by_event_uuid(
-        event_uuid, db, cursor=cursor, size=size
-    )
+    query = session_service.get_upcoming_sessions_by_event_uuid(event_uuid)
+    return paginate(db, query, params=CursorParams(cursor=cursor, size=size))
 
 
 @router.get(
