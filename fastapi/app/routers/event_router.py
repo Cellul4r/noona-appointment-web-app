@@ -18,7 +18,7 @@ from app.schemas.event import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/events", tags=["Events"]) 
+router = APIRouter()
 
 def map_owner(event):
     if event:

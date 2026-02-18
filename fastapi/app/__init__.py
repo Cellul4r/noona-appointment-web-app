@@ -78,7 +78,6 @@ fastapi_app.include_router(
 fastapi_app.include_router(
     calendar_router.router, prefix=f"{api_prefix}/calendar", tags=["Calendar"]
 )
-fastapi_app.include_router(event_router.router, prefix=api_prefix)
 
 
 # exception handler
