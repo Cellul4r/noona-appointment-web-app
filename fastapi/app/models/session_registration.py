@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 class RegistrationStatus(PyEnum):
     CONFIRMED = "confirmed"
     WAITLIST = "waitlist"
-    CANCELLED = "cancelled"
     AVAILABLE = "available"
 
 
