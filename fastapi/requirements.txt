@@ -8,6 +8,7 @@ fastapi-sso==0.20.0
 fastapi-pagination==0.15.10
 # ORM and Database tools
 SQLAlchemy==2.0.29
+sqlakeyset==2.0.0 # keyset pagination for SQLAlchemy
 sqlalchemy-serializer==1.4.22
 alembic==1.14.1
 psycopg2-binary==2.9.9
