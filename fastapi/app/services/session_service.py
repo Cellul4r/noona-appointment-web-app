@@ -94,34 +94,39 @@ class SessionService:
     def get_all_sessions(
         self,
         user_id: int,
-        db: Annotated[Session, Depends(get_db)],
+        event_uuid: uuid.UUID | None = None,
         start_from: datetime | None = None,
         end_to: datetime | None = None,
         scope: str = "all",  # all | joined | hosted
+        registration_status_list: list[RegistrationStatus] = [
+            RegistrationStatus.CONFIRMED,
+            RegistrationStatus.WAITLIST,
+        ],
     ):
         # get all sessions that user is registered for or hosting, and filter by date range if provided
         # all -> both registered and hosted sessions
-        # joined -> only sessions user is registered (not include waitlist)
+        # joined -> only sessions user is registered depends on registration_status_list, default both confirm and waitlist
         # hosted -> only sessions user is hosting
 
         # base query to get sessions table with registration_status of this user
         # and filter only sessions that are associated with specified event
         base_query = (
-            select(
-                SessionModel, SessionRegistration.status.label("registration_status")
-            )
+            select(SessionModel)
+            .add_columns(SessionRegistration.status)
             .join(SessionModel.event)
             .outerjoin(
                 SessionRegistration,
                 and_(
                     SessionRegistration.session_id == SessionModel.id,
                     SessionRegistration.user_id == user_id,
-                    SessionRegistration.status.in_(
-                        [RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLIST]
-                    ),
+                    SessionRegistration.status.in_(registration_status_list),
                 ),
             )
         )
+
+        # filter only a specific event if provided.
+        if event_uuid:
+            base_query = base_query.where(Event.share_uuid == event_uuid)
 
         # if scope joined, filter only sessions that user is really registered include waitlist
         # if scope hosted, filter only sessions that user is hosting
@@ -141,12 +146,26 @@ class SessionService:
         query = query.options(selectinload(SessionModel.event).selectinload(Event.host))
 
         # also filter by date range if provided
-        if start_from:
-            query = query.where(SessionModel.end_datetime >= start_from)
         if end_to:
             query = query.where(SessionModel.start_datetime <= end_to)
+        if start_from:
+            query = query.where(SessionModel.end_datetime >= start_from)
 
-        return db.execute(query).all()
+        # natural order by for sessions
+        if start_from:
+            query = query.order_by(
+                SessionModel.start_datetime.asc(), SessionModel.id.asc()
+            )
+        elif end_to:
+            query = query.order_by(
+                SessionModel.start_datetime.desc(), SessionModel.id.desc()
+            )
+        else:
+            query = query.order_by(
+                SessionModel.start_datetime.asc(), SessionModel.id.asc()
+            )
+
+        return query
 
     def get_all_sessions_by_event(
         self,

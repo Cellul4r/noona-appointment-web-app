@@ -26,13 +26,14 @@ def get_sessions(
     end_datetime: datetime | None = None,
     scope: str = "all",
 ):
-    sessions = session_service.get_all_sessions(
+
+    query = session_service.get_all_sessions(
         user_id=current_user.id,
-        db=db,
         start_from=start_datetime,
         end_to=end_datetime,
         scope=scope,
     )
+    sessions = db.execute(query).all()
     return [
         {
             **session.__dict__,
