@@ -1,21 +1,28 @@
 import logging
+from typing import Annotated
 from uuid import UUID
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.orm import Session
 from fastapi_pagination import Page
+from fastapi_pagination.cursor import CursorPage
 from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.db import get_db
 from app.dependencies.auth import get_current_user
 from app.services.event_service import event_service
 from app.models.user import User
+from app.models.session import Session as SessionModel
 from app.schemas.event import (
     EventCreate,
     EventPublic,
     EventSessionPublic,
     EventUpdate,
 )
+from app.schemas.session import SessionPublic
+
+from app.services.session_service import SessionService
 
 
 logger = logging.getLogger(__name__)
