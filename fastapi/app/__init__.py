@@ -1,9 +1,10 @@
 # fastapi/app/__init__.py
 from fastapi import FastAPI, APIRouter, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_pagination import add_pagination
 from app.config import settings
 from app.db import Base, engine
-from app.routers import auth, phonebook
+from app.routers import auth, phonebook, event_router
 from app.env_detector import should_auto_create_tables
 from app.middlewares.jwt_csrf_middleware import JWTAndCSRFMiddleware
 
@@ -70,6 +71,7 @@ fastapi_app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Auth
 fastapi_app.include_router(
     phonebook.router, prefix=f"{api_prefix}/lab10", tags=["Phonebook"]
 )
+fastapi_app.include_router(event_router.router, prefix=api_prefix)
 
 
 # exception handler
@@ -89,3 +91,5 @@ fastapi_app.logger.info(
     f"Starting FastAPI app with DATABASE_URL: {settings.database_url}"
 )
 fastapi_app.logger.debug(f"Allowed origins: {settings.allowed_origins}")
+
+add_pagination(fastapi_app)

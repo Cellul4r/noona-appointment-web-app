@@ -5,10 +5,6 @@ from uuid import UUID
 
 from app.schemas.user import UserPublic
 
-if TYPE_CHECKING:
-    from app.schemas.session import SessionCreate
-    from app.schemas.session import SessionPublic
-
 
 class EventBase(BaseModel):
     title: str = Field(min_length=1, max_length=255)
@@ -46,3 +42,9 @@ class EventUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=5000)
     is_draft: bool | None = None
     max_sessions_per_user: int | None = Field(default=None, ge=1)
+
+# Import at the bottom to avoid circular import crashes
+from app.schemas.session import SessionCreate, SessionPublic
+
+EventCreate.model_rebuild()
+EventSessionPublic.model_rebuild()
