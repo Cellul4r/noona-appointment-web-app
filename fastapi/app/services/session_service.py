@@ -47,10 +47,12 @@ class SessionService:
         self,
         event_uuid: uuid.UUID,
         db: Session,
+        now: datetime | None = None,
         cursor: str | None = None,
         size: int = 10,
     ) -> tuple[SessionModel, int | None, int | None]:
-        now = datetime.utcnow()
+        if not now:
+            now = datetime.utcnow()
 
         query = (
             select(SessionModel)
@@ -61,18 +63,21 @@ class SessionService:
             .order_by(SessionModel.start_datetime.asc(), SessionModel.id.asc())
         )
 
-        cursor_params = CursorParams(cursor, size)
+        cursor_params = CursorParams(cursor=cursor, size=size)
 
-        return paginate(db, query, cursor_params=cursor_params)
+        return paginate(db, query, params=cursor_params)
 
     def get_past_sessions_by_event_uuid(
         self,
         event_uuid: uuid.UUID,
         db: Session,
+        now: datetime | None = None,
         cursor: str | None = None,
         size: int = 10,
     ) -> CursorPage[SessionPrivate]:
-        now = datetime.utcnow()
+
+        if not now:
+            now = datetime.utcnow()
 
         query = (
             select(SessionModel)
@@ -83,9 +88,9 @@ class SessionService:
             .order_by(SessionModel.start_datetime.desc(), SessionModel.id.desc())
         )
 
-        cursor_params = CursorParams(cursor, size)
+        cursor_params = CursorParams(cursor=cursor, size=size)
 
-        return paginate(db, query, cursor_params=cursor_params)
+        return paginate(db, query, params=cursor_params)
 
     # get sessions within a date range and filter by registration status
     def get_all_sessions(

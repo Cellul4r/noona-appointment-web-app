@@ -73,19 +73,28 @@ def get_event(
     return map_owner(ev)
 
 
-@router.get("/{event_uuid}/sessions/past")
+@router.get("/{event_uuid}/sessions/past", response_model=CursorPage[SessionPublic])
 def get_event_past_sessions(
     event_uuid: uuid.UUID,
     db: Annotated[SessionModel, Depends(get_db)],
     cursor: str | None = None,
     size: int = 10,
-) -> CursorPage[SessionPublic]:
-    return session_service.get_past_sessions_by_event_uuid(event_uuid, db, cursor, size)
+):
+    return session_service.get_past_sessions_by_event_uuid(
+        event_uuid, db, cursor=cursor, size=size
+    )
 
 
-@router.get("/{event_uuid}/sessions/upcoming")
-def get_event_upcoming_sessions(event_uuid: uuid.UUID):
-    return session_service.get_upcoming_sessions_by_event_uuid(event_uuid)
+@router.get("/{event_uuid}/sessions/upcoming", response_model=CursorPage[SessionPublic])
+def get_event_upcoming_sessions(
+    event_uuid: uuid.UUID,
+    db: Annotated[SessionModel, Depends(get_db)],
+    cursor: str | None = None,
+    size: int = 10,
+):
+    return session_service.get_upcoming_sessions_by_event_uuid(
+        event_uuid, db, cursor=cursor, size=size
+    )
 
 
 @router.post(
