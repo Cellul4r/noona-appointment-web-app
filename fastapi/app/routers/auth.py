@@ -9,21 +9,17 @@ from fastapi_sso import GithubSSO, GoogleSSO
 from app.security import (
     create_access_token,
 )
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.schemas.auth import UserResponse, Message
 
-from app.models.authuser import AuthUser
 from app.config import settings
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-from httpx import AsyncClient
 
 from app.dependencies.auth import get_current_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
-from app.schemas.auth import Token
 from app.dependencies.sso import get_github_sso, get_google_sso
 from app.services.auth_service import (
     AuthService,
@@ -38,17 +34,6 @@ router = APIRouter()
 
 user_service = UserService()
 auth_service = AuthService(user_service)
-
-
-@router.get("/", response_model=Message)
-async def hello():
-    """
-    **Root Auth Endpoint**
-
-    Returns a simple greeting message to verify the auth router is active.
-    """
-    logger.info("Auth hello endpoint accessed")
-    return {"message": "From auth.py: Hello World!"}
 
 
 @router.post(
