@@ -27,6 +27,10 @@ class SessionPublic(SessionBase):
     seat_taken: int = Field(default=0, ge=0)
 
 
+class SessionWithEventPublic(SessionPublic):
+    event: EventPublic
+
+
 class SessionPrivate(SessionPublic):
     created_at: datetime
 
@@ -35,3 +39,8 @@ class SessionUpdate(BaseModel):
     start_datetime: datetime | None = Field(default=None)
     end_datetime: datetime | None = Field(default=None)
     seat_capacity: int | None = Field(default=None, ge=1)
+
+
+from app.schemas.event import EventPublic
+
+SessionWithEventPublic.model_rebuild()

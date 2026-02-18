@@ -4,9 +4,6 @@ from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from uuid import UUID
 
-from app.schemas.user import UserPublic
-from app.schemas.session import SessionCreate, SessionPublic
-
 
 class EventBase(BaseModel):
     title: str = Field(min_length=1, max_length=255)
@@ -44,3 +41,9 @@ class EventUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=5000)
     is_draft: bool | None = None
     max_sessions_per_user: int | None = Field(default=None, ge=1)
+
+
+from app.schemas.user import UserPublic
+from app.schemas.session import SessionCreate, SessionPublic
+
+EventSessionPublic.model_rebuild()
