@@ -30,13 +30,13 @@ router = APIRouter()
 session_service = SessionService()
 
 
-def map_owner(event):
-    if event:
-        event.owner = event.host
-    return event
+# def map_owner(event): NO LONGER NEEDED
+#     if event:
+#         event.owner = event.host
+#     return event
 
 
-@router.get("/", response_model=Page[EventPublic])
+@router.get("/", response_model=CursorPage[EventPublic])
 def list_events(
     scope: str | None = Query(default=None),
     title: str | None = Query(default=None),
@@ -51,8 +51,8 @@ def list_events(
         scope=scope, title=title, current_user=current_user
     )
 
-    # Paginate executes the query and applies map_owner to every item
-    return paginate(db, query, transformer=lambda items: [map_owner(e) for e in items])
+    # Paginate executes the query
+    return paginate(db, query)
 
 
 @router.get("/{event_uuid}", response_model=EventSessionPublic)
@@ -70,7 +70,7 @@ def get_event(
     if ev.is_draft and (not current_user or ev.owner_id != current_user.id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
-    return map_owner(ev)
+    return ev
 
 
 @router.get("/{event_uuid}/sessions/past", response_model=CursorPage[SessionPublic])
@@ -107,7 +107,7 @@ def create_event(
 ):
     try:
         ev = event_service.create_event(event_in, db, current_user)
-        return map_owner(ev)
+        return ev
     except Exception as e:
         logger.exception("Failed to create event")
         raise HTTPException(
@@ -116,7 +116,7 @@ def create_event(
         )
 
 
-@router.put("/{event_uuid}", response_model=EventSessionPublic)
+@router.patch("/{event_uuid}", response_model=EventSessionPublic)
 def update_event(
     event_in: EventUpdate,
     event_uuid: UUID = Path(...),
@@ -125,7 +125,7 @@ def update_event(
 ):
     try:
         ev = event_service.update_event(event_uuid, event_in, db, current_user)
-        return map_owner(ev)
+        return ev
     except KeyError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"

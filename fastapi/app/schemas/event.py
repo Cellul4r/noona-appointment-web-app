@@ -25,7 +25,7 @@ class EventPublic(EventBase):
 
     id: int
     share_uuid: UUID
-    owner: UserPublic
+    host: UserPublic
 
 
 class EventSessionPublic(EventPublic):

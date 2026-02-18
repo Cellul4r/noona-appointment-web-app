@@ -22,7 +22,7 @@ class EventService:
 
         # If not logged in, return an empty query immediately.
         if current_user is None:
-            return q.where(False) 
+            q = q.where(False)
         else:
             # Has this user registered for any session in this event?
             has_joined = exists().where(
@@ -47,7 +47,7 @@ class EventService:
             q = q.where(Event.title.ilike(f"%{title}%"))
 
         # Order by title alphabetically for pagination
-        q = q.order_by(Event.title.asc())
+        q = q.order_by(Event.title.asc(), Event.id.asc())
         
         return q
 
