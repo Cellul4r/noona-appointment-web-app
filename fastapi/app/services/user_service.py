@@ -100,12 +100,6 @@ class UserService:
         return user
 
     def get_user_settings(self, db: Session, user_id: int) -> UserPrivate:
-        """
-        Retrieve the settings of the current user by their user_id.
-        Returns a UserPrivate schema containing selected user information.
-        Raises HTTPException if the user is not found.
-        """
-        # Query the database for the user with the given user_id
         user = (
             db.execute(
                 select(User)
@@ -116,16 +110,8 @@ class UserService:
             .first()
         )
         if not user:
-            # If the user does not exist, raise a 404 error
             raise HTTPException(status_code=404, detail="User not found")
-        # Return the user's private settings as a UserPrivate schema
-        return UserPrivate(
-            email=user.email,
-            full_name=user.full_name,
-            profile_image=user.profile_image,
-            timezone=user.timezone,
-            email_notifications=user.email_notifications,
-        )
+        return user
 
     def link_oauth_account(self, db: Session, user_id: int, provider: str, oauth_user: OpenID):
         existing_oauth = (
