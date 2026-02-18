@@ -27,7 +27,11 @@ class SessionPublic(SessionBase):
     seat_taken: int = Field(default=0, ge=0)
 
 
-class SessionWithEventPublic(SessionPublic):
+class SessionWithOptionalStatus(SessionPublic):
+    registration_status: str | None = Field(default=None)
+
+
+class SessionWithEventPublic(SessionWithOptionalStatus):
     event: EventPublic
     registration_status: str | None = Field(default=None)
 

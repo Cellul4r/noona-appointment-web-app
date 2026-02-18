@@ -1,16 +1,16 @@
 import logging
 from typing import Annotated
+from urllib import response
 from uuid import UUID
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.orm import Session
-from fastapi_pagination import Page
-from fastapi_pagination.cursor import CursorPage
+from fastapi_pagination.cursor import CursorPage, CursorParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.db import get_db
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, get_optional_user
 from app.services.event_service import event_service
 from app.models.user import User
 from app.models.session import Session as SessionModel
@@ -20,7 +20,10 @@ from app.schemas.event import (
     EventSessionPublic,
     EventUpdate,
 )
-from app.schemas.session import SessionPublic
+from app.schemas.session import (
+    SessionPublic,
+    SessionWithOptionalStatus,
+)
 
 from app.services.session_service import SessionService
 
@@ -94,6 +97,35 @@ def get_event_upcoming_sessions(
 ):
     return session_service.get_upcoming_sessions_by_event_uuid(
         event_uuid, db, cursor=cursor, size=size
+    )
+
+
+@router.get(
+    "/{event_uuid}/sessions", response_model=CursorPage[SessionWithOptionalStatus]
+)
+def get_event_sessions(
+    event_uuid: uuid.UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_optional_user)] = None,
+    cursor: str | None = None,
+    size: int = 10,
+):
+    # public route will get registration status only if user is logged in
+    user_id = current_user.id if current_user else None
+    query = session_service.get_all_sessions_by_event(event_uuid, user_id=user_id)
+
+    # before paginate transform the result to include registration_status for each session
+    return paginate(
+        db,
+        query,
+        params=CursorParams(cursor=cursor, size=size),
+        transformer=lambda items: [
+            SessionWithOptionalStatus(
+                **session.__dict__,
+                registration_status=status,
+            )
+            for session, status in items
+        ],
     )
 
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 import uuid
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, case, literal, or_, select
 from app.schemas.session import (
     SessionPrivate,
     SessionUpdate,
@@ -26,6 +26,7 @@ class SessionService:
     def get_session_by_id(
         self, session_id: int, user_id: int, db: Session
     ) -> SessionModel:
+        # find the session and check if the user is the host of this session
         session = (
             db.execute(
                 select(SessionModel)
@@ -106,6 +107,8 @@ class SessionService:
         # joined -> only sessions user is registered (not include waitlist)
         # hosted -> only sessions user is hosting
 
+        # base query to get sessions table with registration_status of this user
+        # and filter only sessions that are associated with specified event
         base_query = (
             select(
                 SessionModel, SessionRegistration.status.label("registration_status")
@@ -123,6 +126,9 @@ class SessionService:
             )
         )
 
+        # if scope joined, filter only sessions that user is really registered include waitlist
+        # if scope hosted, filter only sessions that user is hosting
+        # else return both
         if scope == "joined":
             query = base_query.where(SessionRegistration.status.is_not(None))
         elif scope == "hosted":
@@ -137,12 +143,60 @@ class SessionService:
 
         query = query.options(selectinload(SessionModel.event).selectinload(Event.host))
 
+        # also filter by date range if provided
         if start_from:
             query = query.where(SessionModel.end_datetime >= start_from)
         if end_to:
             query = query.where(SessionModel.start_datetime <= end_to)
 
         return db.execute(query).all()
+
+    def get_all_sessions_by_event(
+        self,
+        event_uuid: uuid.UUID,
+        user_id: int | None = None,
+    ):
+        # This function return all sessions of an event,
+        # if user_id is provided, also get the registration status of the user for each session,
+        # and order by registration status
+        # if user_id is not provided, return all sessions without registration status (null)
+
+        # Base query to filter only sessions associated by event_uuid
+        query = (
+            select(SessionModel)
+            .join(SessionModel.event)
+            .where(Event.share_uuid == event_uuid)
+        )
+
+        if user_id:
+            # if user_id exists, we need to left join with SessionRegistration table
+            # to get the registration status of the user for each session
+            query = query.outerjoin(
+                SessionRegistration,
+                and_(
+                    SessionRegistration.session_id == SessionModel.id,
+                    SessionRegistration.user_id == user_id,
+                ),
+            ).add_columns(SessionRegistration.status.label("registration_status"))
+
+            query = query.order_by(
+                case(
+                    (SessionRegistration.status == RegistrationStatus.CONFIRMED, 0),
+                    (SessionRegistration.status == RegistrationStatus.WAITLIST, 1),
+                    else_=2,
+                ),
+                SessionModel.start_datetime.asc(),
+                SessionModel.id.asc(),
+            )
+        else:
+            # if not just add a plain column with null value of registration status
+            query = query.add_columns(literal(None).label("registration_status"))
+            query = query.order_by(
+                SessionModel.start_datetime.asc(), SessionModel.id.asc()
+            )
+
+        # both will be order by status (if user_id exists), then by start_datetime asc, then by id asc for paginations
+        return query
 
     def get_session_registrations(
         self,
@@ -173,10 +227,13 @@ class SessionService:
     def update_session(
         self, session_id: int, user_id: int, session: SessionUpdate, db: Session
     ) -> SessionModel:
+        # find existing session and check authorized user is the host of the session
+        # only host can update/edit the session
         existing_session = self.get_session_by_id(session_id, user_id, db)
         if not existing_session:
             raise HTTPException(status_code=404, detail="Session not found")
 
+        # update session data
         update_data = session.model_dump(exclude_unset=True)
         for k, v in update_data.items():
             setattr(existing_session, k, v)
@@ -186,10 +243,12 @@ class SessionService:
         return existing_session
 
     def delete_session(self, session_id: int, user_id: int, db: Session):
+        # only host can delete the session
         existing_session = self.get_session_by_id(session_id, user_id, db)
         if not existing_session:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
+        # delete the row in the session table
         db.delete(existing_session)
         db.commit()

@@ -4,7 +4,15 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Enum as SAEnum
+from sqlalchemy import (
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Enum as SAEnum,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -30,3 +38,9 @@ class SessionRegistration(Base):
     )
 
     session: Mapped["Session"] = relationship(back_populates="sessions_registered")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "session_id", "user_id", name="unique_user_session_registration"
+        ),
+    )
