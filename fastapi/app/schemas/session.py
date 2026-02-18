@@ -33,7 +33,6 @@ class SessionWithOptionalStatus(SessionPublic):
 
 class SessionWithEventPublic(SessionWithOptionalStatus):
     event: EventPublic
-    registration_status: str | None = Field(default=None)
 
 
 class SessionPrivate(SessionPublic):
