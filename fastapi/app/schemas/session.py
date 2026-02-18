@@ -26,11 +26,11 @@ class SessionPublic(SessionBase):
 
     id: int
     seat_taken: int = Field(default=0, ge=0)
-    event: EventPublic
 
 
 class SessionPrivate(SessionPublic):
     created_at: datetime
+    event: EventPublic
 
 
 class SessionUpdate(BaseModel):
