@@ -214,31 +214,24 @@ class SessionService:
         # both will be order by status (if user_id exists), then by start_datetime asc, then by id asc for paginations
         return query
 
-    def get_session_registrations(
+    def get_registered_user(
         self,
         session_id: int,
-        user_id: int,
-        db: Session,
-        cursor: str | None = None,
-        size: int = 20,
+        status: RegistrationStatus | None = None,
     ):
-        session = self.get_session_by_id(session_id, user_id, db)
 
         query = (
-            select(
-                User.id,
-                User.full_name,
-                User.email,
-                User.profile_image,
-                SessionRegistration.status,
-            )
-            .join(SessionRegistration, SessionRegistration.user_id == User.id)
+            select(User, SessionRegistration.status)
+            .join(User.sessions_registered)
             .where(SessionRegistration.session_id == session_id)
             .order_by(User.full_name.asc(), User.id.asc())
         )
 
-        cursor_params = CursorParams(cursor, size)
-        return paginate(db, query, cursor_params=cursor_params)
+        if status is not None:
+            query = query.where(SessionRegistration.status == status)
+        query = query.options(selectinload(User.sessions_registered))
+        query = query
+        return query
 
     def update_session(
         self, session_id: int, user_id: int, session: SessionUpdate, db: Session

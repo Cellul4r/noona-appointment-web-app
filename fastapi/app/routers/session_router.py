@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.services.session_service import SessionService
@@ -20,6 +20,8 @@ from app.models.session import Session as SessionModel
 
 from fastapi_pagination.cursor import CursorPage, CursorParams
 from fastapi_pagination.ext.sqlalchemy import paginate
+
+from app.schemas.user import UserPublic, UserWithSessionStatus
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -76,15 +78,31 @@ def get_user_sessions(
     )
 
 
-@router.get("/{session_id}/registrations")
-def get_session_registrations(
+@router.get("/{session_id}/users", response_model=CursorPage[UserWithSessionStatus])
+def get_registered_users(
     session_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    status: RegistrationStatus | None = None,
     cursor: str | None = None,
     size: int = 10,
 ):
-    pass
+    session = session_service.get_session_by_id(session_id, current_user.id, db)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found or not authorized",
+        )
+    query = session_service.get_registered_user(session_id, status=status)
+    return paginate(
+        db,
+        query,
+        params=CursorParams(cursor=cursor, size=size),
+        transformer=lambda items: [
+            UserWithSessionStatus(**user.__dict__, registration_status=status)
+            for user, status in items
+        ],
+    )
 
 
 @router.patch("/{session_id}", response_model=SessionPrivate)
