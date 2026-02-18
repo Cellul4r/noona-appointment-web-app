@@ -11,6 +11,7 @@ from app.db import Base
 if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.oauth_user import OAuthUser
+    from app.models.session_registration import SessionRegistration
 
 
 class User(Base):
@@ -37,6 +38,9 @@ class User(Base):
     )
 
     oauth_accounts: Mapped[list["OAuthUser"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    sessions_registered: Mapped[list[SessionRegistration]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
     """

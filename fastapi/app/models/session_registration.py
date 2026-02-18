@@ -19,6 +19,7 @@ from app.db import Base
 
 if TYPE_CHECKING:
     from app.models.session import Session
+    from app.models.user import User
 
 
 class RegistrationStatus(PyEnum):
@@ -38,6 +39,7 @@ class SessionRegistration(Base):
     )
 
     session: Mapped["Session"] = relationship(back_populates="sessions_registered")
+    user: Mapped[User] = relationship(back_populates="sessions_registered")
 
     __table_args__ = (
         UniqueConstraint(
