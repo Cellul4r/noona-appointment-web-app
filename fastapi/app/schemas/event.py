@@ -1,9 +1,11 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from uuid import UUID
 
 from app.schemas.user import UserPublic
+from app.schemas.session import SessionCreate, SessionPublic
 
 
 class EventBase(BaseModel):
@@ -15,7 +17,7 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     is_draft: bool = True
-    sessions: list["SessionCreate"]
+    sessions: list[SessionCreate]
 
 
 class EventPublic(EventBase):
@@ -27,7 +29,7 @@ class EventPublic(EventBase):
 
 
 class EventSessionPublic(EventPublic):
-    sessions: list["SessionPublic"]
+    sessions: list[SessionPublic]
 
 
 class EventPrivate(EventPublic):
@@ -42,9 +44,3 @@ class EventUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=5000)
     is_draft: bool | None = None
     max_sessions_per_user: int | None = Field(default=None, ge=1)
-
-# Import at the bottom to avoid circular import crashes
-from app.schemas.session import SessionCreate, SessionPublic
-
-EventCreate.model_rebuild()
-EventSessionPublic.model_rebuild()

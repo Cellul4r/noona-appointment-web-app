@@ -1,7 +1,6 @@
+from __future__ import annotations
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-from app.schemas.event import EventPublic
 
 
 class SessionBase(BaseModel):
@@ -30,7 +29,6 @@ class SessionPublic(SessionBase):
 
 class SessionPrivate(SessionPublic):
     created_at: datetime
-    event: EventPublic
 
 
 class SessionUpdate(BaseModel):
