@@ -7,7 +7,7 @@ from app.schemas.session import (
     SessionPrivate,
     SessionUpdate,
 )
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload, with_loader_criteria
 from app.models.session import Session as SessionModel
 from app.models.event import Event
 from app.models.user import User
@@ -100,39 +100,49 @@ class SessionService:
         start_from: datetime | None = None,
         end_to: datetime | None = None,
         scope: str = "all",  # all | joined | hosted
-    ) -> list[SessionModel]:
+    ):
+        # get all sessions that user is registered for or hosting, and filter by date range if provided
+        # all -> both registered and hosted sessions
+        # joined -> only sessions user is registered (not include waitlist)
+        # hosted -> only sessions user is hosting
+
+        base_query = (
+            select(
+                SessionModel, SessionRegistration.status.label("registration_status")
+            )
+            .join(SessionModel.event)
+            .outerjoin(
+                SessionRegistration,
+                and_(
+                    SessionRegistration.session_id == SessionModel.id,
+                    SessionRegistration.user_id == user_id,
+                    SessionRegistration.status.in_(
+                        [RegistrationStatus.CONFIRMED, RegistrationStatus.WAITLIST]
+                    ),
+                ),
+            )
+        )
 
         if scope == "joined":
-            stmt = (
-                select(SessionModel)
-                .join(SessionRegistration)
-                .where(SessionRegistration.user_id == user_id)
-            )
+            query = base_query.where(SessionRegistration.status.is_not(None))
         elif scope == "hosted":
-            stmt = (
-                select(SessionModel)
-                .join(SessionModel.event)
-                .where(Event.owner_id == user_id)
-            )
+            query = base_query.where(Event.owner_id == user_id)
         else:
-            stmt = select(SessionModel).where(
+            query = base_query.where(
                 or_(
-                    SessionModel.event.has(Event.owner_id == user_id),
-                    SessionModel.sessions_registered.any(
-                        and_(
-                            SessionRegistration.user_id == user_id,
-                            SessionRegistration.status == RegistrationStatus.CONFIRMED,
-                        )
-                    ),
+                    Event.owner_id == user_id,
+                    SessionRegistration.status.is_not(None),
                 )
-            )
+            ).distinct()
+
+        query = query.options(selectinload(SessionModel.event).selectinload(Event.host))
 
         if start_from:
-            stmt = stmt.where(SessionModel.end_datetime >= start_from)
+            query = query.where(SessionModel.end_datetime >= start_from)
         if end_to:
-            stmt = stmt.where(SessionModel.start_datetime <= end_to)
+            query = query.where(SessionModel.start_datetime <= end_to)
 
-        return db.execute(stmt).scalars().all()
+        return db.execute(query).all()
 
     def get_session_registrations(
         self,
