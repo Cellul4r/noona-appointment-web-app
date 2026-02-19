@@ -13,7 +13,7 @@ from app.dependencies.auth import get_current_user
 from app.dependencies.sso import get_google_sso, get_github_sso
 from app.models.user import User
 from app.services.user_service import UserService
-from app.schemas.user import UserPrivate
+from app.schemas.user import UserPrivate, UserUpdate
 from datetime import timedelta
 from app.security import create_access_token
 
@@ -35,7 +35,7 @@ def get_settings(
 
 @router.patch("/me", response_model=UserPrivate)
 def update_settings(
-    user_update: UserPrivate,
+    user_update: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -63,11 +63,11 @@ async def start_link(
 
     if provider == "google":
         async with google_sso:
-            return await google_sso.get_login_redirect(params={"prompt": "consent", "state": state_token})
+            return await google_sso.get_login_redirect(params={"prompt": "consent"})
 
     if provider == "github":
         async with github_sso:
-            return await github_sso.get_login_redirect(params={"prompt": "consent", "state": state_token})
+            return await github_sso.get_login_redirect(params={"prompt": "consent"})
     raise HTTPException(status_code=400, detail="Unsupported provider")
 
 

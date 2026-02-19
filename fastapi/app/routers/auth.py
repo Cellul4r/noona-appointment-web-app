@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # fastapi/app/routers/auth.py
+import json
 import logging
 import secrets
 from typing import Annotated
@@ -17,7 +18,7 @@ from app.config import settings
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import get_current_user, get_optional_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
 from app.dependencies.sso import get_github_sso, get_google_sso
@@ -85,9 +86,16 @@ def login_for_access_token(
 
 
 @router.get("/google/login", response_description="Redirects to Google Callback")
-async def google_login(google_sso: GoogleSSO = Depends(get_google_sso)):
+async def google_login(google_sso: GoogleSSO = Depends(get_google_sso), current_user: User | None = Depends(get_optional_user), link: bool = False):
+    if link:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required to link accounts")
+        data = {"link": True, "user_id": str(current_user.id)}
+    else:
+        data = {}
+
     async with google_sso:
-        return await google_sso.get_login_redirect(params={"prompt": "consent"})
+        return await google_sso.get_login_redirect(params={"prompt": "consent"}, state=json.dumps(data))
 
 
 @router.get("/google/callback")
@@ -96,30 +104,50 @@ async def google_auth(
     google_sso: GoogleSSO = Depends(get_google_sso),
     db: Session = Depends(get_db),
 ):
-    async with google_sso:
-        user = await google_sso.verify_and_process(request)
+    state = request.query_params.get("state")
+    data = json.loads(state) if state else {}
+    link = data.get("link", False)
+    user_id = data.get("user_id")
 
-        user = user_service.create_oauth_user(user, db)
+    if link:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid state data for linking")
+        async with google_sso:
+            user_info = await google_sso.verify_and_process(request)
+            user_service.link_oauth_account(db, int(user_id), "google", user_info)
+            return {"message": "Google account linked successfully"}
+    else:
+        async with google_sso:
+            user = await google_sso.verify_and_process(request)
 
-        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-        access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
-        )
+            user = user_service.create_oauth_user(user, db)
 
-        response = JSONResponse(
-            content={
-                "message": "Login successful",
-            }
-        )
+            access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+            access_token = create_access_token(
+                data={"sub": str(user.id)}, expires_delta=access_token_expires
+            )
 
-        auth_service.attach_token_cookie(response, access_token)
-        return response
+            response = JSONResponse(
+                content={
+                    "message": "Login successful",
+                }
+            )
+
+            auth_service.attach_token_cookie(response, access_token)
+            return response
 
 
 @router.get("/github/login", response_description="Redirects to Github Callback")
-async def github_login(github_sso: GithubSSO = Depends(get_github_sso)):
+async def github_login(github_sso: GithubSSO = Depends(get_github_sso), current_user: User | None = Depends(get_optional_user), link: bool = False):
+    if link:
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Authentication required to link accounts")
+        data = {"link": True, "user_id": str(current_user.id)}
+    else:
+        data = {}
+
     async with github_sso:
-        return await github_sso.get_login_redirect(params={"prompt": "consent"})
+        return await github_sso.get_login_redirect(params={"prompt": "consent"}, state=json.dumps(data))
 
 
 @router.get("/github/callback")
@@ -128,24 +156,37 @@ async def github_auth(
     github_sso: GithubSSO = Depends(get_github_sso),
     db: Session = Depends(get_db),
 ):
-    async with github_sso:
-        user = await github_sso.verify_and_process(request)
+    state = request.query_params.get("state")
+    data = json.loads(state) if state else {}
+    link = data.get("link", False)
+    user_id = data.get("user_id")
 
-        user = user_service.create_oauth_user(user, db)
+    if link:
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Invalid state data for linking")
+        async with github_sso:
+            user_info = await github_sso.verify_and_process(request)
+            user_service.link_oauth_account(db, int(user_id), "github", user_info)
+            return {"message": "Github account linked successfully"}
+    else:
+        async with github_sso:
+            user = await github_sso.verify_and_process(request)
 
-        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-        access_token = create_access_token(
-            data={"sub": str(user.id)}, expires_delta=access_token_expires
-        )
+            user = user_service.create_oauth_user(user, db)
 
-        response = JSONResponse(
-            content={
-                "message": "Login successful",
-            }
-        )
+            access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+            access_token = create_access_token(
+                data={"sub": str(user.id)}, expires_delta=access_token_expires
+            )
 
-        auth_service.attach_token_cookie(response, access_token)
-        return response
+            response = JSONResponse(
+                content={
+                    "message": "Login successful",
+                }
+            )
+
+            auth_service.attach_token_cookie(response, access_token)
+            return response
 
 
 @router.get("/logout")
