@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from app.config import settings
 from app.db import Base, engine
-from app.routers import auth, session_router, event_router
+from app.routers import auth, session_router, event_router, user_router
 from app.env_detector import should_auto_create_tables
 
 from app.models import *
@@ -68,7 +68,9 @@ except Exception as e:
     # Don't fail the app if table creation fails
 
 # set all router api
-fastapi_app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Auth"])
+fastapi_app.include_router(
+    auth.router, prefix=f"{api_prefix}/auth", tags=["Auth"]
+)
 fastapi_app.include_router(
     event_router.router, prefix=f"{api_prefix}/events", tags=["Events"]
 )
@@ -77,6 +79,9 @@ fastapi_app.include_router(
 )
 fastapi_app.include_router(
     calendar_router.router, prefix=f"{api_prefix}/calendar", tags=["Calendar"]
+)
+fastapi_app.include_router(
+    user_router.router, prefix=f"{api_prefix}/users", tags=["User"]
 )
 
 

@@ -1,12 +1,12 @@
 from fastapi import HTTPException, status
 from fastapi_sso import OpenID
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select, Enum
+
+from sqlalchemy.orm import Session, joinedload
 from app.schemas.user import UserCreate, UserPrivate
 from app.models import User
 from app.security import hash_password
 from app.models.oauth_user import OAuthUser
-
 
 class UserService:
 
@@ -86,5 +86,121 @@ class UserService:
         db.refresh(existing_user)
         return existing_user
 
+    
+    def update_user_settings(self, db: Session, user_id: int, user_update: UserPrivate) -> UserPrivate:
+        user = db.execute(select(User).where(User.id == user_id)).scalars().first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        data_updated = user_update.model_dump(exclude_unset=True)
+        for k, v in data_updated.items():
+            setattr(user, k, v)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    def get_user_settings(self, db: Session, user_id: int) -> UserPrivate:
+        """
+        Retrieve the settings of the current user by their user_id.
+        Returns a UserPrivate schema containing selected user information.
+        Raises HTTPException if the user is not found.
+        """
+        # Query the database for the user with the given user_id
+        user = (
+            db.execute(
+                select(User)
+                .options(joinedload(User.oauth_accounts))
+                .where(User.id == user_id)
+            )
+            .scalars()
+            .first()
+        )
+        if not user:
+            # If the user does not exist, raise a 404 error
+            raise HTTPException(status_code=404, detail="User not found")
+        # Return the user's private settings as a UserPrivate schema
+        return UserPrivate(
+            email=user.email,
+            full_name=user.full_name,
+            profile_image=user.profile_image,
+            timezone=user.timezone,
+            email_notifications=user.email_notifications,
+        )
+
+    def link_oauth_account(self, db: Session, user_id: int, provider: str, oauth_user: OpenID):
+        existing_oauth = (
+            db.execute(
+                select(OAuthUser)
+                .where(OAuthUser.provider == provider)
+                .where(OAuthUser.provider_user_id == oauth_user.id)
+            )
+            .scalars()
+            .first()
+        )
+        if existing_oauth:
+            if existing_oauth.user_id == user_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"You already linked this {provider} account"
+                )
+            raise HTTPException(
+                status_code=400,
+                detail=f"This {provider} account is already linked to another user"
+            )
+
+
+        new_oauth_user = OAuthUser(
+            provider=provider,
+            provider_user_id=oauth_user.id,
+            user_id=user_id,
+        )
+        db.add(new_oauth_user)
+
+
+        if oauth_user.picture:
+            user = db.execute(select(User).where(User.id == user_id)).scalars().first()
+            if not user.profile_image:
+                user.profile_image = oauth_user.picture
+
+        db.commit()
+
+    def unlink_oauth_account(self, db: Session, user_id: int, provider: str) -> None:
+        user = db.execute(select(User).where(User.id == user_id)).scalars().first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        oauth_count = (
+            db.execute(select(OAuthUser).where(OAuthUser.user_id == user_id))
+            .scalars()
+            .all()
+        )
+        if not user.password_hash and len(oauth_count) <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot unlink your only login method"
+            )
+
+        oauth_account = (
+            db.execute(
+                select(OAuthUser)
+                .where(OAuthUser.user_id == user_id)
+                .where(OAuthUser.provider == provider)
+            )
+            .scalars()
+            .first()
+        )
+        if not oauth_account:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No linked {provider} account found"
+            )
+
+        db.delete(oauth_account)
+        db.commit()
+
     def set_verified(self, user: User, db: Session):
         pass
+
+class OAuthProvider(str, Enum):
+    google = "google"
+    github = "github"

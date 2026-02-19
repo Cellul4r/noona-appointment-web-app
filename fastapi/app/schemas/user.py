@@ -25,8 +25,10 @@ class UserPublic(UserBase):
     profile_image: str | None
 
 
-class UserWithSessionStatus(UserPublic):
-    registration_status: RegistrationStatus
+class UserLinkedAccount(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    provider: str | None
 
 
 class UserPrivate(UserPublic):
@@ -34,6 +36,7 @@ class UserPrivate(UserPublic):
     timezone: TimeZoneName = Field(default="UTC", max_length=64)
     email_notifications: bool
     created_at: datetime
+    oauth_accounts: list[UserLinkedAccount] | None = None
 
 
 class UserUpdate(BaseModel):
