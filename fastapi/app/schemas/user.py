@@ -24,6 +24,8 @@ class UserPublic(UserBase):
     full_name: str = Field(min_length=1, max_length=100)
     profile_image: str | None
 
+class UserWithSessionStatus(UserPublic):
+    registration_status: RegistrationStatus
 
 class UserLinkedAccount(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -41,10 +43,10 @@ class UserPrivate(UserPublic):
 
 class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=100)
-    email: EmailStr | None = Field(default=None, max_length=120)
     profile_image: str | None = None
     timezone: TimeZoneName | None = Field(default="UTC", max_length=64)
     email_notifications: bool | None = None
+    password: str | None = Field(min_length=8, max_length=200)
 
 
 class UserSignIn(BaseModel):
