@@ -4,6 +4,7 @@ import Phonebook from '../components/Phonebook.vue';
 import Contact from "../components/Contact.vue";
 import Login from '../views/Login.vue';
 import Signup from "../views/Signup.vue";
+import AllEvents from "../views/AllEvents.vue";
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -16,6 +17,12 @@ const routes = [
     name: "Signup",
     component: Signup,
   },
+  {
+    path: '/events',
+    name: 'AllEvents',
+    component: AllEvents,
+    //meta: { requiresAuth: true } // Optional: prevents access if not logged in
+  }
 
 
 

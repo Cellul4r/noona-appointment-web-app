@@ -19,6 +19,7 @@ from app.schemas.event import (
     EventPublic,
     EventSessionPublic,
     EventUpdate,
+    EventPrivate
 )
 from app.schemas.session import (
     SessionPublic,
@@ -39,7 +40,7 @@ session_service = SessionService()
 #     return event
 
 
-@router.get("/", response_model=CursorPage[EventPublic])
+@router.get("/", response_model=CursorPage[EventPrivate])
 def list_events(
     scope: str = "all",
     title: str | None = Query(default=None),

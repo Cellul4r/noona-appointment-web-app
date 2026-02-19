@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from uuid import UUID
@@ -14,7 +14,7 @@ class EventBase(BaseModel):
 
 class EventCreate(EventBase):
     is_draft: bool = True
-    sessions: list[SessionCreate]
+    sessions: List[SessionCreate]
 
 
 class EventPublic(EventBase):
@@ -23,10 +23,12 @@ class EventPublic(EventBase):
     id: int
     share_uuid: UUID
     host: UserPublic
-
+    is_draft: bool
+    updated_at: datetime
+    sessions: List["SessionPublic"] = [] 
 
 class EventSessionPublic(EventPublic):
-    sessions: list[SessionPublic]
+    sessions: List[SessionPublic]
 
 
 class EventPrivate(EventPublic):
