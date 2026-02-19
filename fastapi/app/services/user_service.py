@@ -3,7 +3,7 @@ from fastapi_sso import OpenID
 from sqlalchemy import func, select, Enum
 
 from sqlalchemy.orm import Session, joinedload
-from app.schemas.user import UserCreate, UserPrivate
+from app.schemas.user import UserCreate, UserPrivate, UserUpdate
 from app.models import User
 from app.security import hash_password
 from app.models.oauth_user import OAuthUser
@@ -87,19 +87,22 @@ class UserService:
         return existing_user
 
     
-    def update_user_settings(self, db: Session, user_id: int, user_update: UserPrivate) -> UserPrivate:
+    def update_user_settings(self, db: Session, user_id: int, user_update: UserUpdate) -> UserPrivate:
         user = db.execute(select(User).where(User.id == user_id)).scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         data_updated = user_update.model_dump(exclude_unset=True)
         for k, v in data_updated.items():
-            setattr(user, k, v)
+            if k == "password":
+                setattr(user, "password_hash", hash_password(v))
+            else:
+                setattr(user, k, v)
         db.commit()
         db.refresh(user)
         return user
 
-    def get_user_settings(self, db: Session, user_id: int) -> UserPrivate:
+    def get_user_settings(self, db: Session, user_id: int) -> User:
         user = (
             db.execute(
                 select(User)
@@ -113,73 +116,30 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
-    def link_oauth_account(self, db: Session, user_id: int, provider: str, oauth_user: OpenID):
-        existing_oauth = (
-            db.execute(
-                select(OAuthUser)
-                .where(OAuthUser.provider == provider)
-                .where(OAuthUser.provider_user_id == oauth_user.id)
-            )
-            .scalars()
-            .first()
-        )
-        if existing_oauth:
-            if existing_oauth.user_id == user_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"You already linked this {provider} account"
-                )
-            raise HTTPException(
-                status_code=400,
-                detail=f"This {provider} account is already linked to another user"
-            )
-
-
-        new_oauth_user = OAuthUser(
-            provider=provider,
-            provider_user_id=oauth_user.id,
-            user_id=user_id,
-        )
-        db.add(new_oauth_user)
-
-
-        if oauth_user.picture:
-            user = db.execute(select(User).where(User.id == user_id)).scalars().first()
-            if not user.profile_image:
-                user.profile_image = oauth_user.picture
-
-        db.commit()
 
     def unlink_oauth_account(self, db: Session, user_id: int, provider: str) -> None:
-        user = db.execute(select(User).where(User.id == user_id)).scalars().first()
+        user = db.execute(select(User).where(User.id == int(user_id))).scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-
-        oauth_count = (
-            db.execute(select(OAuthUser).where(OAuthUser.user_id == user_id))
-            .scalars()
-            .all()
-        )
-        if not user.password_hash and len(oauth_count) <= 1:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot unlink your only login method"
-            )
 
         oauth_account = (
             db.execute(
                 select(OAuthUser)
-                .where(OAuthUser.user_id == user_id)
+                .where(OAuthUser.user_id == int(user_id))
                 .where(OAuthUser.provider == provider)
             )
             .scalars()
             .first()
         )
         if not oauth_account:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No linked {provider} account found"
-            )
+            raise HTTPException(status_code=404, detail=f"No linked {provider} account found")
+
+        oauth_count = db.execute(
+            select(func.count()).select_from(OAuthUser).where(OAuthUser.user_id == int(user_id))
+        ).scalar()
+
+        if not user.password_hash and oauth_count <= 1:
+            raise HTTPException(status_code=400, detail="You cannot unlink Google because it is your only way to sign in. Please set a password or link another account first.")
 
         db.delete(oauth_account)
         db.commit()
