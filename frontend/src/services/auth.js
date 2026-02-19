@@ -26,10 +26,11 @@ axios.interceptors.request.use(
 
 // Login with Google OAuth
 export async function loginWithGoogle() {
-  window.location.href = `${API_URL}/google/login`;
+  window.location.href = `${API_URL}/auth/google/login`;
 }
+// Login with Github OAuth
 export function loginWithGithub() {
-  window.location.href = `${API_URL}/login`;
+  window.location.href = `${API_URL}/auth/github/login`;
 }
 
 // Fetch Profile (JWT sent via cookie)
