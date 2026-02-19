@@ -26,7 +26,6 @@
             <p class="text-base-content/60 mt-1">Manage and track your scheduled sessions</p>
           </div>
           <button @click="createEvent" class="btn btn-primary gap-2 shadow-lg hover:scale-105 transition-transform">
-            <span class="material-symbols-outlined text-lg">ผมรักในหลวง</span>
             Create New Event
           </button>
         </div>
@@ -81,7 +80,7 @@
         </div>
 
         <div v-else-if="filteredEvents.length === 0" class="text-center py-20 opacity-60">
-          <span class="material-symbols-outlined text-6xl mb-4">ไม่เจออีเว้นท์</span>
+          <!--<span class="material-symbols-outlined text-6xl mb-4">ไม่เจออีเว้นท์</span>-->
           <p class="text-lg">No events found matching your criteria.</p>
         </div>
 
