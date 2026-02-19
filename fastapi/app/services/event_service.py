@@ -14,9 +14,11 @@ from app.models.user import User
 class EventService:
     def list_events_query(
         self,
-        scope: str | None = None,
+        scope: str = "all",
         title: str | None = None,
         current_user: User = None,
+        cursor: str | None = None,
+        size: int = 10,
     ):
         q = select(Event) 
 
@@ -35,12 +37,22 @@ class EventService:
             # - Hosting (owner_id matches)
             # - Joining (has_joined is True)
             # - Hosting & Joining (Both are true)
-            q = q.where(
-                or_(
-                    Event.owner_id == current_user.id,
-                    has_joined
+            if scope == "hosted":
+                # Only show events I own
+                q = q.where(Event.owner_id == current_user.id)
+                
+            elif scope == "joined":
+                # Only show events I have registered for
+                q = q.where(has_joined)
+                
+            else:
+                # "all" (Default) - Show both
+                q = q.where(
+                    or_(
+                        Event.owner_id == current_user.id,
+                        has_joined
+                    )
                 )
-            )
         
         # Optional Title Search
         if title:
@@ -52,9 +64,9 @@ class EventService:
         return q
 
     def get_event(self, event_uuid: UUID, db: Session) -> Event | None:
-        """Return an Event by its share_uuid."""
-        return db.execute(select(Event).where(Event.share_uuid == event_uuid)).scalars().first()
-
+        """Return an Event"""
+        return db.execute(select(Event).where(Event.uuid == event_uuid)).scalar_one_or_none()
+    
     def create_event(self, event_in: EventCreate, db: Session, owner: User) -> Event:
         try:
             ev = Event(

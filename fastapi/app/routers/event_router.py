@@ -41,24 +41,26 @@ session_service = SessionService()
 
 @router.get("/", response_model=CursorPage[EventPublic])
 def list_events(
-    scope: str | None = Query(default=None),
+    scope: str = "all",
     title: str | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    cursor: str | None =  Query(default=None),
+    size: int = 10,
 ):
     """
     List events with pagination.
     Use ?page=1&size=20 in the URL to navigate!
     """
     query = event_service.list_events_query(
-        scope=scope, title=title, current_user=current_user
+        scope=scope, title=title, current_user=current_user, cursor=cursor, size=size
     )
 
     # Paginate executes the query
-    return paginate(db, query)
+    return paginate(db, query, params=CursorParams(cursor=cursor, size=size))
 
 
-@router.get("/{event_uuid}", response_model=EventSessionPublic)
+@router.get("/{event_uuid}", response_model=EventPublic)
 def get_event(
     event_uuid: UUID = Path(...),
     db: Session = Depends(get_db),
@@ -70,7 +72,8 @@ def get_event(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
         )
 
-    if ev.is_draft and (not current_user or ev.owner_id != current_user.id):
+    # If it's a draft, block them UNLESS they are logged in and they own it
+    if ev.is_draft and (current_user is None or ev.owner_id != current_user.id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
     return ev
