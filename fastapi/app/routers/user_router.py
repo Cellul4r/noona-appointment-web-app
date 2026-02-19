@@ -71,57 +71,6 @@ async def start_link(
     raise HTTPException(status_code=400, detail="Unsupported provider")
 
 
-@router.get("/link-accounts/{provider}/callback")
-async def link_callback(
-    provider: str,
-    request: Request,
-    db: Session = Depends(get_db),
-    google_sso: GoogleSSO = Depends(get_google_sso),
-    github_sso: GithubSSO = Depends(get_github_sso),
-):
-    """
-    Callback endpoint for OAuth provider after user authorizes linking.
-    Validates the state token and links the OAuth account to the current user.
-    """
-    # Process the OAuth callback and extract user info
-    if provider == "google":
-        async with google_sso:
-            oauth_user = await google_sso.verify_and_process(request)
-    elif provider == "github":
-        async with github_sso:
-            oauth_user = await github_sso.verify_and_process(request)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported provider")
-
-    # State Validation
-    state_token = request.query_params.get("state")
-    if not state_token:
-        raise HTTPException(status_code=400, detail="Missing state")
-
-    try:
-        payload = jwt.decode(
-            state_token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM],
-        )
-        user_id: int = int(payload.get("sub"))
-        action: str = payload.get("action")
-        if action != "link":
-            raise HTTPException(status_code=400, detail="Invalid state action")
-    except JWTError:
-        raise HTTPException(status_code=400, detail="Invalid or expired state token")
-
-    user_service.link_oauth_account(
-        db=db,
-        user_id=user_id,
-        provider=provider,
-        oauth_user=oauth_user,
-    )
-
-    return JSONResponse(
-        content={"message": f"{provider} account linked successfully"}
-    )
-
 
 
 @router.delete("/unlink-accounts/{provider}")
