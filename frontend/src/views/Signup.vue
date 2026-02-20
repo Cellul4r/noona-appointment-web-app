@@ -1,18 +1,15 @@
 <template>
-  <div class="flex min-h-screen">
-    <div class="flex-1 flex justify-center items-center relative h-screen overflow-hidden">
-      <video
-        autoplay
-        loop
-        muted
-        playsinline
-      >
-        <source src="@/assets/Flower.mp4" type="video/mp4" />
+  <div class="flex flex-col md:flex-row min-h-screen">
+
+    <div class="hidden md:flex flex-1 justify-center items-center relative h-screen overflow-hidden">
+      <video autoplay loop muted playsinline class="w-full h-full object-cover">
+        <source src="@/assets/boy_working.mp4" type="video/mp4" />
       </video>
     </div>
-    <div class="flex-1 flex justify-center items-center p-14 rounded-2xl shadow-xl">
 
-        <form class="space-y-4 w-md">
+    <div class="w-full max-w-md shadow-xl rounded-2xl p-6 sm:p-8">
+
+        <form class="space-y-4 w-full max-w-md">
           <h2 class="flex text-3xl font-semibold tracking-tight">Create Account. It's free!!</h2>
           <p class="flex text-gray-600 leading-relaxed">Let's join our Noona. Get set up in under a minute.</p>
           <div class="px-1 py-2">

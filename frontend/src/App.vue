@@ -1,4 +1,8 @@
 <script setup>
+import { useRoute } from 'vue-router'
+import Navbar from './components/Navbar.vue'
+
+const route = useRoute()
 </script>
 <template>
   <div>
@@ -9,6 +13,8 @@
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a> -->
     <!-- Render the appropriate component for the current route -->
+    <Navbar v-if="!route.meta.hideNavbar" />
     <router-view />
+    <!-- <router-view /> -->
   </div>
 </template>

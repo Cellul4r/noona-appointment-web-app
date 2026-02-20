@@ -1,20 +1,16 @@
 <template>
-  <div class="flex min-h-screen">
-    <div class="flex-1 flex justify-center items-center relative h-screen overflow-hidden">
-      <video
-        autoplay
-        loop
-        muted
-        playsinline
-      >
-        <source src="@/assets/Flower.mp4" type="video/mp4" />
+  <div class="flex flex-col md:flex-row min-h-screen">
+
+    <div class="hidden md:flex flex-1 justify-center items-center relative h-screen overflow-hidden">
+      <video autoplay loop muted playsinline class="w-full h-full object-cover">
+        <source src="@/assets/boy_working.mp4" type="video/mp4" />
       </video>
     </div>
-    <div class="flex-1 flex justify-center items-center p-14 rounded-2xl shadow-xl">
 
+    <div class="flex-1 flex justify-center items-center p-6 md:p-14">
       <!-- ถ้ายังไม่ login -->
       <div v-if="!auth.user">
-        <form @submit.prevent="handleLogin" class="space-y-4 w-md">
+        <form @submit.prevent="handleLogin" class="space-y-4 w-full max-w-md">
           <h2 class="flex text-3xl font-semibold tracking-tight">Welcome back!</h2>
           <p class="flex text-gray-600 leading-relaxed">Please enter your details to manage your sessions</p>
           
@@ -91,7 +87,6 @@ import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { loginWithGoogle, loginWithGithub } from "@/services/auth";
 import { useRouter } from 'vue-router'
-
 export default {
 
   setup() {
@@ -150,10 +145,11 @@ export default {
         const userData = await me.json();
         auth.user = userData;
 
-        router.replace("/dashboard");
+        router.replace("events");
 
       } catch (error) {
-        alert("Login failed");
+        alert("Don'i have an account, login first.");
+        router.push("/signup");
       } finally {
         loading.value = false;
       }
@@ -178,3 +174,5 @@ export default {
   },
 };
 </script>
+
+
