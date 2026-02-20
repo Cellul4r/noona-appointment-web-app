@@ -7,7 +7,8 @@ from app.schemas.session import (
     SessionPrivate,
     SessionUpdate,
 )
-from sqlalchemy.orm import Session, selectinload, with_loader_criteria
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.exc import SQLAlchemyError
 from app.models.session import Session as SessionModel
 from app.models.event import Event
 from app.models.user import User
@@ -238,18 +239,40 @@ class SessionService:
     ) -> SessionModel:
         # find existing session and check authorized user is the host of the session
         # only host can update/edit the session
-        existing_session = self.get_session_by_id(session_id, user_id, db)
+
+        # update session data
+        if session.seat_capacity is not None:
+            if session.seat_capacity < existing_session.seat_taken:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="seat_capacity cannot be less than current seat_taken",
+                )
+            # need to lock the row for update to prevent race condition when multiple user try to update the same session
+            existing_session = db.execute(
+                select(SessionModel)
+                .where(SessionModel.id == session_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+        else:
+            existing_session = self.get_session_by_id(session_id, user_id, db)
+
         if not existing_session:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # update session data
-        update_data = session.model_dump(exclude_unset=True)
-        for k, v in update_data.items():
-            setattr(existing_session, k, v)
+        try:
+            update_data = session.model_dump(exclude_unset=True)
+            for k, v in update_data.items():
+                setattr(existing_session, k, v)
 
-        db.commit()
-        db.refresh(existing_session)
-        return existing_session
+            db.commit()
+            db.refresh(existing_session)
+            return existing_session
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
 
     def delete_session(self, session_id: int, user_id: int, db: Session):
         # only host can delete the session
@@ -259,5 +282,12 @@ class SessionService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
         # delete the row in the session table
-        db.delete(existing_session)
-        db.commit()
+        try:
+            db.delete(existing_session)
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
