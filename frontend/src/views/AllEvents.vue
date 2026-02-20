@@ -120,7 +120,7 @@
                 <span class="material-symbols-outlined text-lg">{{ event.location || 'Online / TBD' }}</span>
               </div>
 
-              <p class="text-sm text-base-content/60 line-clamp-2 h-10">
+              <p class="text-sm text-base-content/60 line-clamp-4 italic">
                 {{ event.description || 'No description provided.' }}
               </p>
               
