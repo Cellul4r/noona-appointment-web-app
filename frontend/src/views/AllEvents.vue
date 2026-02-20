@@ -62,7 +62,7 @@
                 placeholder="Search events..." 
                 class="input input-bordered w-full pr-10 focus:input-primary" 
               />
-              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">search</span>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 pointer-events-none">&#128269;</span>
             </div>
           </div>
         </div>
