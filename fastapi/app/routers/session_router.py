@@ -10,6 +10,7 @@ from app.db import get_db
 from app.schemas.session import (
     SessionPrivate,
     SessionPublic,
+    SessionRegistration,
     SessionWithEventPublic,
     SessionWithOptionalStatus,
 )
@@ -117,3 +118,30 @@ def update_session(
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_session(session_id: int, db: Annotated[Session, Depends(get_db)]):
     session_service.delete_session(session_id, db)
+
+
+@router.put("/{session_id}/registration", response_model=SessionRegistration)
+def register_session(
+    session_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return session_service.register_session(session_id, current_user.id, db)
+
+
+@router.post("/{session_id}/confirm", response_model=SessionRegistration)
+def confirm_session(
+    session_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return session_service.confirm_session(session_id, current_user.id, db)
+
+
+@router.delete("/{session_id}/registration", status_code=status.HTTP_204_NO_CONTENT)
+def unregister_session(
+    session_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return session_service.unregister_session(session_id, current_user.id, db)
