@@ -91,7 +91,7 @@
             class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border border-base-200 group"
           >
             <!-- Card Image -->
-            <figure class="relative h-48 overflow-hidden">
+            <!-- <figure class="relative h-48 overflow-hidden">
               <img 
                 :src="`https://picsum.photos/seed/${event.share_uuid}/600/400`" 
                 alt="Event banner" 
@@ -99,7 +99,7 @@
               />
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80"></div>
               
-              <!-- Badges -->
+               Badges 
               <div class="absolute top-3 left-3 flex gap-2">
                 <div 
                   class="badge gap-1 border-none font-medium shadow-sm"
@@ -108,10 +108,10 @@
                   {{ event.is_draft ? 'Draft' : 'Published' }}
                 </div>
               </div>
-            </figure>
+            </figure> -->
 
             <div class="card-body p-6">
-              <h2 class="card-title text-xl font-bold line-clamp-1" :title="event.title">
+              <h2 class="card-title text-xl font-bold line-clamp-3 break-words" :title="event.title">
                 {{ event.title }}
               </h2>
               
@@ -120,7 +120,7 @@
                 <span class="material-symbols-outlined text-lg">{{ event.location || 'Online / TBD' }}</span>
               </div>
 
-              <p class="text-sm text-base-content/60 mt-3 line-clamp-2 h-10">
+              <p class="text-sm text-base-content/60 line-clamp-2 h-10">
                 {{ event.description || 'No description provided.' }}
               </p>
               
@@ -136,7 +136,9 @@
                 </div>
                 <div class="flex flex-col gap-1 text-right">
                   <span>Host</span>
-                  <span class="font-semibold text-base-content">{{ event.host?.full_name || 'Unknown' }}</span>
+                  <span class="font-semibold text-base-content">
+                    {{ user?.id && user.id == event.host?.id ? 'Me' : (event.host?.full_name || 'Unknown') }}
+                  </span>
                 </div>
               </div>
 
@@ -181,45 +183,6 @@
 
       </main>
     </div>
-
-    <!-- SIDEBAR DRAWER -->
-    <div class="drawer-side z-30">
-      <label for="my-drawer-2" class="drawer-overlay"></label> 
-      <aside class="menu p-4 w-72 min-h-full bg-base-100 border-r border-base-200 text-base-content flex flex-col">
-        <!-- User Info -->
-        <div class="flex items-center gap-4 mb-8 px-2 mt-2">
-          <div class="avatar placeholder">
-            <div class="bg-neutral text-neutral-content rounded-full w-12 ring ring-primary ring-offset-base-100 ring-offset-2">
-              <span class="text-xl font-bold">{{ userInitials }}</span>
-            </div>
-          </div>
-          <div>
-            <div class="font-bold text-lg">{{ user?.full_name || 'Guest User' }}</div>
-            <div class="text-xs opacity-60">Host Admin</div>
-          </div>
-        </div>
-
-        <!-- Navigation -->
-        <ul class="menu w-full gap-2 font-medium">
-          <li v-for="link in navLinks" :key="link.name">
-            <a 
-              :class="{ 'active': link.active }"
-              class="flex gap-3 py-3"
-            >
-              <span class="material-symbols-outlined">{{ link.icon }}</span>
-              {{ link.name }}
-            </a>
-          </li>
-        </ul>
-
-        <div class="mt-auto border-t border-base-200 pt-4">
-          <button @click="handleLogout" class="btn btn-ghost w-full justify-start gap-3 text-error hover:bg-error/10">
-            <span class="material-symbols-outlined">logout</span>
-            Log Out
-          </button>
-        </div>
-      </aside>
-    </div>
   </div>
 </template>
 
@@ -249,12 +212,6 @@ const scopeTabs = [
   { label: 'Registered', value: 'joined' }
 ];
 
-const navLinks = [
-  { name: 'Dashboard', active: false },
-  { name: 'My Events',active: true },
-  { name: 'Calendar', active: false },
-  { name: 'Settings', active: false },
-];
 
 const userInitials = computed(() => {
   const name = user.value?.full_name || 'Guest';
@@ -295,11 +252,29 @@ const fetchEvents = async (reset = false) => {
     console.error("Failed to fetch events:", error);
     if (error.code === 'ERR_NETWORK') {
       errorMsg.value = "Cannot connect to server. Is the backend running on port 56733?";
+    } else if (error.response) {
+      errorMsg.value = `Error ${error.response.status}: ${error.response.data.detail || 'Failed to load events.'}`;
     } else {
-      errorMsg.value = "Failed to load events.";
+      errorMsg.value = "An unexpected error occurred while loading events.";
     }
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchUserProfile = async () => {
+  try {
+    const baseUrl = 'http://localhost:56733';
+    const response = await axios.get(`${baseUrl}/users/settings`, {
+      headers: { Authorization: `Bearer ${authStore.token}` },
+      timeout: 5000
+    });
+    
+    if (response.data) {
+      authStore.setUser(response.data);
+    }
+  } catch (error) {
+    console.error("Failed to fetch user profile:", error);
   }
 };
 
@@ -356,5 +331,6 @@ const formatDate = (dateString) => {
 // --- LIFECYCLE ---
 onMounted(() => {
   fetchEvents(true);
+  fetchUserProfile();
 });
 </script>
