@@ -2,6 +2,8 @@ from __future__ import annotations
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.models.session_registration import RegistrationStatus
+
 
 class SessionBase(BaseModel):
     start_datetime: datetime
@@ -29,6 +31,12 @@ class SessionPublic(SessionBase):
 
 class SessionWithOptionalStatus(SessionPublic):
     registration_status: str | None = Field(default=None)
+
+
+class SessionRegistration(BaseModel):
+    session_id: int
+    user_id: int
+    status: RegistrationStatus
 
 
 class SessionWithEventPublic(SessionWithOptionalStatus):

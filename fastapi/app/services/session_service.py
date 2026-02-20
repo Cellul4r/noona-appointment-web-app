@@ -1,23 +1,19 @@
 from datetime import datetime
+from email.policy import HTTP
+from tkinter import SE
 from typing import Annotated
 import uuid
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import and_, case, literal, or_, select
 from app.schemas.session import (
-    SessionPrivate,
     SessionUpdate,
 )
 from sqlalchemy.orm import Session, selectinload
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.models.session import Session as SessionModel
 from app.models.event import Event
 from app.models.user import User
-from app.db import get_db
 from app.models.session_registration import RegistrationStatus, SessionRegistration
-
-from fastapi_pagination.cursor import CursorPage, CursorParams
-from fastapi_pagination.ext.sqlalchemy import paginate
-
 
 class SessionService:
     def __init__(self):
@@ -188,13 +184,17 @@ class SessionService:
         if user_id:
             # if user_id exists, we need to left join with SessionRegistration table
             # to get the registration status of the user for each session
-            query = query.outerjoin(
-                SessionRegistration,
-                and_(
-                    SessionRegistration.session_id == SessionModel.id,
-                    SessionRegistration.user_id == user_id,
-                ),
-            ).add_columns(SessionRegistration.status.label("registration_status"))
+            query = (
+                query.where(or_(user_id == Event.owner_id, Event.is_draft == False))
+                .outerjoin(
+                    SessionRegistration,
+                    and_(
+                        SessionRegistration.session_id == SessionModel.id,
+                        SessionRegistration.user_id == user_id,
+                    ),
+                )
+                .add_columns(SessionRegistration.status.label("registration_status"))
+            )
 
             query = query.order_by(
                 case(
@@ -208,6 +208,9 @@ class SessionService:
         else:
             # if not just add a plain column with null value of registration status
             query = query.add_columns(literal(None).label("registration_status"))
+            query = query.where(
+                Event.is_draft == False
+            )  # only completed created event can be viewed by public user
             query = query.order_by(
                 SessionModel.start_datetime.asc(), SessionModel.id.asc()
             )
@@ -291,3 +294,179 @@ class SessionService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Database error",
             )
+
+    def register_session(self, session_id: int, user_id: int, db: Session):
+
+        # register the user to the session, if the session is full, add to waitlist
+        # if the user is already registered, return the same registration status without doing anything
+        try:
+            session = db.execute(
+                select(SessionModel)
+                .where(SessionModel.id == session_id)
+                .with_for_update() # race condition
+            ).scalar_one_or_none()
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+            existing_registration = db.execute(
+                select(SessionRegistration).where(
+                    SessionRegistration.session_id == session_id,
+                    SessionRegistration.user_id == user_id,
+                )
+            ).scalar_one_or_none()
+            if existing_registration:
+                return existing_registration
+            # if seat available confirm the registration
+            if (
+                session.seat_capacity is None
+                or session.seat_taken < session.seat_capacity
+            ):
+                new_registration = SessionRegistration(
+                    session_id=session_id,
+                    user_id=user_id,
+                    status=RegistrationStatus.CONFIRMED,
+                )
+                # update the seat taken of this session
+                session.seat_taken += 1
+                if session.seat_taken == session.seat_capacity:
+                    self.set_waitlist_registrations(session_id, user_id, db)
+            else:
+                # seat capacity full set to WAITLIST
+                new_registration = SessionRegistration(
+                    session_id=session_id,
+                    user_id=user_id,
+                    status=RegistrationStatus.WAITLIST,
+                )
+            db.add(new_registration)
+            db.commit()
+            db.refresh(new_registration)
+            return new_registration
+        except IntegrityError:
+            db.rollback()
+            # Handle duplicate registration
+            existing = db.execute(
+                select(SessionRegistration).where(
+                    SessionRegistration.session_id == session_id,
+                    SessionRegistration.user_id == user_id,
+                )
+            ).scalar_one()
+            return existing
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
+
+    def confirm_session(self, session_id: int, user_id: int, db: Session):
+        try:
+            # get the session data
+            session = db.execute(
+                select(SessionModel)
+                .where(SessionModel.id == session_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+
+            registration = db.execute(
+                select(SessionRegistration).where(
+                    SessionRegistration.session_id == session_id,
+                    SessionRegistration.user_id == user_id,
+                ).with_for_update()
+            ).scalar_one_or_none()
+
+            if not registration:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Registration of this session not found.",
+                )
+
+            # already confirmed
+            if registration.status == RegistrationStatus.CONFIRMED:
+                return registration
+            
+            # can not transition status from WAITLIST -> CONFIRMED
+            if registration.status == RegistrationStatus.WAITLIST:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Status Waitlist can't be confirm to register.")
+            # seat is already fulled
+            if session.seat_capacity is not None and session.seat_taken >= session.seat_capacity:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Session's capacity is full, can not confirm to register this session",
+                )
+            # set to confirm status
+            registration.status = RegistrationStatus.CONFIRMED
+            session.seat_taken += 1
+            if session.seat_capacity is not None and session.seat_taken == session.seat_capacity:
+                self.set_waitlist_registrations(session_id, user_id, db)
+
+            db.commit()
+            db.refresh(registration)
+            return registration
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
+
+    def unregister_session(self, session_id: int, user_id: int, db: Session):
+    	try:
+            session = db.execute(
+                select(SessionModel)
+                .where(SessionModel.id == session_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+
+            registration = db.execute(
+                select(SessionRegistration).where(
+                    SessionRegistration.session_id == session_id,
+                    SessionRegistration.user_id == user_id,
+                )
+            ).scalar_one_or_none()
+
+            if not registration:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Registration of this session not found.",
+                    )
+            
+            # reduce the seat taken from the session
+            if registration.status == RegistrationStatus.CONFIRMED and session.seat_taken > 0:
+                session.seat_taken -= 1
+            
+            db.delete(registration)
+
+            # if seat is available let the all user that is waitlist -> available
+            if session.seat_capacity is not None and session.seat_taken < session.seat_capacity:
+                self.set_available_registrations(session_id, user_id, db)
+
+            db.commit()
+			
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
+        
+    def set_available_registrations(self, session_id: int, user_id: int, db: Session):
+        registrations = db.execute(select(SessionRegistration)
+                                      .where(SessionRegistration.session_id == session_id,
+                                             SessionRegistration.status == RegistrationStatus.WAITLIST,
+                                      SessionRegistration.user_id != user_id).with_for_update()).scalars().all()
+        for r in registrations:
+            # transaction set to available status
+            r.status = RegistrationStatus.AVAILABLE
+
+    def set_waitlist_registrations(self, session_id: int, user_id: int, db: Session):
+        registrations = db.execute(select(SessionRegistration)
+                                      .where(SessionRegistration.session_id == session_id,
+                                             SessionRegistration.status == RegistrationStatus.AVAILABLE,
+                                      SessionRegistration.user_id != user_id).with_for_update()).scalars().all()
+        for r in registrations:
+            # transaction set to waitlist status
+            r.status = RegistrationStatus.WAITLIST
