@@ -7,7 +7,7 @@
       </video>
     </div>
 
-    <div class="w-full max-w-md shadow-xl rounded-2xl p-6 sm:p-8">
+    <div class="flex-1 flex justify-center items-center p-6 md:p-14">
 
         <form class="space-y-4 w-full max-w-md">
           <h2 class="flex text-3xl font-semibold tracking-tight">Create Account. It's free!!</h2>
