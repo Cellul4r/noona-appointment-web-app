@@ -16,8 +16,9 @@ const routes = [
     path: '/events',
     name: 'AllEvents',
     component: AllEvents,
-    //meta: { requiresAuth: true } // Optional: prevents access if not logged in
-  },
+    meta: { requiresAuth: true } //prevents access if not logged in
+  }
+
 
 
 

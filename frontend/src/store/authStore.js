@@ -9,6 +9,9 @@ export const useAuthStore = defineStore("auth", {
     updateUser() {
       this.user = getUser();
     },
+    setUser(userData) {
+      this.user = userData;
+    },
     login(token) {
       saveToken(token); // Saves to cookie
       this.updateUser();

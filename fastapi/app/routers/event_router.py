@@ -34,12 +34,6 @@ router = APIRouter()
 session_service = SessionService()
 
 
-# def map_owner(event): NO LONGER NEEDED
-#     if event:
-#         event.owner = event.host
-#     return event
-
-
 @router.get("/", response_model=CursorPage[EventPrivate])
 def list_events(
     scope: str = "all",
