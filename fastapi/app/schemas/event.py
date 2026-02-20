@@ -25,7 +25,6 @@ class EventPublic(EventBase):
     host: UserPublic
     is_draft: bool
     updated_at: datetime
-    sessions: List["SessionPublic"] = [] 
 
 class EventSessionPublic(EventPublic):
     sessions: List[SessionPublic]
