@@ -19,7 +19,7 @@ from app.schemas.event import (
     EventPublic,
     EventSessionPublic,
     EventUpdate,
-    EventPrivate
+    EventPrivate,
 )
 from app.schemas.session import (
     SessionPublic,
@@ -40,7 +40,7 @@ def list_events(
     title: str | None = Query(default=None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    cursor: str | None =  Query(default=None),
+    cursor: str | None = Query(default=None),
     size: int = 10,
 ):
     """
@@ -48,7 +48,7 @@ def list_events(
     Use ?page=1&size=20 in the URL to navigate!
     """
     query = event_service.list_events_query(
-        scope=scope, title=title, current_user=current_user, cursor=cursor, size=size
+        scope=scope, title=title, current_user=current_user
     )
 
     # Paginate executes the query
