@@ -5,6 +5,7 @@ import AllEvents from "../views/AllEvents.vue";
 import Dashboard from '../views/Dashboard.vue';
 import CreateEvents from "../views/CreateEvents.vue";
 import EventOverview from '../views/EventOverview.vue';
+import Setting from "../views/Setting.vue";
 
 const routes = [
   { path: '/login', component: Login, meta: { hideNavbar: true } },
@@ -38,6 +39,12 @@ const routes = [
     path: '/events/overview/:event_uuid',
     name: 'EventOverview',
     component: EventOverview,
+  },
+  {
+    path: '/setting',
+    name: 'setting',
+    component: Setting,
+    meta: { requiresAuth: true } //prevents access if not logged in
   }
 
 
