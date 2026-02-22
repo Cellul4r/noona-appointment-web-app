@@ -52,3 +52,6 @@ class UserUpdate(BaseModel):
 class UserSignIn(BaseModel):
     email: EmailStr = Field(max_length=120)
     password: str = Field(min_length=8)
+
+class VerifyPassword(BaseModel):
+    password: str = Field(min_length=8, max_length=200)
