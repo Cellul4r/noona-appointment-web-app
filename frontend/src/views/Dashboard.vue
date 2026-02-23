@@ -1,8 +1,4 @@
 <template>
-  <!-- 
-    REMOVED DRAWER: 
-    The layout is now a simple, full-width container that will sit perfectly below your custom NavBar. 
-  -->
   <div class="bg-base-200 min-h-screen font-display pb-20">
     <main class="w-full p-4 lg:p-8 max-w-7xl mx-auto space-y-8">
       
@@ -116,7 +112,7 @@
               <tr v-else-if="waitlistSessions.length === 0">
                 <td colspan="5" class="text-center py-8 text-base-content/50">No waitlisted sessions at this time.</td>
               </tr>
-              <tr v-for="session in waitlistSessions" :key="session.id">
+              <tr v-for="session in paginatedWaitlist" :key="session.id">
                 <td class="whitespace-nowrap">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
                 <td>
                   <div class="flex items-center gap-2">
@@ -149,6 +145,9 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div v-if="waitlistSessions.length > waitVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+          <button @click="loadMoreSection('waitlist')" class="btn btn-sm btn-wide">Load More</button>
         </div>
       </section>
 
@@ -191,7 +190,7 @@
               <tr v-else-if="filteredUpcoming.length === 0">
                 <td colspan="5" class="text-center py-8 text-base-content/50">No upcoming sessions found.</td>
               </tr>
-              <tr v-for="session in filteredUpcoming" :key="session.id">
+              <tr v-for="session in paginatedUpcoming" :key="session.id">
                 <td class="whitespace-nowrap">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
                 <td class="font-medium">{{ session.event_title }}</td>
                 <td>
@@ -220,13 +219,8 @@
             </tbody>
           </table>
         </div>
-        <!-- Keep Pagination UI as a placeholder -->
-        <div class="p-3 border-t border-base-200 flex justify-center bg-base-100">
-           <div class="join">
-            <button class="join-item btn btn-sm">«</button>
-            <button class="join-item btn btn-sm btn-active">1</button>
-            <button class="join-item btn btn-sm">»</button>
-          </div>
+        <div v-if="filteredUpcoming.length > upcomingVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+          <button @click="loadMoreSection('upcoming')" class="btn btn-sm btn-wide">Load More</button>
         </div>
       </section>
 
@@ -255,7 +249,7 @@
               <tr v-else-if="pastSessions.length === 0">
                 <td colspan="4" class="text-center py-8 text-base-content/50">No past sessions available.</td>
               </tr>
-              <template v-for="session in pastSessions" :key="session.id">
+              <template v-for="session in paginatedPast" :key="session.id">
                 <!-- Main Row -->
                 <tr class="hover:bg-base-200/30 transition-colors">
                   <td class="whitespace-nowrap text-base-content/80">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
@@ -309,6 +303,9 @@
             </tbody>
           </table>
         </div>
+        <div v-if="pastSessions.length > pastVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+          <button @click="loadMoreSection('past')" class="btn btn-sm btn-wide">Load More</button>
+        </div>
       </section>
 
     </main>
@@ -316,7 +313,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
@@ -337,6 +334,12 @@ const recentEvents = ref([]);
 const waitlistSessions = ref([]);
 const upcomingSessions = ref([]);
 const pastSessions = ref([]);
+
+// --- PAGINATION per-section ---
+const sessionsPageSize = 4;
+const waitVisible = ref(sessionsPageSize);
+const upcomingVisible = ref(sessionsPageSize);
+const pastVisible = ref(sessionsPageSize);
 
 // Filters & UI State
 const upcomingSearch = ref('');
@@ -440,6 +443,11 @@ const fetchDashboardData = async () => {
     pastSessions.value = past.slice(0, 50);
     waitlistSessions.value = waitlist.slice(0, 50);
 
+    // Reset visible counts when we refresh the dashboard data
+    waitVisible.value = sessionsPageSize;
+    upcomingVisible.value = sessionsPageSize;
+    pastVisible.value = sessionsPageSize;
+
   } catch (error) {
     console.error("Failed to load dashboard data", error);
   } finally {
@@ -503,6 +511,11 @@ const filteredUpcoming = computed(() => {
   return result;
 });
 
+// --- Paginated views (slice by visible counts) ---
+const paginatedWaitlist = computed(() => waitlistSessions.value.slice(0, waitVisible.value));
+const paginatedUpcoming = computed(() => filteredUpcoming.value.slice(0, upcomingVisible.value));
+const paginatedPast = computed(() => pastSessions.value.slice(0, pastVisible.value));
+
 const getPercent = (filled, total) => {
   if (!total) return 0;
   return Math.round((filled / total) * 100);
@@ -518,6 +531,33 @@ const toggleRow = (id) => {
   if (index === -1) expandedRows.value.push(id);
   else expandedRows.value.splice(index, 1);
 };
+
+// --- Load More handlers for sections ---
+const loadMoreSection = (section) => {
+  if (section === 'waitlist') {
+    if (waitlistSessions.value.length > waitVisible.value) {
+      waitVisible.value += sessionsPageSize;
+      return;
+    }
+  }
+  if (section === 'upcoming') {
+    if (filteredUpcoming.value.length > upcomingVisible.value) {
+      upcomingVisible.value += sessionsPageSize;
+      return;
+    }
+  }
+  if (section === 'past') {
+    if (pastSessions.value.length > pastVisible.value) {
+      pastVisible.value += sessionsPageSize;
+      return;
+    }
+  }
+};
+
+// Reset upcoming visible count when its filters/search change
+watch([upcomingSearch, upcomingTimeRange], () => {
+  upcomingVisible.value = sessionsPageSize;
+});
 
 // --- ACTION HANDLERS ---
 const joinEvent = () => {
