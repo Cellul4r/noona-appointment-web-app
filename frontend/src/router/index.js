@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
 import Signup from "../views/Signup.vue";
 import AllEvents from "../views/AllEvents.vue";
+import Dashboard from '../views/Dashboard.vue'; 
 
 const routes = [
   { path: '/login', component: Login, meta: { hideNavbar: true}},
@@ -17,7 +18,13 @@ const routes = [
     name: 'AllEvents',
     component: AllEvents,
     meta: { requiresAuth: true } //prevents access if not logged in
-  }
+  },
+  {
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard,
+    meta: { requiresAuth: true } //prevents access if not logged in
+  },
 
 
 
