@@ -645,7 +645,7 @@ export default {
     },
 
     linkAccount(provider) {
-      window.location.href = `${this.apiBaseUrl}/auth/${provider}/login?link=true`;
+      window.location.href = `${this.apiBaseUrl}/users/link-accounts/${provider}`;
     },
 
     async unlinkAccount(provider) {
