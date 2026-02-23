@@ -74,7 +74,7 @@
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="scroll-container">
           <div 
-            v-for="event in filteredEvents" 
+            v-for="event in paginatedEvents" 
             :key="event.share_uuid"
             class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border border-base-200 group"
           >
@@ -138,7 +138,7 @@
         </div>
 
         <!-- LOAD MORE -->
-        <div v-if="nextCursor" class="flex justify-center mt-10">
+        <div v-if="filteredEvents.length > visibleCount || nextCursor" class="flex justify-center mt-10">
           <button 
             @click="loadMore" 
             :disabled="loading"
@@ -186,6 +186,10 @@ const userInitials = computed(() => {
   return name.substring(0, 2).toUpperCase();
 });
 
+// --- PAGINATION (client-side 'Load More') ---
+const eventsPerPage = 9;
+const visibleCount = ref(eventsPerPage);
+
 // --- API ACTIONS ---
 const fetchEvents = async (reset = false) => {
   // Prevent double-loading unless resetting (switching tabs)
@@ -211,6 +215,8 @@ const fetchEvents = async (reset = false) => {
 
     if (reset) {
       events.value = response.data.items;
+      // reset visible count when we reset the list
+      visibleCount.value = eventsPerPage;
     } else {
       events.value = [...events.value, ...response.data.items];
     }
@@ -257,20 +263,35 @@ const filteredEvents = computed(() => {
   return events.value;
 });
 
+// paginated view used by the template (client-side pagination)
+const paginatedEvents = computed(() => {
+  return filteredEvents.value.slice(0, visibleCount.value);
+});
+
 // --- EVENT HANDLERS ---
 const handleSearch = () => {
   if (window.searchTimeout) clearTimeout(window.searchTimeout);
   window.searchTimeout = setTimeout(() => {
+    // reset visible count and fetch fresh results
+    visibleCount.value = eventsPerPage;
     fetchEvents(true);
   }, 400);
 };
 
 const changeScope = (scope) => {
   currentScope.value = scope;
+  visibleCount.value = eventsPerPage;
   fetchEvents(true);
 };
 
 const loadMore = () => {
+  // If we have more items already fetched, just increase visible count.
+  if (paginatedEvents.value.length < filteredEvents.value.length) {
+    visibleCount.value += eventsPerPage;
+    return;
+  }
+
+  // Otherwise, try to fetch more from the backend if a cursor exists
   if (nextCursor.value) fetchEvents(false);
 };
 
