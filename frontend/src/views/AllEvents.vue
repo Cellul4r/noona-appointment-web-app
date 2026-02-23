@@ -4,18 +4,6 @@
     
     <!-- MAIN CONTENT -->
     <div class="drawer-content flex flex-col items-center justify-start">
-      
-      <!-- MOBILE NAVBAR -->
-      <div class="w-full navbar bg-base-100 lg:hidden shadow-sm z-20">
-        <div class="flex-none">
-          <label for="my-drawer-2" class="btn btn-square btn-ghost">
-            <span class="material-symbols-outlined">menu</span>
-          </label>
-        </div>
-        <div class="flex-1">
-          <a class="btn btn-ghost text-xl">My Events</a>
-        </div>
-      </div>
 
       <main class="w-full p-6 lg:p-10 max-w-7xl">
         
@@ -90,26 +78,6 @@
             :key="event.share_uuid"
             class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border border-base-200 group"
           >
-            <!-- Card Image -->
-            <!-- <figure class="relative h-48 overflow-hidden">
-              <img 
-                :src="`https://picsum.photos/seed/${event.share_uuid}/600/400`" 
-                alt="Event banner" 
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80"></div>
-              
-               Badges 
-              <div class="absolute top-3 left-3 flex gap-2">
-                <div 
-                  class="badge gap-1 border-none font-medium shadow-sm"
-                  :class="event.is_draft ? 'badge-warning text-warning-content' : 'badge-success text-success-content'"
-                >
-                  {{ event.is_draft ? 'Draft' : 'Published' }}
-                </div>
-              </div>
-            </figure> -->
-
             <div class="card-body p-6">
               <h2 class="card-title text-xl font-bold line-clamp-3 break-words" :title="event.title">
                 {{ event.title }}
@@ -147,7 +115,7 @@
                   v-if="event.is_draft"
                   class="btn btn-primary flex-1 btn-sm"
                 >
-                  Resume Editing
+                  Edit
                 </button>
                 <button 
                   v-else
@@ -307,8 +275,7 @@ const loadMore = () => {
 };
 
 const createEvent = () => {
-  // router.push('/events/create');
-  console.log("Create event clicked");
+  router.push('/events/create');
 };
 
 const handleLogout = () => {
