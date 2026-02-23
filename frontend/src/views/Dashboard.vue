@@ -59,7 +59,6 @@
               </h3>
               
               <div class="flex items-center gap-1.5 text-sm text-base-content/70 mt-2">
-                <span class="material-symbols-outlined text-[18px]">location_on</span>
                 <span class="truncate">{{ event.location || 'Online / TBD' }}</span>
               </div>
 
