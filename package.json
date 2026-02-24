@@ -5,5 +5,8 @@
     },
     "workspaces": [
         "frontend"
-    ]
+    ],
+    "dependencies": {
+        "primeicons": "^7.0.0"
+    }
 }
