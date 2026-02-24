@@ -13,7 +13,7 @@
             <h1 class="text-3xl font-bold text-base-content">My Events</h1>
             <p class="text-base-content/60 mt-1">Manage and track your scheduled sessions</p>
           </div>
-          <button @click="createEvent" class="btn btn-primary gap-2 shadow-lg hover:scale-105 transition-transform">
+          <button @click.prevent="createEvent" class="btn btn-primary gap-2 shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95">
             Create New Event
           </button>
         </div>
@@ -296,7 +296,8 @@ const loadMore = () => {
 };
 
 const createEvent = () => {
-  router.push('/events/create');
+  router.push('/create_events');
+  // console.log("Create event clicked");
 };
 
 const handleLogout = () => {

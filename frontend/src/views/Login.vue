@@ -10,7 +10,7 @@
     <div class="flex-1 flex justify-center items-center p-6 md:p-14">
       <!-- ถ้ายังไม่ login -->
       <div v-if="!auth.user">
-        <form @submit.prevent="handleLogin" class="space-y-4 w-full max-w-md">
+        <form @submit.preventhandleLogin="" class="space-y-4 w-full max-w-md">
           <h2 class="flex text-3xl font-semibold tracking-tight">Welcome back!</h2>
           <p class="flex text-gray-600 leading-relaxed">Please enter your details to manage your sessions</p>
           
@@ -68,15 +68,6 @@
         </p>
       </div>
 
-      <!-- ถ้า login แล้ว -->
-      <div v-else>
-        <h3>Welcome, {{ auth.user.name }}</h3>
-        <p>Email: {{ auth.user.email }}</p>
-        <button class="login-btn" @click="auth.logout">
-          Logout
-        </button>
-      </div>
-
     </div>
 
   </div>
@@ -102,7 +93,7 @@ export default {
 
       if (token) {
         auth.login(token);
-        window.history.replaceState({}, document.title, "/");
+        window.history.replaceState({}, document.title, "/events");
       }
     }
     async function goToSignup() {
@@ -145,7 +136,7 @@ export default {
         const userData = await me.json();
         auth.user = userData;
 
-        router.replace("events");
+        router.replace("/events");
 
       } catch (error) {
         alert("Don'i have an account, login first.");
