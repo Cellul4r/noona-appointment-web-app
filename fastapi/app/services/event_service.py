@@ -59,7 +59,7 @@ class EventService:
     def get_event(self, event_uuid: UUID, db: Session) -> Event | None:
         """Return an Event"""
         return db.execute(
-            select(Event).where(Event.uuid == event_uuid)
+            select(Event).where(Event.share_uuid == event_uuid)
         ).scalar_one_or_none()
 
     def create_event(self, event_in: EventCreate, db: Session, owner: User) -> Event:
