@@ -10,7 +10,7 @@ from fastapi_sso import GithubSSO, GoogleSSO
 from app.security import (
     create_access_token,
 )
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
 
@@ -35,6 +35,8 @@ router = APIRouter()
 
 user_service = UserService()
 auth_service = AuthService(user_service)
+
+FRONTEND_LOGIN_SUCCESS_URI = settings.frontend_login_success_uri
 
 
 @router.post(
@@ -86,16 +88,24 @@ def login_for_access_token(
 
 
 @router.get("/google/login", response_description="Redirects to Google Callback")
-async def google_login(google_sso: GoogleSSO = Depends(get_google_sso), current_user: User | None = Depends(get_optional_user), link: bool = False):
+async def google_login(
+    google_sso: GoogleSSO = Depends(get_google_sso),
+    current_user: User | None = Depends(get_optional_user),
+    link: bool = False,
+):
     if link:
         if not current_user:
-            raise HTTPException(status_code=401, detail="Authentication required to link accounts")
+            raise HTTPException(
+                status_code=401, detail="Authentication required to link accounts"
+            )
         data = {"link": True, "user_id": str(current_user.id)}
     else:
         data = {}
 
     async with google_sso:
-        return await google_sso.get_login_redirect(params={"prompt": "consent"}, state=json.dumps(data))
+        return await google_sso.get_login_redirect(
+            params={"prompt": "consent"}, state=json.dumps(data)
+        )
 
 
 @router.get("/google/callback")
@@ -111,7 +121,9 @@ async def google_auth(
 
     if link:
         if not user_id:
-            raise HTTPException(status_code=400, detail="Invalid state data for linking")
+            raise HTTPException(
+                status_code=400, detail="Invalid state data for linking"
+            )
         async with google_sso:
             user_info = await google_sso.verify_and_process(request)
             user_service.link_oauth_account(db, int(user_id), "google", user_info)
@@ -122,32 +134,38 @@ async def google_auth(
 
             user = user_service.create_oauth_user(user, db)
 
-            access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+            access_token_expires = timedelta(
+                minutes=settings.access_token_expire_minutes
+            )
             access_token = create_access_token(
                 data={"sub": str(user.id)}, expires_delta=access_token_expires
             )
 
-            response = JSONResponse(
-                content={
-                    "message": "Login successful",
-                }
-            )
+            response = RedirectResponse(FRONTEND_LOGIN_SUCCESS_URI)
 
             auth_service.attach_token_cookie(response, access_token)
             return response
 
 
 @router.get("/github/login", response_description="Redirects to Github Callback")
-async def github_login(github_sso: GithubSSO = Depends(get_github_sso), current_user: User | None = Depends(get_optional_user), link: bool = False):
+async def github_login(
+    github_sso: GithubSSO = Depends(get_github_sso),
+    current_user: User | None = Depends(get_optional_user),
+    link: bool = False,
+):
     if link:
         if not current_user:
-            raise HTTPException(status_code=401, detail="Authentication required to link accounts")
+            raise HTTPException(
+                status_code=401, detail="Authentication required to link accounts"
+            )
         data = {"link": True, "user_id": str(current_user.id)}
     else:
         data = {}
 
     async with github_sso:
-        return await github_sso.get_login_redirect(params={"prompt": "consent"}, state=json.dumps(data))
+        return await github_sso.get_login_redirect(
+            params={"prompt": "consent"}, state=json.dumps(data)
+        )
 
 
 @router.get("/github/callback")
@@ -163,7 +181,9 @@ async def github_auth(
 
     if link:
         if not user_id:
-            raise HTTPException(status_code=400, detail="Invalid state data for linking")
+            raise HTTPException(
+                status_code=400, detail="Invalid state data for linking"
+            )
         async with github_sso:
             user_info = await github_sso.verify_and_process(request)
             user_service.link_oauth_account(db, int(user_id), "github", user_info)
@@ -174,16 +194,14 @@ async def github_auth(
 
             user = user_service.create_oauth_user(user, db)
 
-            access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+            access_token_expires = timedelta(
+                minutes=settings.access_token_expire_minutes
+            )
             access_token = create_access_token(
                 data={"sub": str(user.id)}, expires_delta=access_token_expires
             )
 
-            response = JSONResponse(
-                content={
-                    "message": "Login successful",
-                }
-            )
+            response = RedirectResponse(FRONTEND_LOGIN_SUCCESS_URI)
 
             auth_service.attach_token_cookie(response, access_token)
             return response
@@ -208,7 +226,9 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
     """
     logger.info(f"Fetching profile for {current_user.email}")
     return {
+        "id": current_user.id,
         "email": current_user.email,
         "full_name": current_user.full_name,
         "profile_image": current_user.profile_image,
+        "timezone": current_user.timezone,
     }

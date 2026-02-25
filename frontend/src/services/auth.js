@@ -24,6 +24,11 @@ axios.interceptors.request.use(
   }
 );
 
+export async function getUser() {
+  const res = await axios.get(`${API_URL}/auth/me`);
+  return res.data;
+}
+
 // Login with Google OAuth
 export async function loginWithGoogle() {
   window.location.href = `${API_URL}/auth/google/login`;
@@ -44,20 +49,6 @@ export function saveToken(token) {
 
 export function removeToken() {
   VueCookies.remove("jwt");
-}
-
-// Decode JWT to Get User Info
-export function getUser() {
-  const token = VueCookies.get("jwt");
-  if (token) {
-    try {
-      return jwtDecode(token); // Returns { sub, email, name, csrf_token, ... }
-    } catch (error) {
-      removeToken();
-      return null;
-    }
-  }
-  return null;
 }
 
 // Logout & Clear JWT
