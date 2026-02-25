@@ -5,6 +5,10 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: getUser(),
   }),
+
+  getters: {
+    isAuthenticated: (state) => state.user !== null,
+  },
   actions: {
     updateUser() {
       this.user = getUser();
@@ -12,8 +16,7 @@ export const useAuthStore = defineStore("auth", {
     setUser(userData) {
       this.user = userData;
     },
-    login(token) {
-      saveToken(token); // Saves to cookie
+    login() {
       this.updateUser();
     },
     logout() {

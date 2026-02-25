@@ -33,17 +33,6 @@ export function loginWithGithub() {
   window.location.href = `${API_URL}/auth/github/login`;
 }
 
-// Fetch Profile (JWT sent via cookie)
-export async function getProfile() {
-  try {
-    const response = await axios.get(`${API_URL}/profile`);
-    return response.data;
-  } catch (error) {
-    console.error("Auth error:", error);
-    return null;
-  }
-}
-
 // JWT Handling - Store & Retrieve Token in Cookies
 export function getToken() {
   return VueCookies.get("jwt");
@@ -73,6 +62,5 @@ export function getUser() {
 
 // Logout & Clear JWT
 export function logout() {
-  removeToken();
   window.location.reload(); // Optional
 }

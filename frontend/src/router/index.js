@@ -2,11 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
 import Signup from "../views/Signup.vue";
 import AllEvents from "../views/AllEvents.vue";
-import Dashboard from '../views/Dashboard.vue'; 
+<<<<<<< HEAD
+import Dashboard from '../views/Dashboard.vue';
 import CreateEvents from "../views/CreateEvents.vue";
+=======
+import EventOverview from '../views/EventOverview.vue';
+>>>>>>> fceba86 (feat(frontend): add Event overview page)
 
 const routes = [
-  { path: '/login', component: Login, meta: { hideNavbar: true}},
+  { path: '/login', component: Login, meta: { hideNavbar: true } },
   { path: "/login-success", component: Login }, // Handles token parsing
   {
     path: "/signup",
@@ -31,8 +35,13 @@ const routes = [
     name: 'CreateEvents',
     component: CreateEvents,
     meta: { requiresAuth: true },
-    meta: { hideNavbar: true}
-  },
+    meta: { hideNavbar: true }
+  }, {
+    path: '/events/overview/:event_uuid',
+    name: 'EventOverview',
+    component: EventOverview,
+  }
+
 
 ];
 
