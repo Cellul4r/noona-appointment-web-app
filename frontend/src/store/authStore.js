@@ -1,23 +1,24 @@
 import { defineStore } from "pinia";
-import { getUser, saveToken, logout } from "@/services/auth";
+import { logout } from "@/services/auth";
+import { getUser } from "../services/auth";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
-    user: getUser(),
+    user: null,
   }),
 
   getters: {
     isAuthenticated: (state) => state.user !== null,
   },
   actions: {
-    updateUser() {
-      this.user = getUser();
+    async updateUser() {
+      this.user = await getUser();
     },
     setUser(userData) {
       this.user = userData;
     },
-    login() {
-      this.updateUser();
+    async login() {
+      await this.updateUser();
     },
     logout() {
       logout();
