@@ -134,15 +134,15 @@ def unregister_session(
     return session_service.unregister_session(session.id, current_user.id, db)
 
 
-# @router.patch("/{session_id}", response_model=SessionPrivate)
-# def update_session(
-#     session_id: int,
-#     db: Annotated[Session, Depends(get_db)],
-#     current_user=Depends(get_current_user),
-# ):
-#     return session_service.update_session(session_id, current_user.id, db)
+@router.patch("/{session_id}", response_model=SessionPrivate)
+def update_session(
+    session_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return session_service.update_session(session_id, current_user.id, db)
 
 
-# @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete_session(session_id: int, db: Annotated[Session, Depends(get_db)]):
-#     session_service.delete_session(session_id, db)
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(session_id: int, db: Annotated[Session, Depends(get_db)]):
+    session_service.delete_session(session_id, db)
