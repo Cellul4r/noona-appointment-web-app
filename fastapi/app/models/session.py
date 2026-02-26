@@ -5,8 +5,10 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
+import uuid
 
 if TYPE_CHECKING:
     from app.models.event import Event
@@ -17,6 +19,9 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    uuid: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), index=True, unique=True, default=uuid.uuid4
+    )
     event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False)
     start_datetime: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False

@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.session_registration import RegistrationStatus
 
+import uuid
+
 
 class SessionBase(BaseModel):
     start_datetime: datetime
@@ -26,6 +28,7 @@ class SessionPublic(SessionBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    uuid: uuid.UUID
     seat_taken: int = Field(default=0, ge=0)
 
 
