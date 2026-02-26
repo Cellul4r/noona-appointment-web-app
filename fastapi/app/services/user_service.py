@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import HTTPException, status
 from fastapi_sso import OpenID
 from sqlalchemy import func, select, Enum
@@ -29,16 +31,39 @@ class UserService:
         )
 
     def create_user(self, user: UserCreate, db: Session) -> User:
+        default_avatar = self.gen_avatar_url(user.email, user.full_name)
         new_user = User(
             email=user.email,
             full_name=user.full_name,
             password_hash=hash_password(user.password),
+            profile_image=default_avatar,
         )
 
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         return new_user
+    
+    def gen_avatar_url(self, full_name: str) -> str:
+      
+        bgcolor = secrets.token_hex(3)
+        color = hex(int('0xffffff', 0) - int('0x' + bgcolor, 0)).replace('0x', '')
+        lname = ""
+        temp = full_name.split()
+        fname = temp[0][0] if temp else ""
+        if len(temp) > 1:
+            lname = temp[1][0]
+
+        return (
+            "https://ui-avatars.com/api/?name="
+            + fname
+            + "+"
+            + lname
+            + "&background="
+            + bgcolor
+            + "&color="
+            + color
+        )
 
     def create_oauth_user(self, oauth_user: OpenID, db: Session) -> User:
 
@@ -63,14 +88,14 @@ class UserService:
             .first()
         )
 
-        # user never link with This OAuth Account and No email in user database
+        # user never linked with this OAuth Account
         if not existing_user:
-            # create new user and link to OAuth Account
+            avatar = oauth_user.picture or self.gen_avatar_url(oauth_user.email or "", full_name)
             existing_user = User(
                 email=oauth_user.email,
                 full_name=full_name,
-                password_hash=None,  # let the user set the password later on
-                profile_image=oauth_user.picture,
+                password_hash=None,  # User can't set password if they signed up with OAuth, even in setting.
+                profile_image=avatar,
             )
             db.add(existing_user)
             db.flush()  # to get existing_user id
@@ -93,11 +118,17 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found")
 
         data_updated = user_update.model_dump(exclude_unset=True)
+        name_changed = False
         for k, v in data_updated.items():
             if k == "password":
                 setattr(user, "password_hash", hash_password(v))
             else:
+                if k == "full_name" and v != user.full_name:
+                    name_changed = True
                 setattr(user, k, v)
+        # update avatar to match the name changes
+        if name_changed:
+            user.profile_image = self.gen_avatar_url(user.full_name)
         db.commit()
         db.refresh(user)
         return user
