@@ -120,12 +120,7 @@ export default {
     async function goToLogin() {
       router.push("/login");
     }
-    async function loginWithGithub() {
-      window.location.href = "http://localhost:56733/auth/github/login";
-    }
-    async function loginWithGoogle() {
-      window.location.href = "http://localhost:56733/auth/google/login";
-    }
+    
     async function handleSignup() {
       if (password.value !== confirmPassword.value) {
         alert("Passwords do not match");
