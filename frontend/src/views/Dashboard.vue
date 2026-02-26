@@ -12,18 +12,7 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <!-- Join Event by Passcode -->
-          <div class="join w-full sm:w-auto">
-            <input 
-              v-model="joinPasscode"
-              type="text" 
-              placeholder="Enter event passcode" 
-              class="input input-bordered join-item w-full sm:w-48 focus:input-primary" 
-            />
-            <button @click="joinEvent" class="btn btn-secondary join-item">
-              Join
-            </button>
-          </div>
+          
           
           <!-- Create Event -->
           <button @click="goToCreateEvent" class="btn btn-primary gap-2 shadow-sm hover:scale-105 transition-transform w-full sm:w-auto">
@@ -157,17 +146,6 @@
         <div class="p-5 border-b border-base-200 bg-base-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div class="flex items-center gap-2">
             <h2 class="text-lg font-bold">Current & Upcoming Sessions</h2>
-          </div>
-          
-          <div class="flex gap-2 w-full md:w-auto">
-            <input v-model="upcomingSearch" type="text" placeholder="Search event..." class="input input-sm input-bordered w-full md:w-48" />
-            <select v-model="upcomingTimeRange" class="select select-sm select-bordered">
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="this_week">This Week</option>
-              <option value="this_month">This Month</option>
-              <option value="next_month">Next Month</option>
-            </select>
           </div>
         </div>
 
@@ -315,13 +293,14 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { getUserSessions } from '@/services/session.js';
+import { fetchUserSettings } from '@/services/user.js';
+import { getAllEvents } from '../services/event';
 
 // --- STATE & SETUP ---
 const authStore = useAuthStore();
 const router = useRouter();
 const user = computed(() => authStore.user);
-const baseUrl = 'http://localhost:56733'; // Update to your backend port
 
 const loadingDashboard = ref(true);
 
@@ -348,10 +327,8 @@ const expandedRows = ref([]); // Holds IDs of expanded past session rows
 // --- API FETCH FUNCTIONS ---
 const fetchUserProfile = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/users/settings`, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
-    authStore.setUser(response.data); 
+    const data = await fetchUserSettings();
+    if (data) authStore.setUser(data);
   } catch (error) {
     console.error("Failed to fetch profile", error);
   }
@@ -385,10 +362,7 @@ const fetchDashboardData = async () => {
 
     // 1. Fetch Recent Events
     // ------------------------------------------------------------------
-    const eventsRes = await axios.get(`${baseUrl}/events/`, {
-      params: { scope: 'all', size: 3 }, // Fetch 3 most recent events
-      headers
-    });
+    const eventsRes = await getAllEvents({ size: 3, sort: 'updated_at_desc' }, headers);
     recentEvents.value = (eventsRes.data.items || []).map(e => ({
       id: e.id,
       title: e.title,
@@ -399,45 +373,47 @@ const fetchDashboardData = async () => {
       total_sessions: e.sessions ? e.sessions.length : 0 
     }));
 
-    // 2. Fetch Sessions once and classify client-side into waitlist/upcoming/past
+    // 2. Fetch Sessions using backend `get_user_sessions` per requested scopes
     // ------------------------------------------------------------------
-    // Fetch a reasonably large page and classify locally to avoid mis-specified
-    // backend query params; this ensures current/ongoing sessions are included
-    // as "upcoming" and past sessions are those whose end time is before now.
-    const sessionsRes = await axios.get(`${baseUrl}/sessions/`, {
-      params: { size: 200 },
-      headers
-    });
-
-    const allSessions = (sessionsRes.data.items || []).map(mapSessionData);
     const now = new Date();
 
-    // classify
-    const upcoming = [];
-    const past = [];
-    const waitlist = [];
+    // Wait List Sessions: scope=joined, start_datetime=now, registration_status_list = ['waitlist','available']
+    const waitRes = await getUserSessions({
+      scope: 'joined',
+      start_datetime: nowISO,
+      size: 100,
+      registration_status_list: ['waitlist', 'available']
+    }, authStore.token);
 
-    for (const s of allSessions) {
-      const sEnd = s.end_time ? new Date(s.end_time) : null;
-      const sStart = s.start_time ? new Date(s.start_time) : null;
+    // Current & Upcoming Sessions: scope=all, start_datetime=now, registration_status_list = ['confirmed']
+    const upcomingRes = await getUserSessions({
+      scope: 'all',
+      start_datetime: nowISO,
+      size: 200,
+      registration_status_list: ['confirmed']
+    }, authStore.token);
 
-      if (s.is_filled && sStart && sStart >= now) {
-        waitlist.push(s);
-      }
+    // Past Sessions: scope=all, end_datetime=now
+    const pastRes = await getUserSessions({
+      scope: 'all',
+      end_datetime: nowISO,
+      size: 200,
+      registration_status_list: ['confirmed']
+    }, authStore.token);
 
-      if (sEnd && sEnd < now) {
-        past.push(s);
-      } else {
-        // ongoing or future sessions
-        upcoming.push(s);
-      }
-    }
+    const allWait = (waitRes.data?.items || waitRes.items || []);
+    const allUpcoming = (upcomingRes.data?.items || upcomingRes.items || []);
+    const allPast = (pastRes.data?.items || pastRes.items || []);
+
+    const waitlist = allWait.map(mapSessionData);
+    const upcoming = allUpcoming.map(mapSessionData);
+    const past = allPast.map(mapSessionData);
 
     // Sort: upcoming by start asc, past by start desc
     upcoming.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
     past.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
 
-    // Apply some sensible limits like before
+    // Apply some sensible limits
     upcomingSessions.value = upcoming.slice(0, 50);
     pastSessions.value = past.slice(0, 50);
     waitlistSessions.value = waitlist.slice(0, 50);
