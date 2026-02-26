@@ -161,7 +161,7 @@ class SessionService:
 
         # also filter by date range if provided
         if end_to:
-            query = query.where(SessionModel.start_datetime <= end_to)
+            query = query.where(SessionModel.start_datetime < end_to)
         if start_from:
             query = query.where(SessionModel.end_datetime >= start_from)
 
@@ -265,7 +265,7 @@ class SessionService:
             # need to lock the row for update to prevent race condition when multiple user try to update the same session
             existing_session = db.execute(
                 select(SessionModel)
-                .where(SessionModel.id == session_id)
+                .where(SessionModel.id == session_id, Event.owner_id == user_id)
                 .with_for_update()
             ).scalar_one_or_none()
         else:
