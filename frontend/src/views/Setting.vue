@@ -26,17 +26,22 @@
         </p>
       </div>
 
-      <!-- Profile Picture -->
+      <!-- Personal Info -->
       <section
         class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6"
       >
         <div class="flex flex-col gap-1 border-b border-base-300 pb-4">
-          <h3 class="text-base-content text-lg font-bold">Profile Picture</h3>
+          <!-- <h3 class="text-base-content text-lg font-bold">Profile Picture</h3> -->
+           <h3
+          class="text-base-content text-lg font-bold"
+        >
+          Personal Information
+        </h3>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-6">
           <div
             class="avatar cursor-pointer group"
-            @click="avatar_modal.showModal()"
+            @click="viewAvatar()"
           >
             <dialog id="avatar_modal" class="modal">
               <div
@@ -67,49 +72,6 @@
               </div>
             </div>
           </div>
-          <div class="flex flex-col items-center sm:items-start flex-1 gap-2">
-            <p class="text-base-content/60 text-sm mb-1">
-              Supports JPG or PNG only.
-            </p>
-            <div class="flex gap-3">
-              <input
-                type="file"
-                ref="fileInput"
-                class="hidden"
-                accept="image/png, image/jpeg"
-                @change="handleFileUpload"
-              />
-              <button
-                class="btn btn-sm btn-outline"
-                @click="$refs.fileInput.click()"
-                :disabled="uploadingAvatar"
-              >
-                <span
-                  v-if="uploadingAvatar"
-                  class="loading loading-spinner text-secondary"
-                ></span>
-                Upload New
-              </button>
-              <button
-                class="btn btn-sm btn-error btn-outline"
-                @click="removeAvatar"
-              >
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Personal Information -->
-      <section
-        class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6"
-      >
-        <h3
-          class="text-base-content text-lg font-bold border-b border-base-300 pb-4"
-        >
-          Personal Information
-        </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="form-control gap-1 md:col-span-2">
             <label class="label py-0"
@@ -135,7 +97,10 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            v-if="formData.has_password"
+          >
             <div class="form-control gap-1 md:col-span-2">
               <div class="flex justify-between items-end">
                 <label class="label py-0">
@@ -208,32 +173,39 @@
 
               <!-- Unlocked: new password fields -->
               <template v-else>
-                <input
-                  v-model="formData.new_password"
-                  type="password"
-                  class="input input-bordered w-full"
-                  placeholder="Enter new password"
-                  minlength="8"
-                />
+                <input v-model="password" type="password" class="w-full input validator" required minlength="8" 
+                  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
+                  title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
+                  <p class="validator-hint hidden">
+                    Must be more than 8 characters, including
+                    <br/>At least one number
+                    <br/>At least one lowercase letter
+                    <br/>At least one uppercase letter
+                  </p>
                 <div class="form-control gap-1 mt-3">
                   <label class="label py-0"
                     ><span class="label-text font-semibold"
                       >Confirm New Password</span
                     ></label
                   >
-                  <input
-                    v-model="formData.confirm_password"
-                    type="password"
-                    class="input input-bordered w-full"
-                    placeholder="Confirm new password"
-                  />
-                </div>
-                <p class="text-xs text-base-content/50 mt-1">
-                  New password will be saved when you click Save Changes.
-                </p>
+                  <input v-model = "confirmPassword" type="password" class="w-full input validator" required minlength="8" 
+                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
+                    title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
+                    <p class="validator-hint hidden">
+                      Must be more than 8 characters, including
+                      <br/>At least one number
+                      <br/>At least one lowercase letter
+                      <br/>At least one uppercase letter
+                    </p>
+                        </div>
+                        <p class="text-xs text-base-content/50 mt-1">
+                          New password will be saved when you click Save Changes.
+                        </p>
               </template>
             </div>
           </div>
+        </div>
+
         </div>
       </section>
 
@@ -248,47 +220,28 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Timezone -->
-          <div class="form-control w-full gap-1 md:col-span-2">
+          <div class="form-control w-full gap-1">
             <label class="label py-0"
-              ><span class="label-text font-semibold">Time Zone</span></label
+              ><span class="label-text font-semibold">Timezone</span></label
             >
             <label
               class="input input-bordered relative w-full flex items-center"
             >
-              <select
+              <input
+                type="text"
                 v-model="formData.timezone"
+                list="timezones"
+                required
                 class="w-full bg-transparent outline-none"
-              >
-                <option value="GMT">
-                  (GMT+00:00) London - Greenwich Mean Time
-                </option>
-                <option value="EST">
-                  (GMT-05:00) New York - Eastern Standard Time
-                </option>
-                <option value="PST">
-                  (GMT-08:00) Los Angeles - Pacific Standard Time
-                </option>
-                <option value="CET">
-                  (GMT+01:00) Paris - Central European Time
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <!-- Language -->
-          <div class="form-control gap-1">
-            <label class="label py-0"
-              ><span class="label-text font-semibold">Language</span></label
-            >
-            <label
-              class="input input-bordered flex relative w-full items-center gap-2"
-            >
-              <select class="grow bg-transparent outline-none">
-                <option value="en">English (US)</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="de">Deutsch</option>
-              </select>
+                placeholder="Select timezone..."
+              />
+              <datalist id="timezones">
+                <option
+                  v-for="tz in timeZones"
+                  :key="tz"
+                  :value="tz"
+                />
+              </datalist>
             </label>
           </div>
 
@@ -370,8 +323,11 @@
                 <span class="text-sm font-bold text-base-content">
                   Google
                 </span>
-                <span class="text-xs text-success font-medium">
+                <span v-if="isLinked('google')" class="text-xs text-success font-medium">
                   Connected as {{ formData.email }}
+                </span>
+                <span v-else class="text-xs text-base-content/60">
+                  Not connected
                 </span>
               </div>
             </div>
@@ -417,7 +373,10 @@
                 <span class="text-sm font-bold text-base-content">
                   GitHub
                 </span>
-                <span class="text-xs text-base-content/60">
+                <span v-if="isLinked('github')" class="text-xs text-success font-medium">
+                  Connected as {{ formData.email }}
+                </span>
+                <span v-else class="text-xs text-base-content/60">
                   Not connected
                 </span>
               </div>
@@ -447,7 +406,7 @@
           class="bg-base-100 border-t border-base-300 p-4 pointer-events-auto flex justify-end gap-3 px-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
         >
           <button class="btn" @click="fetchUserData">Cancel</button>
-          <button class="btn btn-primary" @click="submitForm">
+          <button class="btn btn-primary" @click="submitForm" :disabled="submitting || isSuccess">
             Save Changes
           </button>
         </div>
@@ -462,27 +421,25 @@ import { computed } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "vue-router";
 
-const DefaultAvatar =
-  "https://img.icons8.com/?size=100&id=z-JBA_KtSkxG&format=png&color=000000";
 
 export default {
   setup() {
     const authStore = useAuthStore();
     const router = useRouter();
     const user = computed(() => authStore.user);
+    const timeZones = Intl.supportedValuesOf('timeZone');
 
-    return { authStore, router, user };
+    return { authStore, router, user, timeZones };
   },
 
   data() {
     return {
       apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
       avatarPreview: null,
-      uploadingAvatar: false,
-
       current_password: "", // In password verification modal
       passwordVerified: false,
       showPasswordModal: false,
+      submitting: false, // indicates an in-flight form submission
 
       theme: localStorage.getItem("app-theme") || "light",
       themes: [
@@ -525,9 +482,10 @@ export default {
       formData: {
         email: "",
         full_name: "",
-        profile_image: null,
-        timezone: "UTC",
+        profile_image: "",
+        timezone: "Europe/London",
         email_notifications: false,
+        has_password: true, // backend will overwrite
         password: null, // new password field, only sent if user verified current password
       },
 
@@ -559,8 +517,15 @@ export default {
         this.formData.profile_image = res.data.profile_image;
         this.formData.timezone = res.data.timezone;
         this.formData.email_notifications = res.data.email_notifications;
+        this.formData.has_password = res.data.has_password;
 
         this.oauthAccounts = res.data.oauth_accounts || [];
+
+        // reset any password edit UI state when reloading/cancel changes
+        this.passwordVerified = false;
+        this.current_password = "";
+        this.formData.new_password = "";
+        this.formData.confirm_password = "";
       } catch (error) {
         console.error("Error fetching data:", error);
         this.response = `Error: ${error.message}`;
@@ -568,6 +533,7 @@ export default {
     },
     async submitForm() {
       try {
+        this.submitting = true;
         const data = {
           full_name: this.formData.full_name,
           profile_image: this.formData.profile_image,
@@ -575,17 +541,28 @@ export default {
           email_notifications: this.formData.email_notifications,
         };
 
-        // Only send password if verified
-        if (this.passwordVerified && this.formData.new_password) {
+        // Only send new password if user has a password, verified current one, and provided a new one
+        if (this.formData.has_password && this.passwordVerified && this.formData.new_password) {
           if (this.formData.new_password !== this.formData.confirm_password) {
             alert("Passwords do not match");
             return;
           }
-
+          // Send the new password, not the old one
           data.password = this.formData.new_password;
         }
 
-        await axios.patch(`${this.apiBaseUrl}/users/me`, data);
+        console.log("Submitting form data:", data);
+        const res = await axios.patch(`${this.apiBaseUrl}/users/me`, data);
+        console.log("Update successful:", res.data);
+
+        // refresh fields from server in case backend modified anything
+        if (res.data) {
+          this.formData.email = res.data.email;
+          this.formData.full_name = res.data.full_name;
+          this.formData.profile_image = res.data.profile_image;
+          this.formData.timezone = res.data.timezone;
+          this.formData.email_notifications = res.data.email_notifications;
+        }
 
         // Reset password UI
         this.passwordVerified = false;
@@ -594,54 +571,83 @@ export default {
         this.formData.confirm_password = "";
 
         this.isSuccess = true;
+        // scroll to top so user can see the banner
+        this.$nextTick(() => { window.scrollTo(0, 0); });
         setTimeout(() => {
           this.isSuccess = false;
         }, 5000);
       } catch (error) {
         console.error("Error updating profile:", error);
+        console.error("Full error response:", error.response);
+        
+        let message = "Failed to update profile";
+        if (error.response) {
+          console.error("Status:", error.response.status);
+          console.error("Data:", error.response.data);
+          const detail = error.response.data.detail;
+          if (typeof detail === "string") {
+            message = detail;
+          } else if (Array.isArray(detail)) {
+            // validation error with array of detailed errors
+            message = detail.map(e => {
+              if (typeof e === "object") {
+                return `${e.loc?.join(".") || "unknown"}: ${e.msg || "error"}`;
+              }
+              return String(e);
+            }).join("; ");
+          } else if (detail !== undefined) {
+            message = JSON.stringify(detail);
+          }
+        } else if (error.message) {
+          message = error.message;
+        }
+        alert(message);
+      } finally {
+        this.submitting = false;
       }
     },
     async verifyPassword() {
       try {
-        await axios.post(`${this.apiBaseUrl}/users/verify-password`, {
+        console.log("verifying password", this.current_password);
+        const res = await axios.post(`${this.apiBaseUrl}/users/verify-password`, {
           password: this.current_password,
         });
+        console.log("verify-password response", res);
 
-        this.passwordVerified = true;
-        this.$refs.passwordModal.close();
-      } catch {
-        alert("Incorrect password");
+        if (res.status === 200 && res.data.verified) {
+          this.passwordVerified = true;
+          this.$refs.passwordModal.close();
+          return;
+        }
+        // fallback message if body is unexpected
+        alert("Password verification failed");
+      } catch (err) {
+        console.error("verify-password error", err);
+        // differentiate between wrong password and other errors
+        let message = "Incorrect password";
+        if (err.response && err.response.data) {
+          message = err.response.data.detail || message;
+        }
+        alert(message);
       }
     },
+
     updateTheme() {
       document.documentElement.setAttribute("data-theme", this.theme);
       localStorage.setItem("app-theme", this.theme);
     },
-    handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.avatarPreview = e.target.result;
-        this.formData.profile_image = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    },
-
-    removeAvatar() {
-      this.avatarPreview = null;
-      this.formData.profile_image = null;
-    },
 
     getAvatar() {
-      return this.avatarPreview || this.formData.profile_image || DefaultAvatar;
+      // return this.avatarPreview || this.formData.profile_image || DefaultAvatar;
+      return this.formData.profile_image;
     },
     viewAvatar() {
       document.getElementById("avatar_modal").showModal();
     },
     isLinked(provider) {
-      return this.oauthAccounts.some((acc) => acc.provider === provider);
+      return this.oauthAccounts.some(
+        (acc) => acc.provider?.toLowerCase() === provider.toLowerCase()
+      );
     },
 
     linkAccount(provider) {
@@ -653,9 +659,8 @@ export default {
         await axios.delete(
           `${this.apiBaseUrl}/users/unlink-accounts/${provider}`,
         );
-        this.oauthAccounts = this.oauthAccounts.filter(
-          (acc) => acc.provider !== provider,
-        );
+        // refresh from server to be safe
+        await this.fetchUserData();
       } catch (err) {
         console.error("Unlink failed:", err);
       }
