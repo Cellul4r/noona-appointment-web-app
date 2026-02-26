@@ -304,9 +304,6 @@ const user = computed(() => authStore.user);
 
 const loadingDashboard = ref(true);
 
-// Header Actions
-const joinPasscode = ref('');
-
 // Data Arrays
 const recentEvents = ref([]);
 const waitlistSessions = ref([]);
@@ -533,13 +530,6 @@ const loadMoreSection = (section) => {
 watch([upcomingSearch, upcomingTimeRange], () => {
   upcomingVisible.value = sessionsPageSize;
 });
-
-// --- ACTION HANDLERS ---
-const joinEvent = () => {
-  if (joinPasscode.value.trim()) {
-    router.push(`/vote/${joinPasscode.value.trim()}`);
-  }
-};
 
 const goToCreateEvent = () => router.push('/events/create');
 const goToVote = (uuid) => router.push(`/vote/${uuid}`);
