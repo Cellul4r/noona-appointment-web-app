@@ -15,3 +15,22 @@ export async function getSessions(eventUuid, cursor = null, size = 6) {
     const res = await axios.get(`${API_URL}/events/${eventUuid}/sessions`, { params });
     return res.data;
 }
+
+export async function getAllEvents({ scope = 'all', size = 12, cursor = null, title = null } = {}, token = '') {
+    // params object mirrors what the front-end used previously in AllEvents.vue
+    const params = { scope, size };
+    if (title) params.title = title;
+    if (cursor) params.cursor = cursor;
+
+    const res = await axios.get(`${API_URL}/events/`, {
+        params,
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000
+    });
+    return res.data;
+}
+
+export async function getEventOverview(uuid) {
+    const res = await axios.get(`${API_URL}/events/overview/${uuid}`);
+    return res.data;
+}
