@@ -105,7 +105,7 @@
                 <div class="flex flex-col gap-1 text-right">
                   <span>Host</span>
                   <span class="font-semibold text-base-content">
-                    {{ user?.id && user.id == event.host?.id ? 'Me' : (event.host?.full_name || 'Unknown') }}
+                    {{ user?.id && user.id == event.host?.id ? `${event.host.full_name} (You)` : (event.host?.full_name || 'Unknown') }}
                   </span>
                 </div>
               </div>
@@ -126,11 +126,13 @@
                 
                 <button 
                   @click="copyLink(event.share_uuid)"
-                  class="btn btn-square btn-sm btn-ghost bg-base-200 hover:bg-primary hover:text-white transition-colors tooltip"
+                  class="btn btn-square btn-sm btn-ghost hover:bg-primary hover:text-white transition-colors tooltip"
                   data-tip="Copy Link"
                   :disabled="event.is_draft"
                 >
-                  <span class="material-symbols-outlined text-lg">link</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                  </svg>
                 </button>
               </div>
             </div>
