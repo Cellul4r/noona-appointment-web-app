@@ -45,6 +45,19 @@ class SessionService:
 
         return session
 
+    def get_session_by_uuid(self, session_uuid: str, db: Session) -> SessionModel:
+        session = (
+            db.execute(select(SessionModel).where(SessionModel.uuid == session_uuid))
+            .scalars()
+            .first()
+        )
+        if not session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found",
+            )
+        return session
+
     def get_upcoming_sessions_by_event_uuid(
         self,
         event_uuid: uuid.UUID,
@@ -201,11 +214,6 @@ class SessionService:
             )
 
             query = query.order_by(
-                case(
-                    (SessionRegistration.status == RegistrationStatus.CONFIRMED, 0),
-                    (SessionRegistration.status == RegistrationStatus.WAITLIST, 1),
-                    else_=2,
-                ),
                 SessionModel.start_datetime.asc(),
                 SessionModel.id.asc(),
             )
@@ -317,7 +325,6 @@ class SessionService:
                     SessionRegistration.user_id == user_id,
                 )
             ).scalar_one_or_none()
-            logger.debug("HIIIIIIIIIIIIIIII")
             if existing_registration:
                 return existing_registration
             # if seat available confirm the registration
