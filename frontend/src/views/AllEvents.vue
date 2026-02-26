@@ -120,6 +120,7 @@
                 <button 
                   v-else
                   class="btn btn-outline flex-1 btn-sm hover:btn-primary"
+                  @click="viewDetails(event)"
                 >
                   View Details
                 </button>
@@ -160,7 +161,8 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { fetchUserSettings } from '@/services/user.js';
+import { getAllEvents, getEventOverview } from '@/services/event.js';
 
 // --- STATE ---
 const authStore = useAuthStore();
@@ -199,7 +201,7 @@ const fetchEvents = async (reset = false) => {
   
   loading.value = true;
   errorMsg.value = null;
-  
+
   try {
     const params = {
       scope: currentScope.value,
@@ -208,26 +210,21 @@ const fetchEvents = async (reset = false) => {
       ...(reset ? {} : { cursor: nextCursor.value })
     };
 
-    const baseUrl = 'http://localhost:56733'; 
-    const response = await axios.get(`${baseUrl}/events/`, { 
-      params,
-      headers: { Authorization: `Bearer ${authStore.token}` },
-      timeout: 5000 
-    });
+    const response = await getAllEvents(params, authStore.token);
 
     if (reset) {
-      events.value = response.data.items;
+      events.value = response.items;
       // reset visible count when we reset the list
       visibleCount.value = eventsPerPage;
     } else {
-      events.value = [...events.value, ...response.data.items];
+      events.value = [...events.value, ...response.items];
     }
     
-    nextCursor.value = response.data.next_page;
+    nextCursor.value = response.next_page;
   } catch (error) {
     console.error("Failed to fetch events:", error);
     if (error.code === 'ERR_NETWORK') {
-      errorMsg.value = "Cannot connect to server. Is the backend running on port 56733?";
+      errorMsg.value = "Cannot connect to server. Please check your network or try again later.";
     } else if (error.response) {
       errorMsg.value = `Error ${error.response.status}: ${error.response.data.detail || 'Failed to load events.'}`;
     } else {
@@ -238,19 +235,14 @@ const fetchEvents = async (reset = false) => {
   }
 };
 
-const fetchUserProfile = async () => {
+const loadUserSettings = async () => {
   try {
-    const baseUrl = 'http://localhost:56733';
-    const response = await axios.get(`${baseUrl}/users/settings`, {
-      headers: { Authorization: `Bearer ${authStore.token}` },
-      timeout: 5000
-    });
-    
-    if (response.data) {
-      authStore.setUser(response.data);
+    const data = await fetchUserSettings();
+    if (data) {
+      authStore.setUser(data);
     }
   } catch (error) {
-    console.error("Failed to fetch user profile:", error);
+    console.error("Failed to fetch user settings:", error);
   }
 };
 
@@ -313,6 +305,18 @@ const copyLink = (uuid) => {
   alert(`Link copied: ${link}`);
 };
 
+// when user clicks the 'View Details' button, fetch overview then navigate
+const viewDetails = async (evt) => {
+  try {
+    // prefetch the overview data (could be used for caching or validation)
+    await getEventOverview(evt.share_uuid);
+  } catch (error) {
+    console.error("Failed to load event overview:", error);
+    // we still navigate even on error, user overview page may handle its own fetch
+  }
+  router.push({ name: 'EventOverview', params: { event_uuid: evt.share_uuid } });
+};
+
 const formatDate = (dateString) => {
   if (!dateString) return 'Just now';
   const date = new Date(dateString);
@@ -322,6 +326,6 @@ const formatDate = (dateString) => {
 // --- LIFECYCLE ---
 onMounted(() => {
   fetchEvents(true);
-  fetchUserProfile();
+  loadUserSettings();
 });
 </script>
