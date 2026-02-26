@@ -22,11 +22,11 @@ class User(Base):
     password_hash: Mapped[str | None] = mapped_column(String(200), nullable=True)
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
     profile_image: Mapped[str | None] = mapped_column(
-        String(200),
+        Text,
         nullable=True,
         default=None,
     )
-    timezone: Mapped[str] = mapped_column(String(64), default="UTC", nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), default="Europe/London", nullable=False)
     email_notifications: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.utcnow()
@@ -43,6 +43,13 @@ class User(Base):
     sessions_registered: Mapped[list[SessionRegistration]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+
+    @property
+    def has_password(self) -> bool:
+        """Indicates whether the user has a usable password set."""
+        return bool(self.password_hash)
+
+
     """
     @property
     def image_path(self) -> str:
