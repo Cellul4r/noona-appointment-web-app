@@ -35,18 +35,18 @@ class UserLinkedAccount(BaseModel):
 
 class UserPrivate(UserPublic):
     id: int
-    timezone: TimeZoneName = Field(default="UTC", max_length=64)
+    timezone: TimeZoneName = Field(default="Europe/London", max_length=64)
     email_notifications: bool
     created_at: datetime
     oauth_accounts: list[UserLinkedAccount] | None = None
+    has_password: bool
 
 
 class UserUpdate(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=100)
-    profile_image: str | None = None
-    timezone: TimeZoneName | None = Field(default="UTC", max_length=64)
+    timezone: TimeZoneName | None = Field(default="Europe/London", max_length=64)
     email_notifications: bool | None = None
-    password: str | None = Field(min_length=8, max_length=200)
+    password: str | None = Field(default=None,min_length=8, max_length=200)
 
 
 class UserSignIn(BaseModel):
