@@ -173,7 +173,7 @@
 
               <!-- Unlocked: new password fields -->
               <template v-else>
-                <input v-model="password" type="password" class="w-full input validator" required minlength="8" 
+                <input v-model="new_password" type="password" class="w-full input validator" required minlength="8" 
                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
                   title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                   <p class="validator-hint hidden">
@@ -188,7 +188,7 @@
                       >Confirm New Password</span
                     ></label
                   >
-                  <input v-model = "confirmPassword" type="password" class="w-full input validator" required minlength="8" 
+                  <input v-model = "confirm_password" type="password" class="w-full input validator" required minlength="8" 
                     pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
                     title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                     <p class="validator-hint hidden">
@@ -405,7 +405,7 @@
         <div
           class="bg-base-100 border-t border-base-300 p-4 pointer-events-auto flex justify-end gap-3 px-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
         >
-          <button class="btn" @click="fetchUserData">Cancel</button>
+          <button class="btn" @click="fetchUserData">Discard</button>
           <button class="btn btn-primary" @click="submitForm" :disabled="submitting || isSuccess">
             Save Changes
           </button>
@@ -437,6 +437,8 @@ export default {
       apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
       avatarPreview: null,
       current_password: "", // In password verification modal
+      new_password: "", // For new password input
+      confirm_password: "", // For confirming new password
       passwordVerified: false,
       showPasswordModal: false,
       submitting: false, // indicates an in-flight form submission
@@ -524,8 +526,8 @@ export default {
         // reset any password edit UI state when reloading/cancel changes
         this.passwordVerified = false;
         this.current_password = "";
-        this.formData.new_password = "";
-        this.formData.confirm_password = "";
+        this.new_password = "";
+        this.confirm_password = "";
       } catch (error) {
         console.error("Error fetching data:", error);
         this.response = `Error: ${error.message}`;
@@ -542,13 +544,14 @@ export default {
         };
 
         // Only send new password if user has a password, verified current one, and provided a new one
-        if (this.formData.has_password && this.passwordVerified && this.formData.new_password) {
-          if (this.formData.new_password !== this.formData.confirm_password) {
+        if (this.formData.has_password && this.passwordVerified && this.new_password) {
+          if (this.new_password !== this.confirm_password) {
             alert("Passwords do not match");
+            this.submitting = false;
             return;
           }
           // Send the new password, not the old one
-          data.password = this.formData.new_password;
+          data.password = this.new_password;
         }
 
         console.log("Submitting form data:", data);
@@ -567,8 +570,8 @@ export default {
         // Reset password UI
         this.passwordVerified = false;
         this.current_password = "";
-        this.formData.new_password = "";
-        this.formData.confirm_password = "";
+        this.new_password = "";
+        this.confirm_password = "";
 
         this.isSuccess = true;
         // scroll to top so user can see the banner
@@ -617,6 +620,7 @@ export default {
         if (res.status === 200 && res.data.verified) {
           this.passwordVerified = true;
           this.$refs.passwordModal.close();
+          this.current_password = "";
           return;
         }
         // fallback message if body is unexpected
