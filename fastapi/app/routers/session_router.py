@@ -47,6 +47,8 @@ def transform_session(row):
         end_datetime=session.end_datetime,
         event=session.event,
         registration_status=status,
+        seat_taken=session.seat_taken,
+        seat_capacity=session.seat_capacity,
     )
 
 
