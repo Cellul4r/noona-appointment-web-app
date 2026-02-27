@@ -521,6 +521,14 @@ export default {
         this.formData.email_notifications = res.data.email_notifications;
         this.formData.has_password = res.data.has_password;
 
+        this.authStore.setUser({
+          id: res.data.id,
+          email: res.data.email,
+          full_name: res.data.full_name,
+          profile_image: res.data.profile_image,
+          timezone: res.data.timezone,
+        });
+
         this.oauthAccounts = res.data.oauth_accounts || [];
 
         // reset any password edit UI state when reloading/cancel changes
@@ -565,6 +573,14 @@ export default {
           this.formData.profile_image = res.data.profile_image;
           this.formData.timezone = res.data.timezone;
           this.formData.email_notifications = res.data.email_notifications;
+
+          this.authStore.setUser({
+            id: res.data.id,
+            email: res.data.email,
+            full_name: res.data.full_name,
+            profile_image: res.data.profile_image,
+            timezone: res.data.timezone,
+          });
         }
 
         // Reset password UI
