@@ -116,7 +116,7 @@
                   <div class="flex items-center gap-2">
                     <div class="avatar placeholder">
                       <div class="bg-neutral text-neutral-content rounded-full w-6">
-                        <span class="text-[10px]">{{ getInitials(session.host_name) }}</span>
+                        <img :src="getAvatar()" alt="Profile Image">
                       </div>
                     </div>
                     <span class="font-medium">
@@ -177,7 +177,7 @@
                   <div class="flex items-center gap-2">
                     <div class="avatar placeholder">
                       <div class="bg-neutral text-neutral-content rounded-full w-6">
-                        <span class="text-[10px]">{{ getInitials(session.host_name) }}</span>
+                        <img :src="getAvatar()" alt="Profile Image">
                       </div>
                     </div>
                     <span class="font-medium">
@@ -238,7 +238,7 @@
                     <div class="flex items-center gap-2">
                       <div class="avatar placeholder opacity-80">
                         <div class="bg-neutral text-neutral-content rounded-full w-6">
-                          <span class="text-[10px]">{{ getInitials(session.host_name) }}</span>
+                          <img :src="getAvatar()" alt="Profile Image">
                         </div>
                       </div>
                       <span class="text-base-content/80">
@@ -507,6 +507,10 @@ const getInitials = (name) => {
   if (!name) return 'U';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
+
+const getAvatar = () => {
+    return authStore.user?.profile_image
+}
 
 const toggleRow = (id) => {
   const index = expandedRows.value.indexOf(id);
