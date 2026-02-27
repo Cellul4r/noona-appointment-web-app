@@ -105,8 +105,10 @@
                 <td>
                   <div class="flex items-center gap-2">
                     <span class="font-medium">{{ session.event_title }}</span>
-                    <button @click="goToVote(session.event_uuid)" class="btn btn-xs btn-circle btn-ghost text-primary tooltip" data-tip="Go to Registration">
-                      <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                    <button @click="goToOverview(session.event_uuid)" class="btn btn-xs btn-circle btn-ghost tooltip" data-tip="Go to Overview">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                      </svg>
                     </button>
                   </div>
                 </td>
@@ -123,8 +125,9 @@
                   </div>
                 </td>
                 <td>
-                  <div class="badge badge-sm" :class="session.is_filled ? 'badge-neutral' : 'badge-success'">
+                  <div class="badge badge-sm" :class="session.is_filled ? 'badge-info' : 'badge-success'">
                     {{ session.is_filled ? 'Wait List' : 'Available' }}
+                    {{ `(${session.seat_taken}/${session.seat_capacity})` }}
                   </div>
                 </td>
                 <td class="text-right">
@@ -188,7 +191,7 @@
                   </div>
                 </td>
                 <td class="text-right">
-                  <button @click="goToVote(session.event_uuid)" class="btn btn-sm btn-outline">
+                  <button @click="goToOverview(session.event_uuid)" class="btn btn-sm btn-outline">
                     View Details
                   </button>
                 </td>
@@ -245,8 +248,15 @@
                   </td>
                   <td class="text-right">
                     <button @click="toggleRow(session.id)" class="btn btn-sm btn-circle btn-ghost tooltip tooltip-left" data-tip="View Details">
-                      <span class="material-symbols-outlined">
-                        {{ expandedRows.includes(session.id) ? 'visibility_off' : 'visibility' }}
+                      <span>
+                        <svg v-if="expandedRows.includes(session.id)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        </svg>
                       </span>
                     </button>
                   </td>
@@ -258,7 +268,12 @@
                     <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                       <div>
                         <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Location</p>
-                        <p class="flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">location_on</span> {{ session.location || 'N/A' }}</p>
+                        <p class="flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        </svg>
+                        </span> {{ session.location || 'N/A' }}</p>
                       </div>
                       <div class="md:col-span-2">
                         <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Description</p>
@@ -267,9 +282,11 @@
                       <div class="md:col-span-3 pt-2">
                         <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Invitation Link</p>
                         <div class="flex items-center gap-2">
-                          <a :href="`/vote/${session.event_uuid}`" class="link link-primary truncate">{{ `/vote/${session.event_uuid}` }}</a>
+                          <a :href="`${session.event_uuid}`" class="link link-primary truncate">{{ `${session.event_uuid}` }}</a>
                           <button @click="copyLink(session.event_uuid)" class="btn btn-xs btn-ghost btn-square">
-                            <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                            </svg>
                           </button>
                         </div>
                       </div>
@@ -346,8 +363,9 @@ const mapSessionData = (s) => {
     location: s.event?.location,
     description: s.event?.description,
     registration_status: s.registration_status,
-    // Determines waitlist visually based on status (Adjust as per your actual backend enums)
-    is_filled: ['WAITLISTED', 'WAITING', 'QUEUE'].includes(s.registration_status?.toUpperCase())
+    seat_capacity: s.seat_capacity,
+    seat_taken: s.seat_taken,
+    is_filled: s.seat_taken >= s.seat_capacity
   };
 };
 
@@ -359,8 +377,8 @@ const fetchDashboardData = async () => {
 
     // 1. Fetch Recent Events
     // ------------------------------------------------------------------
-    const eventsRes = await getAllEvents({ size: 3, sort: 'updated_at_desc' }, headers);
-    recentEvents.value = (eventsRes.data.items || []).map(e => ({
+    const eventsRes = await getAllEvents({ size: 3, sort: 'updated_at_desc' });
+    recentEvents.value = (eventsRes.items || []).map(e => ({
       id: e.id,
       title: e.title,
       is_draft: e.is_draft,
@@ -378,29 +396,26 @@ const fetchDashboardData = async () => {
     const waitRes = await getUserSessions({
       scope: 'joined',
       start_datetime: nowISO,
-      size: 100,
       registration_status_list: ['waitlist', 'available']
-    }, authStore.token);
+    });
 
     // Current & Upcoming Sessions: scope=all, start_datetime=now, registration_status_list = ['confirmed']
     const upcomingRes = await getUserSessions({
       scope: 'all',
       start_datetime: nowISO,
-      size: 200,
       registration_status_list: ['confirmed']
-    }, authStore.token);
+    });
 
     // Past Sessions: scope=all, end_datetime=now
     const pastRes = await getUserSessions({
       scope: 'all',
       end_datetime: nowISO,
-      size: 200,
       registration_status_list: ['confirmed']
-    }, authStore.token);
+    });
 
-    const allWait = (waitRes.data?.items || waitRes.items || []);
-    const allUpcoming = (upcomingRes.data?.items || upcomingRes.items || []);
-    const allPast = (pastRes.data?.items || pastRes.items || []);
+    const allWait = (waitRes.items || []);
+    const allUpcoming = (upcomingRes.items || []);
+    const allPast = (pastRes.items || []);
 
     const waitlist = allWait.map(mapSessionData);
     const upcoming = allUpcoming.map(mapSessionData);
@@ -488,11 +503,6 @@ const paginatedWaitlist = computed(() => waitlistSessions.value.slice(0, waitVis
 const paginatedUpcoming = computed(() => filteredUpcoming.value.slice(0, upcomingVisible.value));
 const paginatedPast = computed(() => pastSessions.value.slice(0, pastVisible.value));
 
-const getPercent = (filled, total) => {
-  if (!total) return 0;
-  return Math.round((filled / total) * 100);
-};
-
 const getInitials = (name) => {
   if (!name) return 'U';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -531,11 +541,11 @@ watch([upcomingSearch, upcomingTimeRange], () => {
   upcomingVisible.value = sessionsPageSize;
 });
 
-const goToCreateEvent = () => router.push('/events/create');
-const goToVote = (uuid) => router.push(`/vote/${uuid}`);
+const goToCreateEvent = () => router.push({name: 'CreateEvents'});
+const goToOverview = (uuid) => router.push({ name: 'EventOverview', params: { event_uuid: uuid } });
 
 const copyLink = (uuid) => {
-  const link = `${window.location.origin}/vote/${uuid}`;
+  const link = `${window.location.origin}/${uuid}`;
   navigator.clipboard.writeText(link);
   alert(`Invitation link copied!`);
 };
