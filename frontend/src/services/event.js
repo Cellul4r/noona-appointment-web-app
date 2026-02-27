@@ -35,6 +35,6 @@ export async function getEventOverview(uuid) {
 }
 
 export async function createEvent(payload) {
-    const res = await api.post(`/events`, payload);
+    const res = await axios.post(`${API_URL}/events`, payload);
     return res.data;
 }
