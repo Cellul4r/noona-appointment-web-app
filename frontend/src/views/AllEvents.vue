@@ -122,6 +122,7 @@
                 <button 
                   v-if="event.is_draft"
                   class="btn btn-primary flex-1 btn-sm"
+                  @click="editEvent(event)"
                 >
                   Edit
                 </button>
@@ -305,6 +306,10 @@ const createEvent = () => {
 const handleLogout = () => {
   authStore.logout();
   router.push('/login');
+};
+
+const editEvent = (evt) => {
+  router.push({ name: 'EditEvent', params: { event_uuid: evt.share_uuid } });
 };
 
 const copyLink = (uuid) => {
