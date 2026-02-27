@@ -16,7 +16,7 @@ export async function getSessions(eventUuid, cursor = null, size = 6) {
     return res.data;
 }
 
-export async function getAllEvents({ scope = 'all', size = 12, cursor = null, title = null } = {}, token = '') {
+export async function getAllEvents({ scope = 'all', size = 12, cursor = null, title = null } = {}) {
     // params object mirrors what the front-end used previously in AllEvents.vue
     const params = { scope, size };
     if (title) params.title = title;
@@ -24,7 +24,6 @@ export async function getAllEvents({ scope = 'all', size = 12, cursor = null, ti
 
     const res = await axios.get(`${API_URL}/events/`, {
         params,
-        headers: { Authorization: `Bearer ${token}` },
         timeout: 5000
     });
     return res.data;
