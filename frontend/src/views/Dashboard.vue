@@ -125,7 +125,7 @@
                   </div>
                 </td>
                 <td>
-                  <div class="badge badge-sm" :class="session.is_filled ? 'badge-info' : 'badge-success'">
+                  <div class="badge badge-sm" :class="session.is_filled ? 'badge-warning' : 'badge-success'">
                     {{ session.is_filled ? 'Wait List' : 'Available' }}
                     {{ `(${session.seat_taken}/${session.seat_capacity})` }}
                   </div>
