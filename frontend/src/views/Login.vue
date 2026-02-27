@@ -5,6 +5,8 @@
       <video autoplay loop muted playsinline class="w-full h-full object-cover">
         <source src="@/assets/boy_working.mp4" type="video/mp4" />
       </video>
+      <!-- <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js"></script>-->
+      <!-- <spline-viewer url="https://prod.spline.design/DnINat72jP3GNnBE/scene.splinecode"></spline-viewer> -->
     </div>
 
     <div class="flex-1 flex justify-center items-center p-6 md:p-14">
