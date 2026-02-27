@@ -28,7 +28,27 @@ export async function getUser() {
   const res = await axios.get(`${API_URL}/auth/me`);
   return res.data;
 }
+const api = axios.create({
+  baseURL: "http://localhost:56733",
+  withCredentials: true, // สำคัญมาก (cookie / session)
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded"
+  }
+});
 
+// login
+export const login = (email, password) => {
+  const formData = new URLSearchParams();
+  formData.append("username", email);
+  formData.append("password", password);
+
+  return api.post("/auth/token", formData);
+};
+
+// get current user
+export const getMe = () => {
+  return api.get("/auth/me");
+};
 // Login with Google OAuth
 export async function loginWithGoogle() {
   window.location.href = `${API_URL}/auth/google/login`;

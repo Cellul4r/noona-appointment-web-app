@@ -330,7 +330,7 @@
                 </svg>
 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                  stroke="currentColor" class="size-6" @click="editSession(s, index)"">
+                  stroke="currentColor" class="size-6" @click="editSession(s, index)">
                   <path stroke-linecap=" round" stroke-linejoin="round"
                   d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                 </svg>
@@ -367,6 +367,7 @@
 <script setup>
 import { ref, watch } from "vue"
 import { useRouter } from 'vue-router'
+import { createEvent } from "@/services/event"
 
 const router = useRouter()
 const isEditing = ref(false)
@@ -394,7 +395,7 @@ const handleCancel = () => {
     end: "",
     capacity: "",
     location: "",
-    desc: ""
+    description: ""
   }
 
   // reset repeat
@@ -427,10 +428,10 @@ const event = ref({
   description: ""
 })
 
-const limitEnabled = ref(true)
-const limit = ref()
+const limitEnabled = ref(false)
+const limit = ref(1)
 watch(limitEnabled, (val) => {
-  if (val) {
+  if (!val) {
     limit.value = 1
   } else {
     limit.value = null
@@ -493,7 +494,6 @@ function editSession(s, index) {
   // เก็บของเดิมไว้
   backupSession.value = { ...s }
 
-  // ✅ ลบออกจาก list ชั่วคราว
   sessions.value.splice(index, 1)
 }
 
@@ -570,10 +570,6 @@ function addSession() {
 }
 
 const saveDraftAndLeave = async () => {
-  //  if (sessions.value.length === 0) {
-  //    alert("Please add at least one session")
-  //    return
-  //  }
   const payload = {
     title: event.value.title,
     location: event.value.location,
@@ -581,23 +577,21 @@ const saveDraftAndLeave = async () => {
     max_sessions_per_user: limitEnabled.value ? limit.value : null,
     is_draft: true,
     sessions: sessions.value.map(s => ({
-      start_datetime: new Date(s.start).toISOString(),
-      end_datetime: new Date(s.end).toISOString(),
-      seat_capacity: Number(s.capacity)
+      start_datetime: s.start ? new Date(s.start).toISOString() : null,
+      end_datetime: s.end ? new Date(s.end).toISOString() : null,
+      seat_capacity: s.capacity ? Number(s.capacity) : 0
     }))
   }
 
   try {
-    await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
+    await createEvent(payload)
 
-    document.getElementById("my_modal_3").close()
+    const modal = document.getElementById("my_modal_3")
+    modal?.close()
+
     router.push('/events')
   } catch (err) {
-    console.error(err)
+    console.error("Save draft failed:", err)
   }
 }
 
@@ -640,22 +634,17 @@ const submit = async () => {
     max_sessions_per_user: limitEnabled.value ? limit.value : null,
     is_draft: false,
     sessions: sessions.value.map(s => ({
-      start_datetime: new Date(s.start).toISOString(),
-      end_datetime: new Date(s.end).toISOString(),
-      seat_capacity: Number(s.capacity)
+      start_datetime: s.start ? new Date(s.start).toISOString() : null,
+      end_datetime: s.end ? new Date(s.end).toISOString() : null,
+      seat_capacity: s.capacity ? Number(s.capacity) : 0
     }))
   }
 
   try {
-    await fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-
+    await createEvent(payload)
     router.push('/events')
   } catch (err) {
-    console.error(err)
+    console.error("Create event failed:", err)
   }
 }
 

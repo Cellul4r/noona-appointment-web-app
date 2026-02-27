@@ -11,8 +11,8 @@
 
     <div class="flex-1 flex justify-center items-center p-6 md:p-14">
       <!-- ถ้ายังไม่ login -->
-      <div v-if="!auth.user">
-        <form @submit.preventhandleLogin="" class="space-y-4 w-full max-w-md">
+      <div>
+        <form @submit.prevent="handleLogin" class="space-y-4 w-full max-w-md">
           <h2 class="flex text-3xl font-semibold tracking-tight">Welcome back!</h2>
           <p class="flex text-gray-600 leading-relaxed">Please enter your details to manage your sessions</p>
           

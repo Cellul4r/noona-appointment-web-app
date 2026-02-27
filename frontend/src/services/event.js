@@ -33,3 +33,8 @@ export async function getEventOverview(uuid) {
     const res = await axios.get(`${API_URL}/events/overview/${uuid}`);
     return res.data;
 }
+
+export async function createEvent(payload) {
+    const res = await api.post(`/events`, payload);
+    return res.data;
+}
