@@ -1,24 +1,37 @@
 <script setup>
-import { ref } from "vue"
+import { ref, computed, onMounted } from "vue"
+import { useAuthStore } from "../store/authStore"
 const isOpen = ref(false)
+
+const authStore = useAuthStore()
+
+onMounted(() => {
+    if (!authStore.user) {
+        authStore.updateUser()
+    }
+})
+
+const getAvatar = () => {
+    return authStore.user?.profile_image
+}
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 bg-white shadow px-6">
+  <nav class="sticky top-0 z-50 bg-base-200 shadow px-6">
     
     <!-- Top Bar -->
-    <div class="flex justify-between items-center h-16">
+    <div class="flex justify-between items-center h-20">
       
       <!-- Left: Logo -->
         <div class="hidden md:flex items-center space-x-4 text-xl font-bold"> 
             <router-link 
             to="/dashboard" 
-            class="text-xl font-bold hover:opacity-80"
+            class="text-2xl font-bold hover:opacity-80 mr-9"
             >
-            MyApp
+            Noona
             </router-link>
             <router-link to="/dashboard" v-slot="{ isActive }"> 
-                <span :class="[ 'btn btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" > 
+                <span :class="[ 'btn p-0 btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" > 
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0 1 12 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5" />
                     </svg>
@@ -26,7 +39,7 @@ const isOpen = ref(false)
                     Dashboard </span> 
             </router-link> 
             <router-link to="/events" v-slot="{ isActive }"> 
-                <span :class="[ 'btn btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" > 
+                <span :class="[ 'btn p-0 btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" > 
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" />
                     </svg>
@@ -35,7 +48,7 @@ const isOpen = ref(false)
             </router-link> 
             
             <router-link to="/calendar" v-slot="{ isActive }"> 
-                <span :class="[ 'btn btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" >
+                <span :class="[ 'btn p-0 btn-ghost', isActive ? 'text-base-content font-bold' : 'text-base-content/60' ]" >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 2.994v2.25m10.5-2.25v2.25m-14.252 13.5V7.491a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v11.251m-18 0a2.25 2.25 0 0 0 2.25 2.25h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5a2.25 2.25 0 0 1 2.25-2.25h13.5a2.25 2.25 0 0 1 2.25 2.25v7.5m-6.75-6h2.25m-9 2.25h4.5m.002-2.25h.005v.006H12v-.006Zm-.001 4.5h.006v.006h-.006v-.005Zm-2.25.001h.005v.006H9.75v-.006Zm-2.25 0h.005v.005h-.006v-.005Zm6.75-2.247h.005v.005h-.005v-.005Zm0 2.247h.006v.006h-.006v-.006Zm2.25-2.248h.006V15H16.5v-.005Z" />
                     </svg>
@@ -43,7 +56,7 @@ const isOpen = ref(false)
             </router-link>
         </div>
 
-        <!-- Mobile Button -->
+        <!-- Hamburger Button -->
         <button
             class="md:hidden text-2xl"
             @click="isOpen = !isOpen"
@@ -54,9 +67,9 @@ const isOpen = ref(false)
         <div class="dropdown dropdown-end">
   
             <!-- Avatar (ปุ่มกด) -->
-            <div tabindex="0" role="button" class="avatar avatar-online cursor-pointer">
+            <div tabindex="0" role="button" class="avatar cursor-pointer">
                 <div class="bg-neutral text-neutral-content w-10 rounded-full">
-                <!-- <span class="text-xl">AI</span> -->
+                <img :src="getAvatar()" alt="Profile Image">
                 </div>
             </div>
 
