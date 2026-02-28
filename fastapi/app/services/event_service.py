@@ -81,7 +81,8 @@ class EventService:
                     event_id=ev.id,  # Keep using internal ID for foreign keys!
                     start_datetime=s.start_datetime,
                     end_datetime=s.end_datetime,
-                    seat_capacity=s.seat_capacity,
+                    location=s.location,
+                    seat_capacity=s.seat_capacity or None,
                 )
                 db.add(sess)
 
