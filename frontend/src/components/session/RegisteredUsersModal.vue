@@ -1,5 +1,5 @@
 <template>
-    <dialog class="modal" :open="isShowRegisteredUser">
+    <dialog class="modal transition-all duration-500" :open="isShowRegisteredUser">
         <div class="modal-box relative">
             <select v-model="registrationStatus" class="absolute right-4 select select-sm select-primary w-fit">
                 <option value="confirmed">Confirmed</option>
