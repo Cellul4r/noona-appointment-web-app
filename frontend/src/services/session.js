@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -37,3 +38,16 @@ export async function confirmSession(sessionUuid) {
   const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/confirm`, {});
   return res.data;
 }
+=======
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
+
+export async function getRegisteredUsers(session_id, status = "confirmed", cursor = null, size = 10) {
+    const params = { status, size }
+    if (cursor) params.cursor = cursor
+
+    const res = await axios.get(`${API_URL}/sessions/${session_id}/users`, { params });
+    return res.data;
+}
+>>>>>>> e605cd6 (feat(frontend): add Calendar page, date-fns, full calendar libary implement logic connect with backend api to get calendar session information)

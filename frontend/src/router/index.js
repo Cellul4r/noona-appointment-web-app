@@ -7,6 +7,7 @@ import CreateEvents from "../views/CreateEvents.vue";
 import EventOverview from '../views/EventOverview.vue';
 import Setting from "../views/Setting.vue";
 import EditEvent from '../views/EditEvent.vue';
+import Calendar from '../views/Calendar.vue';
 
 const routes = [
   { path: '/login', component: Login, meta: { hideNavbar: true } },
@@ -37,7 +38,7 @@ const routes = [
     meta: { hideNavbar: true }
   },
   {
-    path: '/events/overview/:event_uuid',
+    path: '/event/overview/:event_uuid',
     name: 'EventOverview',
     component: EventOverview,
   },
@@ -53,6 +54,11 @@ const routes = [
     component: EditEvent,
     meta: { requiresAuth: true },
     meta: { hideNavbar: true }
+  },
+  {
+    path: '/calendar',
+    name: 'Calendar',
+    component: Calendar,
   }
 
 
