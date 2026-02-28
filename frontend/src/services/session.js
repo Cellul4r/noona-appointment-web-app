@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -10,7 +9,7 @@ export async function getUserSessions(params = {}) {
     // Add this custom serializer to strip out the [] from arrays
     paramsSerializer: (paramsObj) => {
       const searchParams = new URLSearchParams();
-      
+
       Object.keys(paramsObj).forEach(key => {
         const value = paramsObj[key];
         if (Array.isArray(value)) {
@@ -21,11 +20,11 @@ export async function getUserSessions(params = {}) {
           searchParams.append(key, value);
         }
       });
-      
+
       return searchParams.toString();
     }
   });
-  
+
   return res.data;
 }
 
@@ -38,16 +37,11 @@ export async function confirmSession(sessionUuid) {
   const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/confirm`, {});
   return res.data;
 }
-=======
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export async function getRegisteredUsers(session_id, status = "confirmed", cursor = null, size = 10) {
-    const params = { status, size }
-    if (cursor) params.cursor = cursor
+  const params = { status, size }
+  if (cursor) params.cursor = cursor
 
-    const res = await axios.get(`${API_URL}/sessions/${session_id}/users`, { params });
-    return res.data;
+  const res = await axios.get(`${API_URL}/sessions/${session_id}/users`, { params });
+  return res.data;
 }
->>>>>>> e605cd6 (feat(frontend): add Calendar page, date-fns, full calendar libary implement logic connect with backend api to get calendar session information)
