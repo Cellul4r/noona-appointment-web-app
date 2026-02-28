@@ -19,7 +19,7 @@
                     </div>
 
                     <div v-else
-                        class="card bg-base-100 border border-base-300 shadow-lg rounded-2xl wrap-break-word lg:sticky lg:top-24">
+                        class="card bg-base-100 border border-gray-200 shadow-lg rounded-2xl wrap-break-word lg:sticky lg:top-24">
                         <div class="card-body gap-5">
 
                             <h2 class="card-title text-xl wrap-break-word leading-tight">
@@ -65,10 +65,10 @@
                 <div class="order-2 lg:order-1 lg:col-span-3">
 
                     <!-- Share Section -->
-                    <div class="bg-base-100 p-6 rounded-2xl border border-base-300 shadow-md">
+                    <div class="bg-base-100 p-6 rounded-2xl border border-gray-200 shadow-md">
                         <div class="flex items-center gap-2 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-6 text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="blue"
+                                class="size-6 text-primary" fill="blue">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                             </svg>
@@ -89,7 +89,7 @@
                         </div>
 
                         <div class="flex flex-col md:flex-row justify-between items-center
-                      bg-base-200 p-4 rounded-xl gap-3 mt-4">
+                        p-4 rounded-xl gap-3 mt-4 border-gray-300 border bg-slate-100">
 
                             <div>
                                 <h3 class="font-bold">Participant Restrictions</h3>
@@ -98,10 +98,11 @@
                                 </p>
                             </div>
 
-                            <div v-if="event.max_sessions_per_user" class="badge badge-info rounded-full p-4">
+                            <div v-if="event.max_sessions_per_user"
+                                class="badge rounded-full p-4 bg-indigo-100 text-indigo-900 font-bold">
                                 Limit: {{ event.max_sessions_per_user }} sessions per person
                             </div>
-                            <div v-else class="badge badge-info rounded-full p-4">
+                            <div v-else class="badge rounded-full p-4">
                                 No session limit
                             </div>
                         </div>
@@ -114,12 +115,12 @@
                             </p>
 
                             <div class="join w-full">
-                                <input class="input join-item input-bordered w-full" readonly :disabled="isDraftEvent"
-                                    :value="isDraftEvent ? '' : shareLink"
+                                <input class="input join-item input-bordered w-full bg-slate-100 border-gray-300"
+                                    readonly :disabled="isDraftEvent" :value="isDraftEvent ? '' : shareLink"
                                     :placeholder="isDraftEvent ? 'No share link for draft event' : ''" />
 
-                                <button class="btn btn-outline btn-neutral join-item" :disabled="isDraftEvent"
-                                    @click="copyLink">
+                                <button class="border border-gray-300 btn-outline btn join-item"
+                                    :disabled="isDraftEvent" @click="copyLink">
                                     {{ copied ? 'Copied!' : 'Copy' }}
                                 </button>
                             </div>
@@ -166,13 +167,22 @@
         <!-- Edit Event / Register button -->
         <div class="fixed bottom-0 left-0 right-0 bg-base-100/95 backdrop-blur border-t border-base-300 shadow-lg p-4">
             <div class="mx-auto max-w-7xl flex justify-end gap-3">
-                <button class="btn btn-outline btn-neutral" @click="goToEditEvent">
+                <button v-if="isCurrentUserHost" class="btn btn-outline btn-neutral" @click="goToEditEvent">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-5">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                     </svg>
                     Edit Event
+                </button>
+                <button v-if="isCurrentUserHost" class="btn btn-outline btn-error"
+                    :disabled="!isCurrentUserHost || deletingEvent" @click="onDeleteEvent">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.166L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.245-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                    {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
                 </button>
                 <button class="btn btn-primary" :disabled="isDraftEvent" @click="goToRegister">
                     Register
@@ -193,7 +203,7 @@ import { storeToRefs } from 'pinia'
 import SessionCard from '../components/session/SessionCard.vue'
 import RegisteredUsersModal from '../components/session/RegisteredUsersModal.vue'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
-import { getEvent, getSessions } from '../services/event'
+import { deleteEvent, getEvent, getSessions } from '../services/event'
 import { useAuthStore } from '../store/authStore'
 
 const route = useRoute()
@@ -215,6 +225,7 @@ const sessionsLoading = ref(false)
 const nextCursor = ref(null)
 const selectedSessionUuid = ref(null)
 const isShowRegisteredUser = ref(false)
+const deletingEvent = ref(false)
 
 const error = ref(null)
 const copied = ref(false) // copy share link state
@@ -250,6 +261,24 @@ function copyLink() {
 function goToEditEvent() {
     if (!isCurrentUserHost.value) return
     router.push({ name: 'EditEvent', params: { event_uuid: route.params.event_uuid } })
+}
+
+async function onDeleteEvent() {
+    if (!isCurrentUserHost.value || deletingEvent.value) return
+
+    const confirmed = window.confirm('Delete this event? This action cannot be undone.')
+    if (!confirmed) return
+
+    deletingEvent.value = true
+    error.value = null
+    try {
+        await deleteEvent(route.params.event_uuid)
+        router.replace({ name: 'AllEvents' })
+    } catch (err) {
+        error.value = 'Failed to delete event.'
+    } finally {
+        deletingEvent.value = false
+    }
 }
 
 function goToRegister() {

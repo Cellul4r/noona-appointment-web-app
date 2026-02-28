@@ -38,3 +38,7 @@ export async function createEvent(payload) {
     const res = await axios.post(`${API_URL}/events`, payload);
     return res.data;
 }
+
+export async function deleteEvent(uuid) {
+    await axios.delete(`${API_URL}/events/${uuid}`);
+}
