@@ -65,7 +65,7 @@
 <script setup>
 import { computed } from "vue"
 import { TZDate } from "@date-fns/tz"
-import { format } from "date-fns"
+import { format, formatDuration, intervalToDuration } from "date-fns"
 
 const props = defineProps({
     session: {
@@ -96,13 +96,13 @@ const showRegisteredUsers = () => {
 
 const startDate = computed(() =>
     props.session.start_datetime
-        ? new TZDate(props.session.start_datetime)
+        ? new TZDate(props.session.start_datetime, props.timezone)
         : null
 )
 
 const endDate = computed(() =>
     props.session.end_datetime
-        ? new Date(props.session.end_datetime)
+        ? new TZDate(props.session.end_datetime, props.timezone)
         : null
 )
 
@@ -120,59 +120,34 @@ const sameDayDisplay = computed(() => {
     if (!startDate.value || !endDate.value) return ""
 
     // Same day: "Mon, Feb 24, 2026 · 02:30 PM - 03:30 PM"
-    // const date = format(startDate.value, "iii, MMM d, yyyy")
-    const date = startDate.value.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-    })
-    const startTime = startDate.value.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit"
-    })
-    const endTime = endDate.value.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit"
-    })
+    const date = format(startDate.value, "iii, MMM d, yyyy")
+    const startTime = format(startDate.value, "hh:mm aa")
+    const endTime = format(endDate.value, "hh:mm aa")
+
     return `${date} · ${startTime} - ${endTime}`
 })
 
 const startDateLine = computed(() => {
     if (!startDate.value) return ""
 
-    return startDate.value.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-    })
+    return format(startDate.value, "iii, MMM d, yyyy - hh:mm aa")
 })
 
 const endDateLine = computed(() => {
     if (!endDate.value) return ""
 
-    return endDate.value.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-    })
+    return format(endDate.value, "iii, MMM d, yyyy - hh:mm aa")
 })
 
 const durationDisplay = computed(() => {
     if (!startDate.value || !endDate.value) return ""
 
-    const diffMs = endDate.value - startDate.value
-    const diffMins = Math.floor(diffMs / 60000)
-    const hours = Math.floor(diffMins / 60)
-    const minutes = diffMins % 60
+    const duration = intervalToDuration({
+        start: startDate.value,
+        end: endDate.value
+    })
 
-    if (hours === 0) return `${minutes} min`
-    if (minutes === 0) return `${hours}h`
-    return `${hours}h ${minutes}m`
+    return formatDuration(duration, { format: ['years', 'months', 'days', 'hours', 'minutes'] })
 })
 
 /* ---------------- CAPACITY ---------------- */
@@ -209,10 +184,7 @@ const statusClass = computed(() => {
 
 const currentUserRegistrationStatus = computed(() => {
     const status = props.session?.registration_status
-    if (!status) return null
-
-    const normalized = String(status).replace(/_/g, " ").toLowerCase()
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+    return status
 })
 
 const registrationStatusKey = computed(() => {
