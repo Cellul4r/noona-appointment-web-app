@@ -115,6 +115,7 @@ class SessionService:
         registration_status_list: list[RegistrationStatus] = [
             RegistrationStatus.CONFIRMED,
             RegistrationStatus.WAITLIST,
+            RegistrationStatus.AVAILABLE,
         ],
     ):
         # get all sessions that user is registered for or hosting, and filter by date range if provided
@@ -160,9 +161,14 @@ class SessionService:
         query = query.options(selectinload(SessionModel.event).selectinload(Event.host))
 
         # also filter by date range if provided
-        if end_to:
+        if start_from and end_to:
+            query = query.where(
+                SessionModel.start_datetime < end_to,
+                SessionModel.end_datetime >= start_from,
+            )
+        elif end_to:
             query = query.where(SessionModel.start_datetime < end_to)
-        if start_from:
+        elif start_from:
             query = query.where(SessionModel.end_datetime >= start_from)
 
         # natural order by for sessions
