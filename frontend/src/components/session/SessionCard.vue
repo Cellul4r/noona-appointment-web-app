@@ -35,7 +35,7 @@
 
         <!-- Capacity Progress -->
         <div v-if="session.seat_capacity !== null" class="w-full mb-4">
-            <progress class="progress progress-primary w-full h-2" :value="capacityPercent" max="100" />
+            <progress class="progress progress-secondary w-full h-2" :value="capacityPercent" max="100" />
         </div>
 
         <!-- Capacity Button -->
@@ -187,23 +187,12 @@ const currentUserRegistrationStatus = computed(() => {
     return status
 })
 
-const registrationStatusKey = computed(() => {
-    const raw = props.session?.registration_status
-    if (!raw) return null
-
-    const normalized = String(raw).toLowerCase()
-    if (["confirmed", "waitlist", "available"].includes(normalized)) {
-        return normalized
-    }
-    return null
-})
-
-const showRegistrationStatusBadge = computed(() => Boolean(registrationStatusKey.value))
+const showRegistrationStatusBadge = computed(() => Boolean(currentUserRegistrationStatus.value))
 
 const registrationStatusBadgeClass = computed(() => {
-    if (registrationStatusKey.value === "confirmed") return "badge-success"
-    if (registrationStatusKey.value === "waitlist") return "badge-warning"
-    if (registrationStatusKey.value === "available") return "badge-info"
+    if (currentUserRegistrationStatus.value === "confirmed") return "badge-success"
+    if (currentUserRegistrationStatus.value === "waitlist") return "badge-warning"
+    if (currentUserRegistrationStatus.value === "available") return "badge-info"
     return "badge-neutral"
 })
 </script>
