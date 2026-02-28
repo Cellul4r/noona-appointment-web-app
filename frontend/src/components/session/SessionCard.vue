@@ -1,36 +1,48 @@
 <template>
-    <div class="card bg-base-100 rounded-2xl p-4 border hover:shadow-xl transition-all duration-300">
-        <RegisteredUsersModal :is-show-registered-user="isShowRegisteredUser"
-            :is-current-user-host="props.isCurrentUserHost" :session-id="props.session.id"
-            @close="isShowRegisteredUser = false" />
+    <div
+        class="card bg-base-100 rounded-2xl p-4 border border-base-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
         <!-- Date/Time Range -->
-        <div class="mb-3">
-            <div v-if="isSameDay" class="text-base font-semibold">
+        <div class="mb-4">
+            <!-- same day display format -->
+            <div v-if="isSameDay" class="text-base font-semibold text-base-content">
                 <div>{{ sameDayDisplay }}</div>
-                <div class="text-sm font-normal w-fit p-1 rounded-full">Duration: {{ durationDisplay }}</div>
+                <div class="mt-1 text-xs font-medium w-fit px-2 py-1 rounded-full bg-base-200 text-base-content/70">
+                    Duration: {{ durationDisplay }}</div>
             </div>
-            <div v-else class="text-base font-semibold">
-                <div>{{ startDateLine }}</div>
-                <div class="text-base font-normal">→ {{ endDateLine }}</div>
-                <div class="text-sm font-normal">Duration: {{ durationDisplay }}</div>
+            <!-- else split into 2 lines -->
+            <div v-else class="text-sm text-base-content">
+                <div>
+                    <span class="font-bold">Start:</span>
+                    <span class="font-medium"> {{ startDateLine }}</span>
+                </div>
+                <div class="mt-1">
+                    <span class="font-bold">End:</span>
+                    <span class="font-medium"> {{ endDateLine }}</span>
+                </div>
+                <div class="mt-1 text-xs font-medium w-fit px-2 py-1 rounded-full bg-base-200 text-base-content/70">
+                    Duration: {{ durationDisplay }}</div>
             </div>
         </div>
 
         <!-- Status Badge -->
-        <div class="mb-2">
-            <span class="badge" :class="statusClass">{{ statusText }}</span>
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="badge badge-sm" :class="statusClass">{{ statusText }}</span>
+        </div>
+
+        <div v-if="session.location" class="mb-3 text-sm text-base-content/80">
+            <span class="font-semibold">Location:</span> {{ session.location }}
         </div>
 
         <!-- Capacity Progress -->
-        <div v-if="session.seat_capacity !== null" class="w-full mb-3">
+        <div v-if="session.seat_capacity !== null" class="w-full mb-4">
             <progress class="progress progress-primary w-full h-2" :value="capacityPercent" max="100" />
         </div>
 
         <!-- Capacity Button -->
-        <div class="flex justify-between justify-content-center">
-            <button class="btn btn-soft rounded-full text-sm font-medium" :class="capacityButtonClass"
-                @click="showRegisteredUsers">
-                <svg xmlns=" http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+        <div class="flex items-center justify-between">
+            <button class="btn btn-outline btn-neutral rounded-full text-sm font-medium"
+                :disabled="!props.isCurrentUserHost" @click="showRegisteredUsers">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-4">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
@@ -42,13 +54,18 @@
                     {{ session.seat_taken }}
                 </div>
             </button>
+
+            <span v-if="showRegistrationStatusBadge" class="badge badge-sm ml-3" :class="registrationStatusBadgeClass">
+                {{ currentUserRegistrationStatus }}
+            </span>
         </div>
     </div>
 </template>
 
 <script setup>
-import { computed, ref } from "vue"
-import RegisteredUsersModal from "./RegisteredUsersModal.vue";
+import { computed } from "vue"
+import { TZDate } from "@date-fns/tz"
+import { format } from "date-fns"
 
 const props = defineProps({
     session: {
@@ -59,20 +76,27 @@ const props = defineProps({
         type: Boolean,
         required: false
     },
+    timezone: {
+        type: String,
+        required: false,
+        default: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/London"
+    }
 })
 
-const isShowRegisteredUser = ref(false);
+const emit = defineEmits(['open-registered-users'])
 
 const showRegisteredUsers = () => {
     if (!props.isCurrentUserHost) return
-    isShowRegisteredUser.value = true;
+    const sessionUuid = props.session.uuid
+    if (!sessionUuid) return
+    emit('open-registered-users', sessionUuid) // emit event to parent to open the modal and pass sessionUuid value
 }
 
 /* ---------------- DATE & TIME ---------------- */
 
 const startDate = computed(() =>
     props.session.start_datetime
-        ? new Date(props.session.start_datetime)
+        ? new TZDate(props.session.start_datetime)
         : null
 )
 
@@ -96,6 +120,7 @@ const sameDayDisplay = computed(() => {
     if (!startDate.value || !endDate.value) return ""
 
     // Same day: "Mon, Feb 24, 2026 · 02:30 PM - 03:30 PM"
+    // const date = format(startDate.value, "iii, MMM d, yyyy")
     const date = startDate.value.toLocaleDateString(undefined, {
         weekday: "short",
         month: "short",
@@ -160,12 +185,6 @@ const capacityPercent = computed(() => {
     ) * 100
 })
 
-const capacityButtonClass = computed(() => {
-    if (capacityPercent.value >= 100) return "btn-error"
-    if (capacityPercent.value > 75) return "btn-warning"
-    return "btn-neutral"
-})
-
 /* ---------------- STATUS ---------------- */
 
 const statusText = computed(() => {
@@ -185,6 +204,34 @@ const statusClass = computed(() => {
     if (statusText.value === "Full") return "badge-error"
     if (statusText.value === "Upcoming") return "badge-info"
     if (statusText.value === "Ongoing") return "badge-success"
-    return "badge-ghost"
+    return "badge-neutral"
+})
+
+const currentUserRegistrationStatus = computed(() => {
+    const status = props.session?.registration_status
+    if (!status) return null
+
+    const normalized = String(status).replace(/_/g, " ").toLowerCase()
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1)
+})
+
+const registrationStatusKey = computed(() => {
+    const raw = props.session?.registration_status
+    if (!raw) return null
+
+    const normalized = String(raw).toLowerCase()
+    if (["confirmed", "waitlist", "available"].includes(normalized)) {
+        return normalized
+    }
+    return null
+})
+
+const showRegistrationStatusBadge = computed(() => Boolean(registrationStatusKey.value))
+
+const registrationStatusBadgeClass = computed(() => {
+    if (registrationStatusKey.value === "confirmed") return "badge-success"
+    if (registrationStatusKey.value === "waitlist") return "badge-warning"
+    if (registrationStatusKey.value === "available") return "badge-info"
+    return "badge-neutral"
 })
 </script>
