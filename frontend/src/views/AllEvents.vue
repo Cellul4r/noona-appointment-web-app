@@ -299,7 +299,7 @@ const loadMore = () => {
 };
 
 const createEvent = () => {
-  router.push('/create_events');
+  router.push('/event/create');
   // console.log("Create event clicked");
 };
 

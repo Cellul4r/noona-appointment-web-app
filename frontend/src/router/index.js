@@ -31,7 +31,7 @@ const routes = [
     meta: { requiresAuth: true } //prevents access if not logged in
   },
   {
-    path: '/create_events',
+    path: '/event/create',
     name: 'CreateEvents',
     component: CreateEvents,
     meta: { requiresAuth: true },
