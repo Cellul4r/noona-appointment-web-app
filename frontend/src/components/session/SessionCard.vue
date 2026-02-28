@@ -1,6 +1,6 @@
 <template>
     <div
-        class="card bg-base-100 rounded-2xl p-4 border border-base-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+        class="card bg-base-100 rounded-2xl p-4 border border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
         <!-- Date/Time Range -->
         <div class="mb-4">
             <!-- same day display format -->
@@ -41,7 +41,8 @@
 
         <!-- Capacity Button -->
         <div class="flex items-center justify-between">
-            <button class="btn btn-outline btn-neutral rounded-full text-sm font-medium"
+            <button
+                class="btn btn-sm border-indigo-300 bg-indigo-100 text-indigo-800 hover:bg-indigo-400 rounded-full text-sm font-medium"
                 :disabled="!props.isCurrentUserHost" @click="showRegisteredUsers">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-4">
@@ -166,7 +167,7 @@ const capacityPercent = computed(() => {
 })
 
 const progressCapacityClass = computed(() => {
-    if (capacityPercent.value < 50) return "progress-info"
+    if (capacityPercent.value < 50) return "progress-success"
     if (capacityPercent.value < 80) return "progress-warning"
     return "progress-error"
 })
@@ -187,10 +188,10 @@ const statusText = computed(() => {
 })
 
 const statusClass = computed(() => {
-    if (statusText.value === "Full") return "badge-error"
-    if (statusText.value === "Upcoming") return "badge-info"
-    if (statusText.value === "Ongoing") return "badge-success"
-    return "badge-neutral"
+    if (statusText.value === "Full") return "bg-red-300 text-red-800"
+    if (statusText.value === "Upcoming") return "bg-sky-300 text-sky-800"
+    if (statusText.value === "Ongoing") return "bg-amber-300 text-amber-800"
+    return "bg-emerald-300 text-emerald-800"
 })
 
 const currentUserRegistrationStatus = computed(() => {
