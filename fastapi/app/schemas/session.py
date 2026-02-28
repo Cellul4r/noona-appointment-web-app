@@ -10,6 +10,7 @@ import uuid
 class SessionBase(BaseModel):
     start_datetime: datetime
     end_datetime: datetime
+    location: str = Field(default="", max_length=255)
     seat_capacity: int = Field(default=1, ge=1)
 
     @model_validator(mode="after")
@@ -53,6 +54,7 @@ class SessionPrivate(SessionPublic):
 class SessionUpdate(BaseModel):
     start_datetime: datetime | None = Field(default=None)
     end_datetime: datetime | None = Field(default=None)
+    location: str | None = Field(default=None, max_length=255)
     seat_capacity: int | None = Field(default=None, ge=1)
 
 
