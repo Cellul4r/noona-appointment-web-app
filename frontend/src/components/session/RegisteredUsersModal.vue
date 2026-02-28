@@ -27,13 +27,13 @@
             <div class="modal-action">
                 <form method="dialog">
                     <!-- if there is a button in form, it will close the modal -->
-                    <button class="btn">Close</button>
+                    <button class="btn" @click="emit('close')">Close</button>
                 </form>
             </div>
 
         </div>
         <form method="dialog" class="modal-backdrop">
-            <button>close</button>
+            <button @click="emit('close')">close</button>
         </form>
     </dialog>
 </template>
@@ -42,9 +42,11 @@ import { computed, ref, watch } from 'vue';
 import { getRegisteredUsers } from '../../services/session';
 import LoadingSpinner from '../LoadingSpinner.vue';
 
+const emit = defineEmits(['close'])
+
 const props = defineProps({
-    sessionId: {
-        type: Number,
+    sessionUuid: {
+        type: [String, Number],
         required: true
     },
     isShowRegisteredUser: {
@@ -68,9 +70,13 @@ const hasMore = computed(() => {
 })
 
 const fetchRegisteredUsers = async () => {
+    if (!props.isCurrentUserHost) {
+        emit('close')
+        return
+    }
     loading.value = true;
     try {
-        const data = await getRegisteredUsers(props.sessionId, registrationStatus.value, nextCursor.value);
+        const data = await getRegisteredUsers(props.sessionUuid, registrationStatus.value, nextCursor.value);
         registeredUsers.value.push(...data.items);
         nextCursor.value = data.next_page;
     } catch (err) {
@@ -94,8 +100,12 @@ watch(() => props.isShowRegisteredUser, () => {
         registeredUsers.value = [];
         nextCursor.value = null;
     } else {
+        if (!props.isCurrentUserHost) {
+            emit('close')
+            return
+        }
         fetchRegisteredUsers();
     }
 
-})
+}, { immediate: true })
 </script>
