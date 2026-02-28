@@ -35,7 +35,7 @@
 
         <!-- Capacity Progress -->
         <div v-if="session.seat_capacity !== null" class="w-full mb-4">
-            <progress class="progress progress-secondary w-full h-2" :value="capacityPercent" max="100" />
+            <progress class="progress w-full h-2" :class="progressCapacityClass" :value="capacityPercent" max="100" />
         </div>
 
         <!-- Capacity Button -->
@@ -158,6 +158,12 @@ const capacityPercent = computed(() => {
         props.session.seat_taken /
         props.session.seat_capacity
     ) * 100
+})
+
+const progressCapacityClass = computed(() => {
+    if (capacityPercent.value < 50) return "progress-info"
+    if (capacityPercent.value < 80) return "progress-warning"
+    return "progress-error"
 })
 
 /* ---------------- STATUS ---------------- */
