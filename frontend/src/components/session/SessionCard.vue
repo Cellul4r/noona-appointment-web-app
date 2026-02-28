@@ -4,19 +4,20 @@
         <!-- Date/Time Range -->
         <div class="mb-4">
             <!-- same day display format -->
-            <div v-if="isSameDay" class="text-base font-semibold text-base-content">
-                <div>{{ sameDayDisplay }}</div>
+            <div v-if="isSameDay" class="text-sm font-semibold text-base-content">
+                <div class="text-base">Date: {{ dateDisplay }}</div>
+                <div>Time: {{ timeDisplay }}</div>
                 <div class="mt-1 text-xs font-medium w-fit px-2 py-1 rounded-full bg-base-200 text-base-content/70">
                     Duration: {{ durationDisplay }}</div>
             </div>
             <!-- else split into 2 lines -->
-            <div v-else class="text-sm text-base-content">
+            <div v-else class="text-base text-base-content">
                 <div>
-                    <span class="font-bold">Start:</span>
+                    <span class="font-bold">Start: </span>
                     <span class="font-medium"> {{ startDateLine }}</span>
                 </div>
                 <div class="mt-1">
-                    <span class="font-bold">End:</span>
+                    <span class="font-bold">End: </span>
                     <span class="font-medium"> {{ endDateLine }}</span>
                 </div>
                 <div class="mt-1 text-xs font-medium w-fit px-2 py-1 rounded-full bg-base-200 text-base-content/70">
@@ -116,15 +117,19 @@ const isSameDay = computed(() => {
     )
 })
 
-const sameDayDisplay = computed(() => {
+// only used if start and end are on the same day, format: "Mon, Feb 24, 2026 - 02:30 PM - 03:30 PM"
+const dateDisplay = computed(() => {
+    if (!startDate.value) return ""
+
+    return format(startDate.value, "iii, MMM d, yyyy")
+})
+const timeDisplay = computed(() => {
     if (!startDate.value || !endDate.value) return ""
 
-    // Same day: "Mon, Feb 24, 2026 · 02:30 PM - 03:30 PM"
-    const date = format(startDate.value, "iii, MMM d, yyyy")
     const startTime = format(startDate.value, "hh:mm aa")
     const endTime = format(endDate.value, "hh:mm aa")
 
-    return `${date} · ${startTime} - ${endTime}`
+    return `${startTime} - ${endTime}`
 })
 
 const startDateLine = computed(() => {
