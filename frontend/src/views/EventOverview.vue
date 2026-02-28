@@ -35,11 +35,12 @@
                                 </svg> {{ event.location }}
                             </p>
 
-                            <p>
+                            <div>
                                 <img :src="event?.host?.profile_image" class="w-6 h-6 rounded-full inline mr-2">
-                                {{ event?.host?.full_name }} {{ event?.host?.full_name === user?.full_name ? '(Me)' : ''
-                                }}
-                            </p>
+                                <div v-if="!isCurrentUserHost" class="inline">{{
+                                    event?.host?.full_name }}</div>
+                                <div v-else class="inline">{{ event?.host?.full_name }} (You)</div>
+                            </div>
                         </div>
 
                         <div class="divider my-0"></div>
@@ -107,13 +108,14 @@
                     </div>
                     <h2 class="text-xl font-bold mb-5">Session Details</h2>
                     <div class="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                        <SessionCard v-for="session in sessions" :key="session.id" :session="session" />
+                        <SessionCard v-for="session in sessions" :key="session.id" :session="session"
+                            :is-current-user-host="isCurrentUserHost" />
                     </div>
 
                 </div>
 
                 <!-- Pagination -->
-                <div v-if="nextCursor" class="flex justify-center mt-0">
+                <div v-if="nextCursor" class="flex justify-center mt-4">
                     <button class="btn btn-soft" :disabled="sessionsLoading" @click="loadMore">
                         {{ sessionsLoading ? "Loading..." : "Load More" }}
                     </button>
@@ -142,17 +144,21 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import SessionCard from '../components/session/SessionCard.vue'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { getEvent, getSessions } from '../services/event'
+import { useAuthStore } from '../store/authStore'
 
 const route = useRoute()
 const router = useRouter()
 
 /* ---------------- STATE ---------------- */
 
+const authStore = useAuthStore()
+const { user } = storeToRefs(authStore)
 const event = ref({})
 const sessions = ref([])
 
@@ -163,6 +169,13 @@ const nextCursor = ref(null)
 
 const error = ref(null)
 const copied = ref(false)
+const isCurrentUserHost = computed(() => {
+    const hostId = event.value?.host?.id
+    const currentUserId = user.value?.id
+
+    if (hostId == null || currentUserId == null) return false
+    return String(hostId) === String(currentUserId)
+})
 
 /* ---------------- SHARE LINK ---------------- */
 
@@ -229,4 +242,10 @@ watch(
     },
     { immediate: true }
 )
+
+onMounted(async () => {
+    if (!user.value) {
+        await authStore.updateUser()
+    }
+})
 </script>
