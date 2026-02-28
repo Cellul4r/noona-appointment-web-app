@@ -41,8 +41,7 @@
 
         <!-- Capacity Button -->
         <div class="flex items-center justify-between">
-            <button
-                class="btn btn-sm border-indigo-300 bg-indigo-100 text-indigo-800 hover:bg-indigo-400 rounded-full text-sm font-medium"
+            <button class="btn btn-sm bg-base-300 hover:bg-gray-300  rounded-full text-sm font-medium"
                 :disabled="!props.isCurrentUserHost" @click="showRegisteredUsers">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor" class="size-4">
@@ -167,7 +166,7 @@ const capacityPercent = computed(() => {
 })
 
 const progressCapacityClass = computed(() => {
-    if (capacityPercent.value < 50) return "progress-success"
+    if (capacityPercent.value < 50) return "progress-neutral"
     if (capacityPercent.value < 80) return "progress-warning"
     return "progress-error"
 })
