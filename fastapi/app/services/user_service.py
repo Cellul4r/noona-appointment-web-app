@@ -31,7 +31,7 @@ class UserService:
         )
 
     def create_user(self, user: UserCreate, db: Session) -> User:
-        default_avatar = self.gen_avatar_url(user.email, user.full_name)
+        default_avatar = self.gen_avatar_url(user.full_name)
         new_user = User(
             email=user.email,
             full_name=user.full_name,
