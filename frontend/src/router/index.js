@@ -68,7 +68,11 @@ const routes = [
     component: NotFound,
     meta: { hideNavbar: true }
   },
-
+  {
+    path: '/about-us',
+    name: 'AboutUs',
+    component: () => import('../views/AboutUs.vue'),
+  },
 ];
 
 const router = createRouter({
