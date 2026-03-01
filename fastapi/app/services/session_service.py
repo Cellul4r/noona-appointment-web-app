@@ -196,6 +196,9 @@ class SessionService:
         self,
         event_uuid: uuid.UUID,
         user_id: int | None = None,
+        scope: str = "all",  # all | joined | hosted
+        upcoming_only: bool = False,
+        now: datetime | None = None,
     ):
         # This function return all sessions of an event,
         # if user_id is provided, also get the registration status of the user for each session,
@@ -209,11 +212,17 @@ class SessionService:
             .where(Event.share_uuid == event_uuid)
         )
 
+        if now is None:
+            now = datetime.utcnow()
+
+        if upcoming_only:
+            query = query.where(SessionModel.start_datetime >= now)
+
         if user_id:
             # if user_id exists, we need to left join with SessionRegistration table
             # to get the registration status of the user for each session
             query = (
-                query.where(or_(user_id == Event.owner_id, Event.is_draft == False))
+                query.where(or_(Event.owner_id == user_id, Event.is_draft == False))
                 .outerjoin(
                     SessionRegistration,
                     and_(
@@ -223,6 +232,11 @@ class SessionService:
                 )
                 .add_columns(SessionRegistration.status.label("registration_status"))
             )
+
+            if scope == "joined":
+                query = query.where(SessionRegistration.status.is_not(None))
+            elif scope == "hosted":
+                query = query.where(Event.owner_id == user_id)
 
             query = query.order_by(
                 SessionModel.start_datetime.asc(),

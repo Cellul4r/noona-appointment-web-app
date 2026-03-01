@@ -80,12 +80,16 @@ def get_event_sessions(
     event_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_optional_user)] = None,
+    upcoming_only: bool = False,
+    scope: str = "all",
     cursor: str | None = None,
     size: int = 10,
 ):
     # public route will get registration status only if user is logged in
     user_id = current_user.id if current_user else None
-    query = session_service.get_all_sessions_by_event(event_uuid, user_id=user_id)
+    query = session_service.get_all_sessions_by_event(
+        event_uuid, user_id=user_id, scope=scope, upcoming_only=upcoming_only
+    )
 
     # before paginate transform the result to include registration_status for each session
     return paginate(
