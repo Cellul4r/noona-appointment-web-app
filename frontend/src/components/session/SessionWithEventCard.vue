@@ -3,7 +3,7 @@
         :class="cardAccentClass">
         <div class="p-4 flex flex-col gap-4">
             <div class="flex items-start justify-between gap-2">
-                <h3 class="font-semibold text-base-content leading-tight line-clamp-2">
+                <h3 class="font-semibold text-base-content leading-tight line-clamp-3">
                     {{ session?.event?.title || 'Untitled Event' }}
                 </h3>
                 <div class="flex items-center gap-1">

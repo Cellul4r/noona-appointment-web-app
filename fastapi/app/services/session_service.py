@@ -268,17 +268,22 @@ class SessionService:
 
         # update session data
         if session.seat_capacity is not None:
-            if session.seat_capacity < existing_session.seat_taken:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="seat_capacity cannot be less than current seat_taken",
-                )
             # need to lock the row for update to prevent race condition when multiple user try to update the same session
             existing_session = db.execute(
                 select(SessionModel)
                 .where(SessionModel.id == session_id, Event.owner_id == user_id)
                 .with_for_update()
             ).scalar_one_or_none()
+
+            if not existing_session:
+                raise HTTPException(status_code=404, detail="Session not found")
+
+            if session.seat_capacity < existing_session.seat_taken:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="seat_capacity cannot be less than current seat_taken",
+                )
+
         else:
             existing_session = self.get_session_by_id(session_id, user_id, db)
 
