@@ -11,7 +11,7 @@ class SessionBase(BaseModel):
     start_datetime: datetime
     end_datetime: datetime
     location: str = Field(default="", max_length=255)
-    seat_capacity: int = Field(default=1, ge=1)
+    seat_capacity: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def validate_datetimes(self):
