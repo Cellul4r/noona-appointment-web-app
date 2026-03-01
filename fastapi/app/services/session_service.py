@@ -111,6 +111,7 @@ class SessionService:
         event_uuid: uuid.UUID | None = None,
         start_from: datetime | None = None,
         end_to: datetime | None = None,
+        upcoming_only: bool = False,
         scope: str = "all",  # all | joined | hosted
         registration_status_list: list[RegistrationStatus] = [
             RegistrationStatus.CONFIRMED,
@@ -161,7 +162,11 @@ class SessionService:
         query = query.options(selectinload(SessionModel.event).selectinload(Event.host))
 
         # also filter by date range if provided
-        if start_from and end_to:
+        if upcoming_only:
+            query = query.where(
+                SessionModel.start_datetime >= start_from or datetime.utcnow()
+            )
+        elif start_from and end_to:
             query = query.where(
                 SessionModel.start_datetime < end_to,
                 SessionModel.end_datetime >= start_from,
