@@ -92,7 +92,7 @@ import SessionWithEventCard from '../components/session/SessionWithEventCard.vue
 import SessionDetailsModal from '../components/session/SessionDetailsModal.vue'
 import { useAuthStore } from '../store/authStore'
 import { TZDate } from '@date-fns/tz'
-import { format } from 'date-fns'
+import { addDays, format } from 'date-fns'
 
 const calendarEvents = ref([]);
 
@@ -232,13 +232,13 @@ const calendarOptions = ref({
     events: calendarEvents.value,
     datesSet(arg) {
         syncHeaderFromApi(arg);
-        start_date.value = arg.start.toISOString() // to UTC ISO string
-        end_date.value = arg.end.toISOString()
+        start_date.value = new TZDate(arg.start, calendarTimezone.value);
+        end_date.value = new TZDate(arg.end, calendarTimezone.value);
 
         fetchSessions();
     },
     dateClick(info) {
-        selectedDate.value = normalizeToDateOnly(info.dateStr);
+        selectedDate.value = new TZDate(info.date, calendarTimezone.value);
     },
     eventClick(info) {
         const session = info.event.extendedProps.session;
@@ -264,13 +264,12 @@ const selectedSessions = computed(() => {
     if (!selectedDate.value) return [];
 
     // beware of timezone issues here - we want naive timezone
-    const dayStart = new TZDate(selectedDate.value, 'Europe/London');
-    const dayEnd = new TZDate(selectedDate.value, 'Europe/London');
-    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+    const dayStart = new TZDate(selectedDate.value, calendarTimezone.value);
+    const dayEnd = addDays(dayStart, 1);
 
     return sessions.value.filter(session => {
-        const sessionStart = new Date(session.start_datetime);
-        const sessionEnd = new Date(session.end_datetime);
+        const sessionStart = new TZDate(session.start_datetime, calendarTimezone.value);
+        const sessionEnd = new TZDate(session.end_datetime, calendarTimezone.value);
         return sessionStart < dayEnd && sessionEnd > dayStart;
     });
 });

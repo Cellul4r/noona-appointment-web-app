@@ -112,12 +112,12 @@ const userTimezone = computed(() => {
 
 const startDate = computed(() => {
     if (!session.value.start_datetime) return null;
-    return new Date(session.value.start_datetime);
+    return new TZDate(session.value.start_datetime, userTimezone.value);
 });
 
 const endDate = computed(() => {
     if (!session.value.end_datetime) return null;
-    return new Date(session.value.end_datetime);
+    return new TZDate(session.value.end_datetime, userTimezone.value);
 });
 
 const safeFormatInTimezone = (date, pattern) => {
