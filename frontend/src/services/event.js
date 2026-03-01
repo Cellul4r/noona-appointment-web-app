@@ -8,8 +8,8 @@ export async function getEvent(uuid) {
     return res.data;
 }
 
-export async function getSessions(eventUuid, cursor = null, size = 6) {
-    const params = { size }
+export async function getSessions(eventUuid, cursor = null, size = 6, upcoming_only = false) {
+    const params = { size, upcoming_only }
     if (cursor) params.cursor = cursor
 
     const res = await axios.get(`${API_URL}/events/${eventUuid}/sessions`, { params });
