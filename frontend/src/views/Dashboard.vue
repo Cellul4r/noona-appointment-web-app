@@ -114,13 +114,13 @@
                 </td>
                 <td>
                   <div class="flex items-center gap-2">
-                    <div class="avatar placeholder">
-                      <div class="bg-neutral text-neutral-content rounded-full w-6">
-                        <img :src="getAvatar()" alt="Profile Image">
+                    <div class="avatar placeholder opacity-80">
+                      <div class="bg-neutral text-neutral-content rounded-full w-6 overflow-hidden">
+                        <img :src="getHostAvatar(session)" alt="Profile Image">
                       </div>
                     </div>
                     <span class="font-medium">
-                      {{ user?.id && user.id == session.host_id ? 'Me' : session.host_name }}
+                      {{ user?.id && user.id == session.host_id ? `${session.host_name} (You)` : session.host_name }}
                     </span>
                   </div>
                 </td>
@@ -175,19 +175,19 @@
                 <td class="font-medium">{{ session.event_title }}</td>
                 <td>
                   <div class="flex items-center gap-2">
-                    <div class="avatar placeholder">
-                      <div class="bg-neutral text-neutral-content rounded-full w-6">
-                        <img :src="getAvatar()" alt="Profile Image">
+                    <div class="avatar placeholder opacity-80">
+                      <div class="bg-neutral text-neutral-content rounded-full w-6 overflow-hidden">
+                        <img :src="getHostAvatar(session)" alt="Profile Image">
                       </div>
                     </div>
                     <span class="font-medium">
-                      {{ user?.id && user.id == session.host_id ? 'Me' : session.host_name }}
+                      {{ user?.id && user.id == session.host_id ? `${session.host_name} (You)` : session.host_name }}
                     </span>
                   </div>
                 </td>
                 <td>
-                  <div class="badge badge-sm" :class="user?.id == session.host_id ? 'badge-primary' : 'badge-success'">
-                    {{ user?.id == session.host_id ? 'Host' : 'Confirmed' }}
+                  <div class="badge badge-sm font-semibold whitespace-nowrap" :class="getUpcomingStatusClass(session)">
+                    {{ getUpcomingStatusLabel(session) }}
                   </div>
                 </td>
                 <td class="text-right">
@@ -237,12 +237,12 @@
                   <td>
                     <div class="flex items-center gap-2">
                       <div class="avatar placeholder opacity-80">
-                        <div class="bg-neutral text-neutral-content rounded-full w-6">
-                          <img :src="getAvatar()" alt="Profile Image">
+                        <div class="bg-neutral text-neutral-content rounded-full w-6 overflow-hidden">
+                          <img :src="getHostAvatar(session)" alt="Profile Image">
                         </div>
                       </div>
                       <span class="text-base-content/80">
-                        {{ user?.id && user.id == session.host_id ? 'Me' : session.host_name }}
+                        {{ user?.id && user.id == session.host_id ? `${session.host_name} (You)` : session.host_name }}
                       </span>
                     </div>
                   </td>
@@ -282,7 +282,7 @@
                       <div class="md:col-span-3 pt-2">
                         <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Details Link</p>
                         <div class="flex items-center gap-2">
-                          <a @click="goToOverview(session.event_uuid)" class="link link-primary truncate cursor-pointer">{{ `${session.event_uuid}` }}</a>
+                          <a @click="goToOverview(session.event_uuid)" class="link link-primary truncate cursor-pointer">{{ `${session.event_title}` }}</a>
                           <button @click="copyLink(session.event_uuid)" class="btn btn-xs btn-ghost btn-square">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                               <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
@@ -358,6 +358,7 @@ const mapSessionData = (s) => {
     event_uuid: s.event?.share_uuid,
     host_id: s.event?.host?.id,
     host_name: s.event?.host?.full_name || 'Unknown Host',
+    host_profile_image: s.event?.host?.profile_image,
     start_time: s.start_datetime,
     end_time: s.end_datetime,
     location: s.event?.location,
@@ -453,34 +454,6 @@ const filteredUpcoming = computed(() => {
   let rangeStart = null;
   let rangeEnd = null;
 
-  switch (upcomingTimeRange.value) {
-    case 'today': {
-      rangeStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      rangeEnd = new Date(rangeStart);
-      rangeEnd.setDate(rangeEnd.getDate() + 1);
-      break;
-    }
-    case 'this_week': {
-      // week starting today (next 7 days)
-      rangeStart = new Date(now);
-      rangeEnd = new Date(now);
-      rangeEnd.setDate(rangeEnd.getDate() + 7);
-      break;
-    }
-    case 'this_month': {
-      rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      break;
-    }
-    case 'next_month': {
-      rangeStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      rangeEnd = new Date(now.getFullYear(), now.getMonth() + 2, 1);
-      break;
-    }
-    default:
-      break;
-  }
-
   if (rangeStart && rangeEnd) {
     result = result.filter(s => {
       const sStart = s.start_time ? new Date(s.start_time) : null;
@@ -503,9 +476,35 @@ const paginatedWaitlist = computed(() => waitlistSessions.value.slice(0, waitVis
 const paginatedUpcoming = computed(() => filteredUpcoming.value.slice(0, upcomingVisible.value));
 const paginatedPast = computed(() => pastSessions.value.slice(0, pastVisible.value));
 
-const getAvatar = () => {
-    return authStore.user?.profile_image
-}
+const getHostAvatar = (session) => {
+  if (session.host_profile_image) {
+    return session.host_profile_image;
+  }
+  // Fallback to generated initials if no profile image exists
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(session.host_name || 'U')}&background=random`;
+};
+
+const getUpcomingStatusLabel = (session) => {
+  const isHost = user.value?.id == session.host_id;
+  const isRegistered = session.registration_status?.toUpperCase() === 'CONFIRMED';
+  
+  // Left this as it is for now because I don't know how to word Unregistered Host without it looking like ----.
+  if (isHost) {
+    return isRegistered ? 'Host' : 'Host';
+  }
+  return 'Confirmed';
+};
+
+const getUpcomingStatusClass = (session) => {
+  const isHost = user.value?.id == session.host_id;
+  const isRegistered = session.registration_status?.toUpperCase() === 'CONFIRMED';
+  
+  if (isHost) {
+    // Solid primary for registered host, Outlined primary for unregistered host
+    return isRegistered ? 'badge-primary' : 'badge-outline badge-primary';
+  }
+  return 'badge-success'; // Green for normal participants
+};
 
 const toggleRow = (id) => {
   const index = expandedRows.value.indexOf(id);
