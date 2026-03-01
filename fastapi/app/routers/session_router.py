@@ -10,7 +10,6 @@ from app.db import get_db
 from app.schemas.session import (
     SessionPrivate,
     SessionPublic,
-    SessionRegistration,
     SessionUpdate,
     SessionWithEventPublic,
     SessionWithOptionalStatus,
@@ -119,34 +118,44 @@ def get_session_by_uuid(
     return transform_session(row)
 
 
-@router.post("/{session_uuid}/registration", response_model=SessionRegistration)
+@router.post("/{session_uuid}/registration", response_model=SessionWithEventPublic)
 def register_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    return session_service.register_session(session.id, current_user.id, db)
+    session_service.register_session(session.id, current_user.id, db)
+    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    return transform_session(row)
 
 
-@router.post("/{session_uuid}/confirm", response_model=SessionRegistration)
+@router.post("/{session_uuid}/confirm", response_model=SessionWithEventPublic)
 def confirm_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    return session_service.confirm_session(session.id, current_user.id, db)
+    session_service.confirm_session(session.id, current_user.id, db)
+    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    return transform_session(row)
 
 
-@router.delete("/{session_uuid}/registration", status_code=status.HTTP_200_OK)
+@router.delete(
+    "/{session_uuid}/registration",
+    status_code=status.HTTP_200_OK,
+    response_model=SessionWithEventPublic,
+)
 def unregister_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    return session_service.unregister_session(session.id, current_user.id, db)
+    session_service.unregister_session(session.id, current_user.id, db)
+    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    return transform_session(row)
 
 
 @router.delete(
