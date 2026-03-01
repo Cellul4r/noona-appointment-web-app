@@ -157,7 +157,7 @@
             class="btn btn-wide"
           >
             <span v-if="loading" class="loading loading-spinner"></span>
-            {{ loading ? 'Loading...' : 'Load More Events' }}
+            {{ loading ? 'Loading...' : 'Load More' }}
           </button>
         </div>
 
