@@ -38,9 +38,10 @@
 </template>
 
 <script setup>
+import { TZDate } from '@date-fns/tz';
+import { format } from 'date-fns';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 const props = defineProps({
     isOpen: {
@@ -53,7 +54,7 @@ const props = defineProps({
     },
     timezone: {
         type: String,
-        default: 'UTC'
+        default: 'Europe/London'
     }
 });
 
@@ -64,41 +65,24 @@ const sessionData = computed(() => props.session || {});
 
 const startDate = computed(() => {
     if (!sessionData.value?.start_datetime) return null;
-    return new Date(sessionData.value.start_datetime);
+    return new TZDate(sessionData.value.start_datetime, props.timezone);
 });
 
 const endDate = computed(() => {
     if (!sessionData.value?.end_datetime) return null;
-    return new Date(sessionData.value.end_datetime);
+    return new TZDate(sessionData.value.end_datetime, props.timezone);
 });
 
 const safeFormatInTimezone = (date, pattern) => {
-    try {
-        return formatInTimeZone(date, props.timezone || 'UTC', pattern);
-    } catch {
-        return formatInTimeZone(date, 'UTC', pattern);
-    }
-};
-
-const formatWithMeridiemDots = (date, pattern) => {
-    return safeFormatInTimezone(date, pattern).replace(/\bAM\b/g, 'A.M.').replace(/\bPM\b/g, 'P.M.');
+    return format(new TZDate(date, props.timezone), pattern);
 };
 
 const isDifferentDateInTimezone = computed(() => {
     if (!startDate.value || !endDate.value) return false;
 
-    try {
-        const zonedStart = toZonedTime(startDate.value, props.timezone || 'UTC');
-        const zonedEnd = toZonedTime(endDate.value, props.timezone || 'UTC');
-
-        return !(
-            zonedStart.getFullYear() === zonedEnd.getFullYear() &&
-            zonedStart.getMonth() === zonedEnd.getMonth() &&
-            zonedStart.getDate() === zonedEnd.getDate()
-        );
-    } catch {
-        return false;
-    }
+    return startDate.value.getDate() !== endDate.value.getDate() ||
+        startDate.value.getMonth() !== endDate.value.getMonth() ||
+        startDate.value.getFullYear() !== endDate.value.getFullYear();
 });
 
 const sessionTitle = computed(() => sessionData.value?.event?.title || 'Session');
@@ -112,17 +96,17 @@ const dateLine = computed(() => {
 
 const timeLine = computed(() => {
     if (!startDate.value || !endDate.value) return 'Time not set';
-    return `${formatWithMeridiemDots(startDate.value, 'hh:mm a')} - ${formatWithMeridiemDots(endDate.value, 'hh:mm a')}`;
+    return `${safeFormatInTimezone(startDate.value, 'hh:mm a')} - ${safeFormatInTimezone(endDate.value, 'hh:mm a')}`;
 });
 
 const startLine = computed(() => {
     if (!startDate.value) return 'Not set';
-    return formatWithMeridiemDots(startDate.value, 'EEE, d MMM yyyy hh:mm a');
+    return safeFormatInTimezone(startDate.value, 'EEE, d MMM yyyy hh:mm a');
 });
 
 const endLine = computed(() => {
     if (!endDate.value) return 'Not set';
-    return formatWithMeridiemDots(endDate.value, 'EEE, d MMM yyyy hh:mm a');
+    return safeFormatInTimezone(endDate.value, 'EEE, d MMM yyyy hh:mm a');
 });
 
 const locationLine = computed(() => sessionData.value?.location || sessionData.value?.event?.location || 'Location not set');

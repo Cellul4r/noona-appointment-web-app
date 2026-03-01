@@ -14,7 +14,7 @@
                         </div>
                         <h2 class="inline items-center text-2xl font-bold ml-5">{{ currentViewTitle ||
                             'Calendar'
-                        }}
+                            }}
                         </h2>
                     </div>
 
@@ -86,10 +86,13 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import momentTimezonePlugin from '@fullcalendar/moment-timezone';
 import { getCalendar } from '../services/calendar'
 import SessionWithEventCard from '../components/session/SessionWithEventCard.vue'
 import SessionDetailsModal from '../components/session/SessionDetailsModal.vue'
 import { useAuthStore } from '../store/authStore'
+import { TZDate } from '@date-fns/tz'
+import { format } from 'date-fns'
 
 const calendarEvents = ref([]);
 
@@ -149,24 +152,17 @@ const switchView = (viewName) => {
 const normalizeToDateOnly = (value) => {
     if (!value) return null;
 
-    try {
-        return formatInTimeZone(value, calendarTimezone.value, 'yyyy-MM-dd');
-    } catch {
-        try {
-            const parsedDate = new Date(value);
-            return formatInTimeZone(parsedDate, calendarTimezone.value, 'yyyy-MM-dd');
-        } catch {
-            return null;
-        }
-    }
+    const date = new TZDate(value, calendarTimezone.value);
+    return format(date, 'yyyy-MM-dd');
 };
 
+// format selected date for output in frontend
 const formattedSelectedDate = computed(() => {
     if (!selectedDate.value) return 'Select a date';
     try {
-        const date = new Date(`${selectedDate.value}T00:00:00Z`);
-        return formatInTimeZone(date, calendarTimezone.value, 'EEEE, MMMM d, yyyy');
-    } catch {
+        const date = new TZDate(selectedDate.value, calendarTimezone.value);
+        return format(date, 'EEEE, MMMM d, yyyy');
+    } catch (e) {
         return selectedDate.value;
     }
 });
@@ -225,7 +221,8 @@ const calendarOptions = ref({
     plugins: [
         dayGridPlugin,
         timeGridPlugin,
-        interactionPlugin
+        interactionPlugin,
+        momentTimezonePlugin,
     ],
     initialView: 'dayGridMonth',
     headerToolbar: false,
@@ -241,7 +238,7 @@ const calendarOptions = ref({
         fetchSessions();
     },
     dateClick(info) {
-        selectedDate.value = normalizeToDateOnly(info.date) || normalizeToDateOnly(info.dateStr) || null;
+        selectedDate.value = normalizeToDateOnly(info.dateStr);
     },
     eventClick(info) {
         const session = info.event.extendedProps.session;
@@ -267,8 +264,8 @@ const selectedSessions = computed(() => {
     if (!selectedDate.value) return [];
 
     // beware of timezone issues here - we want naive timezone
-    const dayStart = new Date(`${selectedDate.value}T00:00:00.000Z`);
-    const dayEnd = new Date(dayStart);
+    const dayStart = new TZDate(selectedDate.value, 'Europe/London');
+    const dayEnd = new TZDate(selectedDate.value, 'Europe/London');
     dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
     return sessions.value.filter(session => {
