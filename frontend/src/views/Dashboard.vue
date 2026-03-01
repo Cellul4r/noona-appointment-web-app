@@ -280,9 +280,9 @@
                         <p class="italic text-base-content/80">{{ session.description || 'No description provided.' }}</p>
                       </div>
                       <div class="md:col-span-3 pt-2">
-                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Invitation Link</p>
+                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Details Link</p>
                         <div class="flex items-center gap-2">
-                          <a :href="`${session.event_uuid}`" class="link link-primary truncate">{{ `${session.event_uuid}` }}</a>
+                          <a @click="goToOverview(session.event_uuid)" class="link link-primary truncate cursor-pointer">{{ `${session.event_uuid}` }}</a>
                           <button @click="copyLink(session.event_uuid)" class="btn btn-xs btn-ghost btn-square">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                               <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
@@ -503,11 +503,6 @@ const paginatedWaitlist = computed(() => waitlistSessions.value.slice(0, waitVis
 const paginatedUpcoming = computed(() => filteredUpcoming.value.slice(0, upcomingVisible.value));
 const paginatedPast = computed(() => pastSessions.value.slice(0, pastVisible.value));
 
-const getInitials = (name) => {
-  if (!name) return 'U';
-  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-};
-
 const getAvatar = () => {
     return authStore.user?.profile_image
 }
@@ -549,9 +544,10 @@ const goToCreateEvent = () => router.push({name: 'CreateEvents'});
 const goToOverview = (uuid) => router.push({ name: 'EventOverview', params: { event_uuid: uuid } });
 
 const copyLink = (uuid) => {
-  const link = `${window.location.origin}/${uuid}`;
+  const routeData = router.resolve({ name: 'EventOverview', params: { event_uuid: uuid } });
+  const link = `${window.location.origin}${routeData.href}`;
   navigator.clipboard.writeText(link);
-  alert(`Invitation link copied!`);
+  alert(`Details link copied!`);
 };
 
 // --- FORMATTERS ---
