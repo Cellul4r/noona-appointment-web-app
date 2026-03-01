@@ -193,12 +193,6 @@ const scopeTabs = [
   { label: 'Registered', value: 'joined' }
 ];
 
-
-const userInitials = computed(() => {
-  const name = user.value?.full_name || 'Guest';
-  return name.substring(0, 2).toUpperCase();
-});
-
 // --- PAGINATION (client-side 'Load More') ---
 const eventsPerPage = 9;
 const visibleCount = ref(eventsPerPage);
