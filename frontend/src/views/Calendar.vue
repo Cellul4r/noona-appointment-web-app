@@ -94,7 +94,7 @@ import { useAuthStore } from '../store/authStore'
 const calendarEvents = ref([]);
 
 const sessions = ref([]);
-const start_date = ref(null);
+const start_date = ref(null); // scope for fetching sessions, in ISO format string in the calendar
 const end_date = ref(null);
 const scope = ref("all"); // all, joined, hosted
 
@@ -102,21 +102,20 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const calendarTimezone = computed(() => {
-    const timezone = user.value?.timezone;
-    if (typeof timezone !== 'string') return 'UTC';
+    const timezone = user.value?.timezone
+    if (!timezone) return 'Europe/London' // default to UTC+0 timezone
 
-    const trimmedTimezone = timezone.trim();
-    return trimmedTimezone || 'UTC';
+    return timezone
 });
 
-const selectedDate = ref(null);
+const selectedDate = ref(null); // show on sessions panel
 const selectedEventSession = ref(null);
 const isSessionDetailsModalOpen = ref(false);
 const calendarRef = ref(null);
 const currentViewTitle = ref('');
 const currentViewType = ref('dayGridMonth');
 
-const getCalendarApi = () => calendarRef.value?.getApi?.() ?? null;
+const getCalendarApi = () => calendarRef.value?.getApi?.() ?? null; // function to get FullCalendar API custom
 
 const syncHeaderFromApi = (arg = null) => {
     const view = arg?.view || getCalendarApi()?.view;
@@ -182,32 +181,15 @@ const getDayCellClasses = (arg) => {
     return isSameSelectedDate(arg.date) ? ['fc-day-selected'] : [];
 };
 
-const normalizeRegistrationStatus = (registrationStatus) => {
-    if (registrationStatus == null) return 'normal';
-
-    const normalized = String(registrationStatus).trim().toLowerCase();
-    if (!normalized || normalized === 'null' || normalized === 'none') return 'normal';
-
-    if (normalized === 'confirmed') return 'confirmed';
-    if (normalized === 'waitlist' || normalized === 'waiting' || normalized === 'queued' || normalized === 'queueing') return 'waitlist';
-    if (normalized === 'available' || normalized === 'open') return 'available';
-
-    return 'normal';
-};
-
 const getEventStatusColor = (registrationStatus) => {
-    const status = normalizeRegistrationStatus(registrationStatus);
-
-    if (status === 'confirmed') return 'event-confirmed';
-    if (status === 'waitlist') return 'event-waitlist';
-    if (status === 'available') return 'event-available';
+    if (registrationStatus === 'confirmed') return 'event-confirmed';
+    if (registrationStatus === 'waitlist') return 'event-waitlist';
+    if (registrationStatus === 'available') return 'event-available';
     return 'event-normal';
 };
 
 const getEventPalette = (registrationStatus) => {
-    const status = normalizeRegistrationStatus(registrationStatus);
-
-    if (status === 'confirmed') {
+    if (registrationStatus === 'confirmed') {
         return {
             backgroundColor: 'var(--color-success)',
             borderColor: 'var(--color-success)',
@@ -215,7 +197,7 @@ const getEventPalette = (registrationStatus) => {
         };
     }
 
-    if (status === 'waitlist') {
+    if (registrationStatus === 'waitlist') {
         return {
             backgroundColor: 'var(--color-warning)',
             borderColor: 'var(--color-warning)',
@@ -223,7 +205,7 @@ const getEventPalette = (registrationStatus) => {
         };
     }
 
-    if (status === 'available') {
+    if (registrationStatus === 'available') {
         return {
             backgroundColor: 'var(--color-primary)',
             borderColor: 'var(--color-primary)',
@@ -253,7 +235,7 @@ const calendarOptions = ref({
     events: calendarEvents.value,
     datesSet(arg) {
         syncHeaderFromApi(arg);
-        start_date.value = arg.start.toISOString()
+        start_date.value = arg.start.toISOString() // to UTC ISO string
         end_date.value = arg.end.toISOString()
 
         fetchSessions();
@@ -312,7 +294,7 @@ const setCalendarEvents = () => {
         start: session.start_datetime,
         end: session.end_datetime,
         classNames: [getEventStatusColor(session.registration_status)],
-        extendedProps: {
+        extendedProps: { // extension properties to show in event details modal
             session: session,
             registration_status: session.registration_status,
             seat_taken: session.seat_taken,
