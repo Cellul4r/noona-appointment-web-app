@@ -8,6 +8,7 @@ import EventOverview from '../views/EventOverview.vue';
 import Setting from "../views/Setting.vue";
 import EditEvent from '../views/EditEvent.vue';
 import Calendar from '../views/Calendar.vue';
+import NotFound from '../views/NotFound.vue';
 
 const routes = [
   { path: '/login', component: Login, meta: { hideNavbar: true } },
@@ -59,8 +60,13 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: Calendar,
-  }
-
+  },
+  {
+    path: '/not-found',
+    name: 'NotFound',
+    component: NotFound,
+    meta: { hideNavbar: true }
+  },
 
 ];
 
