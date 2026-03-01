@@ -167,7 +167,7 @@
         <!-- Edit Event / Register button -->
         <div class="fixed bottom-0 left-0 right-0 bg-base-100/95 backdrop-blur border-t border-base-300 shadow-lg p-4">
             <div class="mx-auto max-w-7xl flex justify-end gap-3">
-                <button v-if="isCurrentUserHost" class="btn btn-outline btn-neutral" @click="goToEditEvent">
+                <button v-if="isCurrentUserHost" class="btn btn-sm btn-outline btn-neutral" @click="goToEditEvent">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-5">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -175,7 +175,7 @@
                     </svg>
                     Edit Event
                 </button>
-                <button v-if="isCurrentUserHost" class="btn btn-outline btn-error"
+                <button v-if="isCurrentUserHost" class="btn btn-sm btn-outline btn-error"
                     :disabled="!isCurrentUserHost || deletingEvent" @click="onDeleteEvent">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-5">
@@ -184,7 +184,7 @@
                     </svg>
                     {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
                 </button>
-                <button class="btn btn-primary" :disabled="isDraftEvent" @click="goToRegister">
+                <button class="btn btn-sm btn-primary" :disabled="isDraftEvent" @click="goToRegister">
                     Register
                 </button>
             </div>
