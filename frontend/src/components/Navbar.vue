@@ -35,7 +35,8 @@ const handleLogout = () => {
             <div class="hidden md:flex items-center space-x-4 text-xl font-bold">
                 <router-link to="/about-us" class="flex items-center gap-2 text-2xl font-bold hover:opacity-80 mr-9">
                     <img src="/src/assets/boy.png" class="h-13" />
-                    <span class="font-extrabold text-xl">Noona</span>
+                    <img src="/src/assets/noona_pink.png" class="h-13" />
+                    <!-- <span class="font-extrabold text-xl">Noona</span> -->
                 </router-link>
 
                 <template v-if="isLoggedIn">
