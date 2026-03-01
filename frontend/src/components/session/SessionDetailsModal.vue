@@ -23,7 +23,7 @@
             <div class="mt-4 flex items-center gap-2 text-base text-base-content/80">
                 <img v-if="hostImage" :src="hostImage" alt="host profile" class="w-7 h-7 rounded-full object-cover">
                 <div v-else class="w-7 h-7 rounded-full bg-base-300"></div>
-                <p>{{ hostName }}</p>
+                <p>{{ hostName }} {{ sessionData?.event?.host?.id === user?.id ? '(You)' : '' }}</p>
             </div>
 
             <div class="modal-action">
@@ -43,6 +43,8 @@ import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../../store/authStore';
+import { storeToRefs } from 'pinia';
 
 const props = defineProps({
     isOpen: {
@@ -61,6 +63,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 const router = useRouter();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
 const sessionData = computed(() => props.session || {});
 
