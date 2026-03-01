@@ -60,6 +60,7 @@ const routes = [
     path: '/calendar',
     name: 'Calendar',
     component: Calendar,
+    meta: { requiresAuth: true }
   },
   {
     path: '/not-found',
