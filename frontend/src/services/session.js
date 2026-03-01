@@ -45,3 +45,8 @@ export async function getRegisteredUsers(sessionUuid, status = "confirmed", curs
   const res = await axios.get(`${API_URL}/sessions/${sessionUuid}/users`, { params });
   return res.data;
 }
+
+export async function getSessionByUuid(sessionUuid) {
+  const res = await axios.get(`${API_URL}/sessions/${sessionUuid}`);
+  return res.data;
+}
