@@ -3,7 +3,8 @@
         <div class="modal-box max-w-lg">
             <div class="flex items-start justify-between gap-3">
                 <h3 class="font-bold text-xl leading-tight">{{ sessionTitle }}</h3>
-                <span class="badge text-sm" :class="statusClass">{{ statusLabel }}</span>
+                <span class="badge text-sm whitespace-nowrap shrink-0" :class="statusClass">{{ statusLabel
+                }}</span>
             </div>
 
             <div class="mt-4 space-y-2 text-base text-base-content/80">

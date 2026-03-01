@@ -14,7 +14,7 @@
                         </div>
                         <h2 class="inline items-center text-2xl font-bold ml-5">{{ currentViewTitle ||
                             'Calendar'
-                            }}
+                        }}
                         </h2>
                     </div>
 
@@ -170,7 +170,7 @@ const formattedSelectedDate = computed(() => {
 const isSameSelectedDate = (value) => {
     if (!selectedDate.value || !value) return false;
     const normalized = normalizeToDateOnly(value);
-    return normalized === selectedDate.value;
+    return normalized === normalizeToDateOnly(selectedDate.value);
 };
 
 const getDayCellClasses = (arg) => {

@@ -195,7 +195,7 @@ const capacityClass = computed(() => {
     if (seatCapacity.value === null) return 'progress-primary';
     if (capacityPercent.value >= 100) return 'progress-error';
     if (capacityPercent.value >= 75) return 'progress-warning';
-    return 'progress-success';
+    return 'progress-neutral';
 });
 
 const registrationStatusLabel = computed(() => {
