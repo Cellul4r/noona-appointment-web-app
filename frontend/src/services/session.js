@@ -38,10 +38,10 @@ export async function confirmSession(sessionUuid) {
   return res.data;
 }
 
-export async function getRegisteredUsers(session_id, status = "confirmed", cursor = null, size = 10) {
+export async function getRegisteredUsers(sessionUuid, status = "confirmed", cursor = null, size = 10) {
   const params = { status, size }
   if (cursor) params.cursor = cursor
 
-  const res = await axios.get(`${API_URL}/sessions/${session_id}/users`, { params });
+  const res = await axios.get(`${API_URL}/sessions/${sessionUuid}/users`, { params });
   return res.data;
 }
