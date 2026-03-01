@@ -107,6 +107,18 @@ def get_registered_users(
     )
 
 
+@router.get("/{session_uuid}", response_model=SessionWithEventPublic)
+def get_session_by_uuid(
+    session_uuid: uuid.UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    row = session_service.get_session_with_user_status(
+        session_uuid, current_user.id, db
+    )
+    return transform_session(row)
+
+
 @router.post("/{session_uuid}/registration", response_model=SessionRegistration)
 def register_session(
     session_uuid: uuid.UUID,
@@ -127,7 +139,7 @@ def confirm_session(
     return session_service.confirm_session(session.id, current_user.id, db)
 
 
-@router.delete("/{session_uuid}/registration", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{session_uuid}/registration", status_code=status.HTTP_200_OK)
 def unregister_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
@@ -138,7 +150,7 @@ def unregister_session(
 
 
 @router.delete(
-    "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_204_NO_CONTENT
+    "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_200_OK
 )
 def unregister_user_from_session(
     session_uuid: uuid.UUID,
