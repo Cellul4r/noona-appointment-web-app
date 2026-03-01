@@ -50,7 +50,10 @@
             <div class="md:col-span-2">
               <span>Event Title</span>
               <span class="text-red-500"> *</span>
-              <input v-model="event.title" type="text" class="input input-bordered w-full" />
+              <input v-model="event.title" type="text" class="input input-bordered w-full"/>
+                <p class="validator-hint hidden">
+                  Event title is required.
+                </p>
             </div>
 
             <div class="md:col-span-2">
