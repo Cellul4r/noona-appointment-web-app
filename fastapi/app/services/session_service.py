@@ -58,6 +58,31 @@ class SessionService:
             )
         return session
 
+    def get_session_with_user_status(
+        self, session_uuid: uuid.UUID, user_id: int, db: Session
+    ):
+        row = db.execute(
+            select(SessionModel)
+            .add_columns(SessionRegistration.status.label("status"))
+            .outerjoin(
+                SessionRegistration,
+                and_(
+                    SessionRegistration.session_id == SessionModel.id,
+                    SessionRegistration.user_id == user_id,
+                ),
+            )
+            .where(SessionModel.uuid == session_uuid)
+            .options(selectinload(SessionModel.event).selectinload(Event.host))
+        ).first()
+
+        if not row:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Session not found",
+            )
+
+        return row
+
     def get_upcoming_sessions_by_event_uuid(
         self,
         event_uuid: uuid.UUID,
