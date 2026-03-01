@@ -73,7 +73,5 @@ export function removeToken() {
 
 // Logout & Clear JWT
 export function logout() {
-  axios.get(`${API_URL}/auth/logout`).then(() => {
-  window.location.reload(); // Optional
-});
+  axios.get(`${API_URL}/auth/logout`)
 }

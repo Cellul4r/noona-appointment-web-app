@@ -9,10 +9,12 @@ import Setting from "../views/Setting.vue";
 import EditEvent from '../views/EditEvent.vue';
 import Calendar from '../views/Calendar.vue';
 import NotFound from '../views/NotFound.vue';
+import { useAuthStore } from '../store/authStore';
+import LoginSuccess from '../views/LoginSuccess.vue';
 
 const routes = [
-  { path: '/login', component: Login, meta: { hideNavbar: true } },
-  { path: "/login-success", component: Login }, // Handles token parsing
+  { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
+  { path: "/login-success", name: 'LoginSuccess', component: LoginSuccess, meta: { hideNavbar: true } }, // Handles token parsing
   {
     path: "/signup",
     name: "Signup",
@@ -35,8 +37,7 @@ const routes = [
     path: '/event/create',
     name: 'CreateEvents',
     component: CreateEvents,
-    meta: { requiresAuth: true },
-    meta: { hideNavbar: true }
+    meta: { requiresAuth: true, hideNavbar: true },
   },
   {
     path: '/event/overview/:event_uuid',
@@ -53,8 +54,7 @@ const routes = [
     path: '/events/edit/:event_uuid',
     name: 'EditEvent',
     component: EditEvent,
-    meta: { requiresAuth: true },
-    meta: { hideNavbar: true }
+    meta: { requiresAuth: true, hideNavbar: true }
   },
   {
     path: '/calendar',
@@ -74,6 +74,28 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+router.beforeEach(async (to, from, next) => {
+  if (to.meta.requiresAuth) {
+    const authStore = useAuthStore();
+    if (!authStore.user) {
+      try {
+        await authStore.updateUser();
+      } catch (err) {
+        authStore.user = null;
+      }
+    }
+    if (!authStore.isAuthenticated) {
+      return next({ name: 'Login' });
+    }
+
+    if ((to.name === 'Login' || to.name === 'Signup') && authStore.isAuthenticated) {
+      return next({ name: 'Dashboard' });
+    }
+
+  }
+  next();
+})
 
 
 export default router;
