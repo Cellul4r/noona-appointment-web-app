@@ -510,6 +510,61 @@ class SessionService:
                 detail="Database error",
             )
 
+    def unregister_user_from_session(
+        self, session_id: int, current_user_id: int, user_id: int, db: Session
+    ):
+        try:
+            session = db.execute(
+                select(SessionModel)
+                .where(SessionModel.id == session_id)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if not session:
+                raise HTTPException(status_code=404, detail="Session not found")
+            registration = db.execute(
+                select(SessionRegistration).where(
+                    SessionRegistration.session_id == session_id,
+                    SessionRegistration.user_id == user_id,
+                )
+            ).scalar_one_or_none()
+
+            if not registration:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Registration of this session not found.",
+                )
+
+            # Check if the current user is authorized to unregister this user
+            if session.event.owner_id != current_user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not authorized to unregister this user.",
+                )
+
+            # reduce the seat taken from the session
+            if (
+                registration.status == RegistrationStatus.CONFIRMED
+                and session.seat_taken > 0
+            ):
+                session.seat_taken -= 1
+
+            db.delete(registration)
+
+            # if seat is available let the all user that is waitlist -> available
+            if (
+                session.seat_capacity is not None
+                and session.seat_taken < session.seat_capacity
+            ):
+                self.set_available_registrations(session_id, user_id, db)
+
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error",
+            )
+
     def set_available_registrations(self, session_id: int, user_id: int, db: Session):
         registrations = (
             db.execute(

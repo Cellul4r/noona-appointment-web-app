@@ -11,6 +11,7 @@ from app.schemas.session import (
     SessionPrivate,
     SessionPublic,
     SessionRegistration,
+    SessionUpdate,
     SessionWithEventPublic,
     SessionWithOptionalStatus,
 )
@@ -136,15 +137,35 @@ def unregister_session(
     return session_service.unregister_session(session.id, current_user.id, db)
 
 
+@router.delete(
+    "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def unregister_user_from_session(
+    session_uuid: uuid.UUID,
+    user_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    session = session_service.get_session_by_uuid(session_uuid, db)
+    return session_service.unregister_user_from_session(
+        session.id, current_user.id, user_id, db
+    )
+
+
 @router.patch("/{session_id}", response_model=SessionPrivate)
 def update_session(
+    session_id: int,
+    session: SessionUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    return session_service.update_session(session_id, current_user.id, session, db)
+
+
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(
     session_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ):
-    return session_service.update_session(session_id, current_user.id, db)
-
-
-@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: int, db: Annotated[Session, Depends(get_db)]):
-    session_service.delete_session(session_id, db)
+    session_service.delete_session(session_id, current_user.id, db)
