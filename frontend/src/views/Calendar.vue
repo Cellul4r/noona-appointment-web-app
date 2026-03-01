@@ -1,39 +1,47 @@
 <template>
     <div class="bg-base-100 h-screen flex flex-col">
         <!-- Main Content -->
-        <div class="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden bg-base-200">
+        <div class="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden bg-base-300/75">
             <!-- Calendar Section -->
             <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-4 md:p-6">
                 <div class="calendar-custom-header mb-3">
-                    <div class="flex items-center gap-3">
-                        <button class="calendar-nav-btn" @click="goPrev" aria-label="Previous period">‹</button>
-                        <button class="calendar-nav-btn" @click="goNext" aria-label="Next period">›</button>
-                        <h2 class="calendar-title">{{ currentViewTitle || 'Calendar' }}</h2>
+                    <div>
+                        <div class="join-item inline-block">
+                            <button class="btn btn-base join items-center text-xl rounded-l-lg" @click="goPrev"
+                                aria-label="Previous period">‹</button>
+                            <button class="btn btn-base join items-center text-xl rounded-r-lg" @click="goNext"
+                                aria-label="Next period">›</button>
+                        </div>
+                        <h2 class="inline items-center text-2xl font-bold ml-5">{{ currentViewTitle ||
+                            'Calendar'
+                        }}
+                        </h2>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <div
-                            class="flex items-center gap-2 bg-base-100 border border-base-300 rounded-xl px-3 py-2 shadow-sm">
+                            class="flex items-center gap-2 bg-base-100 border border-gray-300 rounded-lg pl-3 py-1.5 shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-5 shrink-0">
+                                stroke="currentColor" class="size-4 shrink-0">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
                             </svg>
                             <select v-model="scope"
-                                class="select select-sm border-0 font-semibold p-0 pl-2 w-36 focus:outline-none">
+                                class="select select-xs border-0 font-semibold p-0 pl-2 w-36 shadow-none outline-0 focus:outline-none">
                                 <option value="all">All sessions</option>
                                 <option value="hosted">Hosted sessions</option>
                                 <option value="joined">Registered sessions</option>
                             </select>
                         </div>
 
-                        <div class="calendar-view-switch">
-                            <button class="calendar-view-btn"
-                                :class="{ 'is-active': currentViewType === 'timeGridWeek' }"
-                                @click="switchView('timeGridWeek')">week</button>
-                            <button class="calendar-view-btn"
-                                :class="{ 'is-active': currentViewType === 'dayGridMonth' }"
-                                @click="switchView('dayGridMonth')">month</button>
+                        <div class="bg-slate-200 rounded-lg p-1">
+                            <button class="btn bg-inherit border-0 mr-2 py-0 rounded-lg text-xs font-semibold"
+                                :class="(currentViewType === 'timeGridWeek') ? 'bg-white text-indigo-600 hover:text-indigo-600' : 'text-slate-600 hover:text-black'"
+                                @click="switchView('timeGridWeek')">Week</button>
+                            <button
+                                class="btn bg-inherit hover:text-black border-0 py-0 rounded-lg text-xs font-semibold"
+                                :class="(currentViewType === 'dayGridMonth') ? 'bg-white text-indigo-600 hover:text-indigo-600' : 'text-slate-600 hover:text-black'"
+                                @click="switchView('dayGridMonth')">Month</button>
                         </div>
                     </div>
                 </div>
@@ -43,9 +51,9 @@
             </div>
 
             <!-- Sessions Panel -->
-            <div class="w-full md:w-80 bg-base-100 flex flex-col min-h-0 order-2 overflow-hidden"
-                style="box-shadow: -1px 0 3px rgba(0,0,0,0.1);">
-                <div class="flex-1 overflow-y-auto flex flex-col min-h-0">
+            <div
+                class="w-full md:w-80 bg-base-100 flex flex-col min-h-0 order-2 overflow-hidden shadow-sm border-l border-l-gray-300">
+                <div class=" flex-1 overflow-y-auto flex flex-col min-h-0">
                     <div class="p-4 md:p-5 border-b border-base-200 shrink-0">
                         <h2 class="text-lg font-bold">{{ formattedSelectedDate }}</h2>
                         <p class="text-xs text-base-content/60 mt-1">{{ selectedSessions.length }} session(s)</p>
@@ -65,7 +73,7 @@
         <SessionDetailsModal :is-open="isSessionDetailsModalOpen" :session="selectedEventSession"
             :timezone="calendarTimezone" @close="closeSessionDetailsModal" />
 
-        <footer class="shrink-0 bg-base-100 border-t border-base-200 px-4 md:px-6 py-2">
+        <footer class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-200 px-4 md:px-6 py-2">
             <p class="text-xs text-base-content/60 text-center md:text-right">Timezone: {{ calendarTimezone }}</p>
         </footer>
     </div>
@@ -339,10 +347,9 @@ onMounted(async () => {
     color: var(--color-base-content);
 }
 
-.calendar-nav-btn {
+/* .calendar-nav-btn {
     width: 48px;
     height: 48px;
-    border-radius: 10px;
     border: 1px solid var(--color-base-300);
     background: color-mix(in oklab, var(--color-base-100) 94%, white);
     color: color-mix(in oklab, var(--color-base-content) 62%, white);
@@ -353,11 +360,7 @@ onMounted(async () => {
     justify-content: center;
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.1);
 }
-
-.calendar-nav-btn:hover {
-    background: color-mix(in oklab, var(--color-base-100) 98%, white);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18), 0 2px 4px rgba(15, 23, 42, 0.12);
-}
+ */
 
 .calendar-view-switch {
     display: inline-flex;
@@ -369,23 +372,6 @@ onMounted(async () => {
     background: color-mix(in oklab, var(--color-base-100) 92%, white);
 }
 
-.calendar-view-btn {
-    border: 0;
-    background: transparent;
-    color: color-mix(in oklab, var(--color-base-content) 62%, white);
-    font-weight: 700;
-    text-transform: lowercase;
-    border-radius: 10px;
-    min-width: 84px;
-    height: 40px;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
-}
-
-.calendar-view-btn.is-active {
-    background: var(--color-base-100);
-    color: var(--color-primary);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18), 0 2px 4px rgba(15, 23, 42, 0.12);
-}
 
 .fc {
     font-family: inherit;
