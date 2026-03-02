@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
@@ -36,6 +36,9 @@ class SessionRegistration(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     status: Mapped[RegistrationStatus] = mapped_column(
         SAEnum(RegistrationStatus), nullable=False
+    )
+    last_available_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     session: Mapped["Session"] = relationship(back_populates="sessions_registered")
