@@ -1,4 +1,5 @@
 import logging
+from re import S
 from typing import Annotated
 from urllib import response
 from uuid import UUID
@@ -6,10 +7,13 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+
 from fastapi_pagination.cursor import CursorPage, CursorParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.db import get_db
+
 from app.dependencies.auth import get_current_user, get_optional_user
 from app.services.event_service import event_service
 from app.models.user import User
@@ -128,12 +132,12 @@ def create_event(
 @router.patch("/{event_uuid}", response_model=EventSessionPublic)
 def update_event(
     event_in: EventUpdate,
-    event_uuid: UUID = Path(...),
+    event_uuid: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        ev = event_service.update_event(event_uuid, event_in, db, current_user)
+        ev = event_service.update_event_sessions(event_uuid, event_in, db, current_user)
         return ev
     except KeyError:
         raise HTTPException(
@@ -141,6 +145,10 @@ def update_event(
         )
     except PermissionError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
