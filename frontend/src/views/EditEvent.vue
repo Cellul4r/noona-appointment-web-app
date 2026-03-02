@@ -1,14 +1,43 @@
 <template>
   <div class="min-h-screen bg-base-200 font-display pb-20">
-    
+    <nav class="sticky top-0 z-50 bg-white shadow px-6">
+      <div class="flex justify-between items-center h-16">
+        <button onclick="my_modal_3.showModal()" class="flex items-center gap-2 text-xl hover:opacity-80">
 
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+
+          <span class="font-bold text-lg">Edit Event</span>
+        </button>
+        <dialog id="my_modal_3" class="modal">
+          <div class="modal-box">
+            <form method="dialog">
+              <button class="btn btn-lg btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="text-lg font-bold">Leave this page?</h3>
+            <p class="py-4">You have unsaved changes. What would you like to do?</p>
+            <div class="flex gap-4">
+              <button type="button" class="btn btn-primary flex-1 p-4" @click="saveChangesAndLeave">
+                Save Changes & leave
+              </button>
+
+              <button type="button" @click="goToDashboard" class="btn flex-1">
+                Leave without saving
+              </button>
+            </div>
+          </div>
+        </dialog>
+
+      </div>
+    </nav>
     <div class="max-w-4xl mx-auto p-4 lg:p-6 space-y-6 mt-4">
       
       <!-- Event Details Card -->
       <div class="card bg-base-100 shadow-sm border border-base-200">
         <div class="card-body">
           <h2 class="card-title text-xl mb-4">
-
             Event Details
           </h2>
 
@@ -294,14 +323,15 @@
 import { ref, watch, onMounted } from "vue"
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/authStore'
+import { getEvent, getSessions } from '@/services/event.js'
 import axios from 'axios'
+
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const sessionModalRef = ref(null)
-
-const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:56733' // Update to your backend port
 
 // --- STATE ---
 const event = ref({
@@ -338,11 +368,9 @@ onMounted(async () => {
   if (!eventId) return;
 
   try {
-    const headers = { Authorization: `Bearer ${authStore.token}` };
-
     // 1. Fetch Event Details
-    const eventRes = await axios.get(`${baseUrl}/events/${eventId}`, { headers });
-    const data = eventRes.data;
+    // FIX: getEvent(eventId) already returns res.data
+    const data = await getEvent(eventId)
 
     event.value.title = data.title || "";
     event.value.location = data.location || "";
@@ -354,9 +382,9 @@ onMounted(async () => {
     }
 
     // 2. Fetch Sessions for this Event
-    // Using ?size=100 to ensure we pull back all sessions into the edit form.
-    const sessionsRes = await axios.get(`${baseUrl}/events/${eventId}/sessions?size=100`, { headers });
-    const sessionsData = sessionsRes.data.items || [];
+    // FIX: getSessions expects (uuid, cursor, size), not an object for the second argument
+    const sessionsRes = await getSessions(eventId, null, 100) 
+    const sessionsData = sessionsRes.items || [];
 
     sessions.value = sessionsData.map(s => ({
       id: s.id, // Store ID if we need it for backend updates
@@ -508,9 +536,25 @@ function resetForm() {
 
 // --- SUBMIT ACTIONS ---
 const saveDraftAndLeave = async () => {
-  // Add backend update logic here if you want it to save before leaving
-  document.getElementById("leave_modal")?.close()
-  router.push('/dashboard')
+  const eventId = route.params.event_uuid;
+  const payload = {
+    title: event.value.title,
+    location: event.value.location,
+    description: event.value.description,
+    max_sessions_per_user: limitEnabled.value ? limit.value : null,
+    is_draft: true,
+  }
+
+  try {
+    await axios.patch(`${API_URL}/events/${eventId}`, payload, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    });
+    document.getElementById("leave_modal")?.close()
+    router.push('/events')
+  } catch (err) {
+    console.error("Save draft failed:", err)
+    alert("Failed to save draft.");
+  }
 }
 
 const submit = async () => {
@@ -522,28 +566,27 @@ const submit = async () => {
     description: event.value.description,
     max_sessions_per_user: limitEnabled.value ? limit.value : null,
     is_draft: false,
-    // Note: Backend patching usually doesn't update sessions alongside Event update directly
-    // unless you coded a specific nested creation logic for updates. 
-    // Usually you need a separate POST/PATCH /sessions/ route.
   }
 
   try {
-    console.log("Saving Event Updates...", payload)
+    // Save Event Details
+    await axios.patch(`${API_URL}/events/${eventId}`, payload, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    });
+
+    // NOTE: Because your backend's PATCH /events/{uuid} only updates Event schemas 
+    // and doesn't handle nested session arrays, any modified sessions here will 
+    // require you to wire up separate endpoints (POST /sessions, PATCH /sessions, DELETE /sessions)
+    // in the future.
     
-    // Example call (uncomment once service handles the patch)
-    // await axios.patch(`${baseUrl}/events/${eventId}`, payload, {
-    //   headers: { Authorization: `Bearer ${authStore.token}` }
-    // });
-    
-    router.push('/dashboard')
+    router.push('/events')
   } catch (err) {
     console.error("Update event failed:", err)
     alert("Failed to save changes.");
   }
 }
 
-const goToDashboard = () => router.push("/dashboard")
-const handleLogout = () => { /* Add logout logic */ router.push('/login'); }
+const goToDashboard = () => router.push("/events")
 
 // --- FORMATTERS ---
 function formatDay(date) { return new Date(date).getDate(); }
