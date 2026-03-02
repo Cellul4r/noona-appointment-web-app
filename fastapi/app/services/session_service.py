@@ -197,7 +197,7 @@ class SessionService:
                 SessionModel.end_datetime >= start_from,
             )
         elif end_to:
-            query = query.where(SessionModel.start_datetime < end_to)
+            query = query.where(SessionModel.end_datetime < end_to)
         elif start_from:
             query = query.where(SessionModel.end_datetime >= start_from)
 
