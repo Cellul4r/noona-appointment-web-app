@@ -1,5 +1,5 @@
-from typing import List
 from uuid import UUID
+from fastapi import HTTPException
 from sqlalchemy import select, or_, exists
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -94,7 +94,12 @@ class EventService:
             raise ValueError("Database error")
 
     def update_event(
-        self, event_uuid: UUID, event_in: EventUpdate, db: Session, current_user: User
+        self,
+        event_uuid: UUID,
+        event_in: EventUpdate,
+        db: Session,
+        current_user: User,
+        auto_commit: bool = True,
     ) -> Event:
         ev = self.get_event(event_uuid, db)
         if not ev:
@@ -115,12 +120,108 @@ class EventService:
 
         try:
             db.add(ev)
-            db.commit()
-            db.refresh(ev)
+            if auto_commit:
+                db.commit()
+                db.refresh(ev)
             return ev
         except SQLAlchemyError:
             db.rollback()
             raise ValueError("Database error")
+
+    def update_event_sessions(
+        self,
+        event_uuid: UUID,
+        event_in: EventUpdate,
+        db: Session,
+        current_user: User,
+    ):
+        # Update event details and sessions in one transaction
+        try:
+            ev = self.update_event(
+                event_uuid, event_in, db, current_user, auto_commit=False
+            )
+            # Find default sessions
+            existing_sessions = (
+                db.execute(
+                    select(SessionModel)
+                    .where(SessionModel.event_id == ev.id)
+                    .with_for_update()
+                )
+                .scalars()
+                .all()
+            )
+            # Determine which sessions to update, delete, or add
+            # if new sessions has an id, if match with existing session -> update
+            # else -> add new session
+            # if existing session id not in new sessions -> delete
+            if event_in.sessions is None:
+                # update only event details
+                db.commit()
+                db.refresh(ev)
+                return ev
+
+            for s in event_in.sessions:
+                if s.action == "create":
+                    new_sess = SessionModel(
+                        event_id=ev.id,
+                        start_datetime=s.data.start_datetime,
+                        end_datetime=s.data.end_datetime,
+                        location=s.data.location,
+                        seat_capacity=s.data.seat_capacity or None,
+                    )
+                    db.add(new_sess)
+                elif s.action == "update":
+                    existing_sess = next(
+                        (
+                            sess
+                            for sess in existing_sessions
+                            if sess.uuid == s.session_uuid
+                        ),
+                        None,
+                    )
+                    if not existing_sess:
+                        raise HTTPException(
+                            status_code=404,
+                            detail=f"Session {s.session_uuid} not found",
+                        )
+
+                    if (
+                        existing_sess.seat_taken > 0
+                        and s.data.seat_capacity is not None
+                        and s.data.seat_capacity < existing_sess.seat_taken
+                    ):
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Cannot reduce seat capacity below current seat taken count {existing_sess.seat_taken}",
+                        )
+
+                    update_data = s.data.model_dump(exclude_unset=True)
+                    for field, value in update_data.items():
+                        setattr(existing_sess, field, value)
+
+                    db.add(existing_sess)
+                elif s.action == "delete":
+                    existing_sess = next(
+                        (
+                            sess
+                            for sess in existing_sessions
+                            if sess.uuid == s.session_uuid
+                        ),
+                        None,
+                    )
+                    if not existing_sess:
+                        raise HTTPException(
+                            status_code=404,
+                            detail=f"Session {s.session_uuid} not found",
+                        )
+                    db.delete(existing_sess)
+            db.commit()
+            db.refresh(ev)
+            return ev
+
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Database error")
 
     def delete_event(self, event_uuid: UUID, db: Session, current_user: User) -> bool:
         ev = self.get_event(event_uuid, db)
