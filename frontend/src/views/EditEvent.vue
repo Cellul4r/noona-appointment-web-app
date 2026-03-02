@@ -323,10 +323,7 @@
 import { ref, watch, onMounted } from "vue"
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/authStore'
-import { getEvent, getSessions } from '@/services/event.js'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+import { getEvent, getSessions, updateEvent } from '@/services/event.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -337,13 +334,15 @@ const sessionModalRef = ref(null)
 const event = ref({
   title: "",
   location: "",
-  description: ""
+  description: "",
+  is_draft: false
 })
 
 const limitEnabled = ref(false)
 const limit = ref(1)
 
 const sessions = ref([])
+const originalSessions = ref([]) // Used to track which sessions were deleted
 
 // Form state for modal
 const isEditing = ref(false)
@@ -369,12 +368,12 @@ onMounted(async () => {
 
   try {
     // 1. Fetch Event Details
-    // FIX: getEvent(eventId) already returns res.data
     const data = await getEvent(eventId)
 
     event.value.title = data.title || "";
     event.value.location = data.location || "";
     event.value.description = data.description || "";
+    event.value.is_draft = data.is_draft || false;
 
     if (data.max_sessions_per_user) {
       limitEnabled.value = true;
@@ -382,20 +381,22 @@ onMounted(async () => {
     }
 
     // 2. Fetch Sessions for this Event
-    // FIX: getSessions expects (uuid, cursor, size), not an object for the second argument
     const sessionsRes = await getSessions(eventId, null, 100) 
     const sessionsData = sessionsRes.items || [];
 
-    sessions.value = sessionsData.map(s => ({
-      id: s.id, // Store ID if we need it for backend updates
+    const mappedSessions = sessionsData.map(s => ({
+      id: s.id,
       uuid: s.uuid,
-      // Backend returns ISO strings, input type="datetime-local" needs YYYY-MM-DDTHH:MM
       start: s.start_datetime ? s.start_datetime.substring(0, 16) : "",
       end: s.end_datetime ? s.end_datetime.substring(0, 16) : "",
       capacity: s.seat_capacity,
       location: s.location || "",
       description: s.description || ""
     }));
+
+    sessions.value = mappedSessions;
+    // Deep copy to original tracker so we know what existed when they loaded the page
+    originalSessions.value = JSON.parse(JSON.stringify(mappedSessions));
 
   } catch (error) {
     console.error("Failed to load event details:", error);
@@ -535,26 +536,9 @@ function resetForm() {
 }
 
 // --- SUBMIT ACTIONS ---
-const saveDraftAndLeave = async () => {
-  const eventId = route.params.event_uuid;
-  const payload = {
-    title: event.value.title,
-    location: event.value.location,
-    description: event.value.description,
-    max_sessions_per_user: limitEnabled.value ? limit.value : null,
-    is_draft: true,
-  }
-
-  try {
-    await axios.patch(`${API_URL}/events/${eventId}`, payload, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
-    document.getElementById("leave_modal")?.close()
-    router.push('/events')
-  } catch (err) {
-    console.error("Save draft failed:", err)
-    alert("Failed to save draft.");
-  }
+const saveChangesAndLeave = async () => {
+  await submit()
+  document.getElementById("my_modal_3")?.close()
 }
 
 const submit = async () => {
@@ -565,24 +549,16 @@ const submit = async () => {
     location: event.value.location,
     description: event.value.description,
     max_sessions_per_user: limitEnabled.value ? limit.value : null,
-    is_draft: false,
+    is_draft: event.value.is_draft
   }
 
   try {
-    // Save Event Details
-    await axios.patch(`${API_URL}/events/${eventId}`, payload, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    });
-
-    // NOTE: Because your backend's PATCH /events/{uuid} only updates Event schemas 
-    // and doesn't handle nested session arrays, any modified sessions here will 
-    // require you to wire up separate endpoints (POST /sessions, PATCH /sessions, DELETE /sessions)
-    // in the future.
-    
+    // Call the simplified updateEvent from event.js
+    await updateEvent(eventId, payload);
     router.push('/events')
   } catch (err) {
     console.error("Update event failed:", err)
-    alert("Failed to save changes.");
+    alert("Failed to save changes. Please ensure all event fields are filled out correctly.");
   }
 }
 
