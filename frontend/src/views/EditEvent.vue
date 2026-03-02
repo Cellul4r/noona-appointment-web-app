@@ -70,9 +70,12 @@
       <div class="card bg-base-100 shadow-sm border border-base-200">
         <div class="card-body p-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <h2 class="card-title text-xl m-0">
-              Session Management
-            </h2>
+            <div class="flex items-center gap-3">
+              <h2 class="card-title text-xl m-0">
+                Session Management
+              </h2>
+              <span class="badge badge-sm badge-neutral">{{ userTimezone }}</span>
+            </div>
             
             <div class="flex items-center gap-3 bg-base-200 px-4 py-2 rounded-lg border border-base-300">
               <span class="text-sm font-semibold">
@@ -122,9 +125,8 @@
                   <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                     <span class="flex items-center gap-1 text-base-content/80">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                       </svg>
-
                       {{ formatTime(s.start) }} - {{ formatTime(s.end) }}
                     </span>
                     <span class="hidden sm:inline text-base-content/30">|</span>
@@ -234,13 +236,13 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Start -->
             <div>
-              <label class="label pt-0 pb-1"><span class="label-text font-semibold">Start Time</span></label>
+              <label class="label pt-0 pb-1"><span class="label-text font-semibold">Start Time ({{ userTimezone }})</span></label>
               <input type="datetime-local" v-model="newSession.start" class="input input-bordered w-full focus:input-primary" />
             </div>
 
             <!-- End -->
             <div>
-              <label class="label pt-0 pb-1"><span class="label-text font-semibold">End Time</span></label>
+              <label class="label pt-0 pb-1"><span class="label-text font-semibold">End Time ({{ userTimezone }})</span></label>
               <input type="datetime-local" v-model="newSession.end" class="input input-bordered w-full focus:input-primary" />
             </div>
 
@@ -362,11 +364,21 @@
 <script setup>
 import { ref, watch, onMounted, computed } from "vue"
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/store/authStore'
 import { getEvent, getSessions, updateEvent } from '@/services/event.js'
+// Import date-fns & TZ package
+import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
+import { TZDate } from "@date-fns/tz"
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 const sessionModalRef = ref(null)
+
+// Computed user timezone fallback
+const userTimezone = computed(() => {
+  return authStore.user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+})
 
 // --- STATE ---
 const event = ref({
@@ -416,12 +428,10 @@ const paginatedSessions = computed(() => {
   return sessions.value.slice(start, start + itemsPerPage)
 })
 
-// Gets the actual array index of a session mapped from the paginated view
 const getGlobalIndex = (index) => {
   return (currentPage.value - 1) * itemsPerPage + index
 }
 
-// Watch sessions length to adjust current page if it goes out of bounds (e.g. from deleting)
 watch(() => sessions.value.length, () => {
   if (currentPage.value > totalPages.value) {
     currentPage.value = Math.max(1, totalPages.value)
@@ -449,16 +459,22 @@ onMounted(async () => {
     const sessionsRes = await getSessions(eventId, null, 100) 
     const sessionsData = sessionsRes.items || [];
 
-    const mappedSessions = sessionsData.map(s => ({
-      id: s.id,
-      uuid: s.uuid,
-      start: s.start_datetime ? s.start_datetime.substring(0, 16) : "",
-      end: s.end_datetime ? s.end_datetime.substring(0, 16) : "",
-      capacity: s.seat_capacity,
-      taken: s.seat_taken,
-      location: s.location || "",
-      description: s.description || ""
-    }));
+    const mappedSessions = sessionsData.map(s => {
+      // 1. Convert Backend UTC ISO string to the User's Timezone string format expected by datetime-local (yyyy-MM-ddTHH:mm)
+      const startStr = s.start_datetime ? format(new TZDate(s.start_datetime, userTimezone.value), "yyyy-MM-dd'T'HH:mm") : "";
+      const endStr = s.end_datetime ? format(new TZDate(s.end_datetime, userTimezone.value), "yyyy-MM-dd'T'HH:mm") : "";
+
+      return {
+        id: s.id,
+        uuid: s.uuid,
+        start: startStr,
+        end: endStr,
+        capacity: s.seat_capacity,
+        taken: s.seat_taken,
+        location: s.location || "",
+        description: s.description || ""
+      }
+    });
 
     sessions.value = mappedSessions;
     originalSessions.value = JSON.parse(JSON.stringify(mappedSessions));
@@ -541,41 +557,37 @@ function addSession() {
 
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
-  const startDate = new Date(newSession.value.start)
-  const endDate = new Date(newSession.value.end)
-
-  const clone = (d) => new Date(d.getTime())
+  
+  // Use TZDate to parse local datetime-local strings as UserTimezone!
+  const startDate = new TZDate(newSession.value.start, userTimezone.value)
+  const endDate = new TZDate(newSession.value.end, userTimezone.value)
 
   const addByType = (date) => {
-    const d = new Date(date)
-    if (type === "Daily") d.setDate(d.getDate() + interval)
-    if (type === "Weekly") d.setDate(d.getDate() + 7 * interval)
-    if (type === "Monthly") d.setMonth(d.getMonth() + interval)
-    if (type === "Yearly") d.setFullYear(d.getFullYear() + interval)
-    return d
+    if (type === "Daily") return addDays(date, interval)
+    if (type === "Weekly") return addWeeks(date, interval)
+    if (type === "Monthly") return addMonths(date, interval)
+    if (type === "Yearly") return addYears(date, interval)
+    return date
   }
 
-  const format = (date) => {
-    const pad = (n) => n.toString().padStart(2, "0")
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  }
+  const formatLocal = (date) => format(date, "yyyy-MM-dd'T'HH:mm")
 
   if (type === "Does not repeat") {
     sessions.value.push({
       ...newSession.value,
-      start: format(startDate),
-      end: format(endDate),
+      start: formatLocal(startDate),
+      end: formatLocal(endDate),
     })
   } else {
-    let currentStart = clone(startDate)
-    let currentEnd = clone(endDate)
+    let currentStart = startDate
+    let currentEnd = endDate
     let i = 0
 
     while (true) {
       sessions.value.push({
         ...newSession.value,
-        start: format(currentStart),
-        end: format(currentEnd),
+        start: formatLocal(currentStart),
+        end: formatLocal(currentEnd),
         recurring: type
       })
       i++
@@ -584,7 +596,9 @@ function addSession() {
         if (repeatEnd.value.count && i >= repeatEnd.value.count) break
       }
       if (repeatEndEnabled.value && repeatEnd.value.type === "date") {
-        if (currentStart >= new Date(repeatEnd.value.date)) break
+        // Evaluate limit using user Timezone
+        const limitDate = new TZDate(repeatEnd.value.date, userTimezone.value)
+        if (currentStart >= limitDate) break
       }
       if (i > 100) break 
       
@@ -596,7 +610,6 @@ function addSession() {
   sessionModalRef.value.close()
   resetForm()
   
-  // Jump to last page to see newly added sessions
   currentPage.value = Math.max(1, Math.ceil(sessions.value.length / itemsPerPage))
 }
 
@@ -604,7 +617,6 @@ function saveEdit() {
   if (!newSession.value.start || !newSession.value.end) return alert("Please provide both start and end times.")
   if (newSession.value.start >= newSession.value.end) return alert("End time must be after start time.")
   if (newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
-  
   
   sessions.value.splice(editingIndex.value, 0, { ...newSession.value })
   sessionModalRef.value.close()
@@ -652,14 +664,13 @@ const submit = async () => {
   // 2. Mark Created and Updated Sessions
   sessions.value.forEach(s => {
     
-    // Build the data object but ONLY include valid fields.
-    // We explicitly omit keys if they are null to prevent Pydantic 422 Strict validation errors
+    // Parse the local strings back out as TZDate bound to the User Timezone
+    // and extract the correct UTC ISOString for the backend!
     const data = {
-      start_datetime: s.start ? new Date(s.start).toISOString() : null,
-      end_datetime: s.end ? new Date(s.end).toISOString() : null,
+      start_datetime: s.start ? new TZDate(s.start, userTimezone.value).toISOString() : null,
+      end_datetime: s.end ? new TZDate(s.end, userTimezone.value).toISOString() : null,
     };
     
-    // Only attach these if they actually contain a value
     if (s.capacity) data.seat_capacity = Number(s.capacity);
     if (s.location) data.location = s.location;
     if (s.description) data.description = s.description;
@@ -673,7 +684,6 @@ const submit = async () => {
     } else {
       sessionsPayload.push({
         action: "create",
-        // Note: Do NOT pass session_uuid: null for create, omit it entirely 
         data: data
       });
     }
@@ -698,7 +708,6 @@ const submit = async () => {
       return;
     }
     
-    // Dynamic error message logic: This will extract the exact 422 error from Pydantic!
     let errorMsg = "Failed to save changes.";
     if (err.response && err.response.data && err.response.data.detail) {
       errorMsg += "\nDetails: " + JSON.stringify(err.response.data.detail);
@@ -710,10 +719,17 @@ const submit = async () => {
 const goToDashboard = () => router.push("/events")
 
 // --- FORMATTERS ---
-function formatDay(date) { return new Date(date).getDate(); }
-function formatMonth(date) { return new Date(date).toLocaleString('en-US', { month: 'short' }).toUpperCase(); }
-function formatTime(date) { 
-  if(!date) return '';
-  return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); 
+// Format the input strings ("yyyy-MM-dd'T'HH:mm") representing userTimezone directly into readable pieces
+function formatDay(dateStr) { 
+  if(!dateStr) return '';
+  return format(new TZDate(dateStr, userTimezone.value), 'd');
+}
+function formatMonth(dateStr) { 
+  if(!dateStr) return '';
+  return format(new TZDate(dateStr, userTimezone.value), 'MMM').toUpperCase(); 
+}
+function formatTime(dateStr) { 
+  if(!dateStr) return '';
+  return format(new TZDate(dateStr, userTimezone.value), 'hh:mm a'); 
 }
 </script>
