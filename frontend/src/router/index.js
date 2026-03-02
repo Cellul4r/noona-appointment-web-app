@@ -81,23 +81,22 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  if (to.meta.requiresAuth) {
-    const authStore = useAuthStore();
-    if (!authStore.user) {
-      try {
-        await authStore.updateUser();
-      } catch (err) {
-        authStore.user = null;
-      }
+  const authStore = useAuthStore();
+  if (!authStore.user) {
+    try {
+      await authStore.updateUser();
+    } catch (err) {
+      authStore.user = null;
     }
+  }
+  if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
       return next({ name: 'Login' });
     }
 
-    if ((to.name === 'Login' || to.name === 'Signup') && authStore.isAuthenticated) {
-      return next({ name: 'Dashboard' });
-    }
-
+  }
+  if ((to.name === 'Login' || to.name === 'Signup') && authStore.isAuthenticated) {
+    return next({ name: 'Dashboard' });
   }
   next();
 })
