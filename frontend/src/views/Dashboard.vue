@@ -131,7 +131,15 @@
                   </div>
                 </td>
                 <td class="text-right">
-                  <button v-if="!session.is_filled" class="btn btn-sm btn-success text-white">Accept</button>
+                  <button 
+                    v-if="!session.is_filled" 
+                    @click="handleAcceptWaitlist(session.session_uuid)"
+                    :disabled="processingAccept === session.session_uuid"
+                    class="btn btn-sm btn-success text-white"
+                  >
+                    <span v-if="processingAccept === session.session_uuid" class="loading loading-spinner loading-xs"></span>
+                    Accept
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -310,7 +318,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
-import { getUserSessions } from '@/services/session.js';
+import { getUserSessions, confirmSession } from '@/services/session.js';
 import { fetchUserSettings } from '@/services/user.js';
 import { getAllEvents } from '../services/event';
 
@@ -320,6 +328,7 @@ const router = useRouter();
 const user = computed(() => authStore.user);
 
 const loadingDashboard = ref(true);
+const processingAccept = ref(null); 
 
 // Data Arrays
 const recentEvents = ref([]);
@@ -354,6 +363,7 @@ const fetchUserProfile = async () => {
 const mapSessionData = (s) => {
   return {
     id: s.id,
+    session_uuid: s.uuid,
     event_title: s.event?.title || 'Unknown Event',
     event_uuid: s.event?.share_uuid,
     host_id: s.event?.host?.id,
@@ -490,7 +500,7 @@ const getUpcomingStatusLabel = (session) => {
   
   // Left this as it is for now because I don't know how to word Unregistered Host without it looking like ----.
   if (isHost) {
-    return isRegistered ? 'Host' : 'Host';
+    return isRegistered ? 'Confirmed' : 'Host';
   }
   return 'Confirmed';
 };
@@ -500,8 +510,7 @@ const getUpcomingStatusClass = (session) => {
   const isRegistered = session.registration_status?.toUpperCase() === 'CONFIRMED';
   
   if (isHost) {
-    // Solid primary for registered host, Outlined primary for unregistered host
-    return isRegistered ? 'badge-primary' : 'badge-outline badge-primary';
+    return isRegistered ? 'badge-success' : 'badge-primary';
   }
   return 'badge-success'; // Green for normal participants
 };
@@ -582,6 +591,26 @@ const formatDateTimeRange = (startStr, endStr) => {
   const endTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(endDate);
   
   return `${dateFmt}, ${startTimeFmt} - ${endTimeFmt}`;
+};
+
+const handleAcceptWaitlist = async (sessionUuid) => {
+  processingAccept.value = sessionUuid;
+  try {
+    // 1. Tell backend to confirm the available seat
+    await confirmSession(sessionUuid);
+    
+    // 2. Alert success
+    alert("Successfully registered for the session!");
+    
+    // 3. Refresh dashboard data so it vanishes from Wait List and appears in Upcoming
+    await fetchDashboardData();
+  } catch (error) {
+    console.error("Failed to accept session:", error);
+    alert("Failed to confirm registration. The seat might have been taken by someone else in the queue.");
+    await fetchDashboardData(); // Refresh anyway to get the latest accurate seat count
+  } finally {
+    processingAccept.value = null;
+  }
 };
 
 // --- LIFECYCLE ---
