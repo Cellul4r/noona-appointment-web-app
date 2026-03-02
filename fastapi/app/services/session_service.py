@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+import datetime as dt
 from email.policy import HTTP
 import logging
 from typing import Annotated
 import uuid
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, background, status
 from sqlalchemy import and_, case, func, literal, or_, select
 from app.schemas.session import (
     SessionUpdate,
@@ -398,7 +399,10 @@ class SessionService:
                         SessionRegistration.status == RegistrationStatus.CONFIRMED,
                     )
                 ).scalar_one()
-                if current_registrations >= event.max_sessions_per_user:
+                if (
+                    event.max_sessions_per_user is not None
+                    and current_registrations >= event.max_sessions_per_user
+                ):
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"User has already registered for {event.max_sessions_per_user} sessions.",
@@ -496,7 +500,10 @@ class SessionService:
                     SessionRegistration.status == RegistrationStatus.CONFIRMED,
                 )
             ).scalar_one()
-            if current_registrations >= event.max_sessions_per_user:
+            if (
+                event.max_sessions_per_user is not None
+                and current_registrations >= event.max_sessions_per_user
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"User has already registered for {event.max_sessions_per_user} sessions.",
@@ -520,7 +527,13 @@ class SessionService:
                 detail="Database error",
             )
 
-    def unregister_session(self, session_id: int, user_id: int, db: Session):
+    def unregister_session(
+        self,
+        session_id: int,
+        user_id: int,
+        db: Session,
+    ) -> list[str]:
+        notification_recipients: list[str] = []
         try:
             session = db.execute(
                 select(SessionModel)
@@ -557,9 +570,14 @@ class SessionService:
                 session.seat_capacity is not None
                 and session.seat_taken < session.seat_capacity
             ):
-                self.set_available_registrations(session_id, user_id, db)
+                notification_recipients = self.set_available_registrations(
+                    session_id,
+                    user_id,
+                    db,
+                )
 
             db.commit()
+            return notification_recipients
         except SQLAlchemyError:
             db.rollback()
             raise HTTPException(
@@ -568,8 +586,13 @@ class SessionService:
             )
 
     def unregister_user_from_session(
-        self, session_id: int, current_user_id: int, user_id: int, db: Session
-    ):
+        self,
+        session_id: int,
+        current_user_id: int,
+        user_id: int,
+        db: Session,
+    ) -> list[str]:
+        notification_recipients: list[str] = []
         try:
             session = db.execute(
                 select(SessionModel)
@@ -612,9 +635,14 @@ class SessionService:
                 session.seat_capacity is not None
                 and session.seat_taken < session.seat_capacity
             ):
-                self.set_available_registrations(session_id, user_id, db)
+                notification_recipients = self.set_available_registrations(
+                    session_id,
+                    user_id,
+                    db,
+                )
 
             db.commit()
+            return notification_recipients
         except SQLAlchemyError:
             db.rollback()
             raise HTTPException(
@@ -622,7 +650,12 @@ class SessionService:
                 detail="Database error",
             )
 
-    def set_available_registrations(self, session_id: int, user_id: int, db: Session):
+    def set_available_registrations(
+        self,
+        session_id: int,
+        user_id: int,
+        db: Session,
+    ) -> list[str]:
         registrations = (
             db.execute(
                 select(SessionRegistration)
@@ -636,9 +669,21 @@ class SessionService:
             .scalars()
             .all()
         )
+        notification_recipients: list[str] = []
         for r in registrations:
             # transaction set to available status
             r.status = RegistrationStatus.AVAILABLE
+            if r.user.email_notifications and (
+                r.last_available_notified_at is None
+                or dt.datetime.now(dt.timezone.utc) - r.last_available_notified_at
+                >= timedelta(hours=1)
+            ):
+                notification_recipients.append(r.user.email)
+
+        logger.info(
+            f"Prepared available-seat notifications for users: {notification_recipients}"
+        )
+        return notification_recipients
 
     def set_waitlist_registrations(self, session_id: int, user_id: int, db: Session):
         registrations = (
