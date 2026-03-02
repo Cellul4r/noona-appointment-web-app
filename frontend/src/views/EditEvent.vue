@@ -141,7 +141,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
                       </svg>
 
-                      {{ s.capacity }} seats
+                      {{ s.capacity || 'Unlimited' }} seats
                     </span>
                     <span v-if="s.recurring" class="badge badge-primary badge-sm badge-outline text-[10px] font-bold">
                       <span class="material-symbols-outlined text-[12px] mr-1">repeat</span>
@@ -322,12 +322,10 @@
 <script setup>
 import { ref, watch, onMounted } from "vue"
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/store/authStore'
 import { getEvent, getSessions, updateEvent } from '@/services/event.js'
 
 const router = useRouter()
 const route = useRoute()
-const authStore = useAuthStore()
 const sessionModalRef = ref(null)
 
 // --- STATE ---
@@ -367,7 +365,6 @@ onMounted(async () => {
   if (!eventId) return;
 
   try {
-    // 1. Fetch Event Details
     const data = await getEvent(eventId)
 
     event.value.title = data.title || "";
@@ -380,7 +377,6 @@ onMounted(async () => {
       limit.value = data.max_sessions_per_user;
     }
 
-    // 2. Fetch Sessions for this Event
     const sessionsRes = await getSessions(eventId, null, 100) 
     const sessionsData = sessionsRes.items || [];
 
@@ -395,7 +391,6 @@ onMounted(async () => {
     }));
 
     sessions.value = mappedSessions;
-    // Deep copy to original tracker so we know what existed when they loaded the page
     originalSessions.value = JSON.parse(JSON.stringify(mappedSessions));
 
   } catch (error) {
@@ -423,13 +418,11 @@ const openEditModal = (s, index) => {
   editingIndex.value = index
   backupSession.value = { ...s }
   
-  // Temporarily remove it from the list so they don't see duplicates if they edit
   sessions.value.splice(index, 1)
   sessionModalRef.value.showModal()
 }
 
 const closeSessionModal = () => {
-  // If we were editing and cancelled, put the original back
   if (isEditing.value && backupSession.value) {
     sessions.value.splice(editingIndex.value, 0, backupSession.value)
   }
@@ -495,7 +488,7 @@ function addSession() {
       if (repeatEndEnabled.value && repeatEnd.value.type === "date") {
         if (currentStart >= new Date(repeatEnd.value.date)) break
       }
-      if (i > 100) break // Safety cap
+      if (i > 100) break 
       
       currentStart = addByType(currentStart)
       currentEnd = addByType(currentEnd)
@@ -544,21 +537,70 @@ const saveChangesAndLeave = async () => {
 const submit = async () => {
   const eventId = route.params.event_uuid;
   
+  const sessionsPayload = [];
+  const currentUuids = new Set(sessions.value.map(s => s.uuid).filter(Boolean));
+
+  // 1. Mark Deleted Sessions
+  originalSessions.value.forEach(os => {
+    if (!currentUuids.has(os.uuid)) {
+      sessionsPayload.push({
+        action: "delete",
+        session_uuid: os.uuid
+      });
+    }
+  });
+
+  // 2. Mark Created and Updated Sessions
+  sessions.value.forEach(s => {
+    
+    // Build the data object but ONLY include valid fields.
+    // We explicitly omit keys if they are null to prevent Pydantic 422 Strict validation errors
+    const data = {
+      start_datetime: s.start ? new Date(s.start).toISOString() : null,
+      end_datetime: s.end ? new Date(s.end).toISOString() : null,
+    };
+    
+    // Only attach these if they actually contain a value
+    if (s.capacity) data.seat_capacity = Number(s.capacity);
+    if (s.location) data.location = s.location;
+    if (s.description) data.description = s.description;
+
+    if (s.uuid) {
+      sessionsPayload.push({
+        action: "update",
+        session_uuid: s.uuid,
+        data: data
+      });
+    } else {
+      sessionsPayload.push({
+        action: "create",
+        // Note: Do NOT pass session_uuid: null for create, omit it entirely 
+        data: data
+      });
+    }
+  });
+
   const payload = {
     title: event.value.title,
-    location: event.value.location,
-    description: event.value.description,
-    max_sessions_per_user: limitEnabled.value ? limit.value : null,
-    is_draft: event.value.is_draft
+    location: event.value.location || "",
+    description: event.value.description || "",
+    max_sessions_per_user: limitEnabled.value && limit.value ? Number(limit.value) : null,
+    is_draft: event.value.is_draft,
+    sessions: sessionsPayload
   }
 
   try {
-    // Call the simplified updateEvent from event.js
     await updateEvent(eventId, payload);
     router.push('/events')
   } catch (err) {
     console.error("Update event failed:", err)
-    alert("Failed to save changes. Please ensure all event fields are filled out correctly.");
+    
+    // Dynamic error message logic: This will extract the exact 422 error from Pydantic!
+    let errorMsg = "Failed to save changes.";
+    if (err.response && err.response.data && err.response.data.detail) {
+      errorMsg += "\nDetails: " + JSON.stringify(err.response.data.detail);
+    }
+    alert(errorMsg);
   }
 }
 
