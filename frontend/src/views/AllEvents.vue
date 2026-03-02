@@ -307,7 +307,7 @@ const editEvent = (evt) => {
 };
 
 const copyLink = (uuid) => {
-  const link = `${window.location.origin}/vote/${uuid}`;
+  const link = `${window.location.origin}/event/overview/${uuid}`;
   navigator.clipboard.writeText(link);
   alert(`Link copied: ${link}`);
 };
