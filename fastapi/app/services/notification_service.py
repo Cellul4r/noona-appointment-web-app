@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, tzinfo
 import logging
 from pathlib import Path
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 
 from fastapi import BackgroundTasks
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -41,17 +42,21 @@ class NotificationService:
         session_start: datetime,
         session_end: datetime,
         overview_url: str,
+        timezone: str = "Europe/London",
     ) -> str:
         template = self.template_env.get_template(
             "email/available_seat_notification.html"
         )
+        session_start = session_start.astimezone(ZoneInfo(timezone))
+        session_end = session_end.astimezone(ZoneInfo(timezone))
         return template.render(
             app_name=settings.mail_from_name,
             event_title=event_title,
-            session_start=session_start.strftime("%d %b %Y, %I:%M %p UTC"),
-            session_end=session_end.strftime("%d %b %Y, %I:%M %p UTC"),
+            session_start=session_start.strftime("%d %b %Y, %I:%M %p"),
+            session_end=session_end.strftime("%d %b %Y, %I:%M %p"),
             overview_url=overview_url,
             current_year=datetime.utcnow().year,
+            timezone=timezone,
         )
 
     async def send_available_seat_email(self, recipients: list[str], session_id: int):
@@ -75,18 +80,6 @@ class NotificationService:
                 return
 
             overview_url = self._build_event_overview_url(str(session.event.share_uuid))
-            html_body = self._render_available_seat_html(
-                event_title=session.event.title,
-                session_start=session.start_datetime,
-                session_end=session.end_datetime,
-                overview_url=overview_url,
-            )
-
-            await self.email_service.send_emails(
-                "Yay! A Seat is now available.",
-                EmailSchema(email=recipients),
-                html_body,
-            )
 
             now = datetime.utcnow()
             for recipient in recipients:
@@ -95,6 +88,21 @@ class NotificationService:
                 ).scalar_one_or_none()
                 if not user:
                     continue
+
+                timezone = user.timezone or "Europe/London"
+                html_body = self._render_available_seat_html(
+                    event_title=session.event.title,
+                    session_start=session.start_datetime,
+                    session_end=session.end_datetime,
+                    overview_url=overview_url,
+                    timezone=timezone,
+                )
+
+                await self.email_service.send_emails(
+                    "Yay! A Seat is now available.",
+                    EmailSchema(email=[recipient]),
+                    html_body,
+                )
 
                 registration = db.execute(
                     select(SessionRegistration).where(

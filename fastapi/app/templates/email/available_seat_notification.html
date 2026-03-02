@@ -1,59 +1,83 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seat Available Notification</title>
-  </head>
-  <body style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#1f2937;">
-    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f3f6fb;padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
-            <tr>
-              <td style="padding:28px 28px 18px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#ffffff;">
-                <div style="font-size:13px;opacity:.9;letter-spacing:.4px;text-transform:uppercase;">Available Seat Alert</div>
-                <h1 style="margin:10px 0 0;font-size:26px;line-height:1.25;">Good news — a seat is now available</h1>
-              </td>
-            </tr>
+</head>
 
-            <tr>
-              <td style="padding:28px;">
-                <p style="margin:0 0 14px;font-size:16px;line-height:1.65;">Hi there,</p>
-                <p style="margin:0 0 18px;font-size:16px;line-height:1.65;">A seat opened up for a session in <strong>{{ event_title }}</strong>. You can go directly to the event overview and register before someone else takes it.</p>
+<body
+    style="margin:0;padding:0;background:#f3f6fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#1f2937;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+        style="background:#f3f6fb;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                    style="max-width:640px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+                    <tr>
+                        <td
+                            style="padding:28px 28px 18px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#ffffff;">
+                            <div style="font-size:13px;opacity:.9;letter-spacing:.4px;text-transform:uppercase;">
+                                Available Seat Alert</div>
+                            <h1 style="margin:10px 0 0;font-size:26px;line-height:1.25;">Good news — a seat is now
+                                available</h1>
+                        </td>
+                    </tr>
 
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
-                  <tr>
-                    <td style="padding:16px 18px;">
-                      <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Session Time</div>
-                      <div style="font-size:15px;color:#0f172a;"><strong>Start:</strong> {{ session_start }}</div>
-                      <div style="font-size:15px;color:#0f172a;margin-top:4px;"><strong>End:</strong> {{ session_end }}</div>
-                    </td>
-                  </tr>
+                    <tr>
+                        <td style="padding:28px;">
+                            <p style="margin:0 0 14px;font-size:16px;line-height:1.65;">Hi there,</p>
+                            <p style="margin:0 0 18px;font-size:16px;line-height:1.65;">A seat opened up for a session
+                                in <strong>{{ event_title }}</strong>. You can go directly to the event overview and
+                                register before someone else takes it.</p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                                style="margin:0 0 24px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;">
+                                <tr>
+                                    <td style="padding:16px 18px;">
+                                        <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Session Time</div>
+                                        <div style="font-size:15px;color:#0f172a;"><strong>Start:</strong> {{
+                                            session_start }}</div>
+                                        <div style="font-size:15px;color:#0f172a;margin-top:4px;"><strong>End:</strong>
+                                            {{ session_end }}</div>
+                                        <div style="margin-top:10px;font-size:12px;line-height:1.5;color:#64748b;">
+                                            <strong>Note:</strong> The times above are shown in {{ timezone}}.
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px;">
+                                <tr>
+                                    <td align="center" style="border-radius:10px;background:#2563eb;">
+                                        <a href="{{ overview_url }}"
+                                            style="display:inline-block;padding:14px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">View
+                                            Event Overview</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#64748b;text-align:center;">If
+                                the button does not work, copy and paste this URL in your browser:</p>
+                            <p
+                                style="margin:0 0 4px;font-size:13px;line-height:1.6;color:#2563eb;word-break:break-all;text-align:center;">
+                                {{ overview_url }}</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e5e7eb;">
+                            <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">Best
+                                regards,<br /><strong>{{ app_name }}</strong></p>
+                            <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">© {{ current_year }} {{ app_name
+                                }}. All rights reserved.</p>
+                        </td>
+                    </tr>
                 </table>
-
-                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px;">
-                  <tr>
-                    <td align="center" style="border-radius:10px;background:#2563eb;">
-                      <a href="{{ overview_url }}" style="display:inline-block;padding:14px 24px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">View Event Overview</a>
-                    </td>
-                  </tr>
-                </table>
-
-                <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#64748b;text-align:center;">If the button does not work, copy and paste this URL in your browser:</p>
-                <p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:#2563eb;word-break:break-all;text-align:center;">{{ overview_url }}</p>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:18px 28px;background:#f8fafc;border-top:1px solid #e5e7eb;">
-                <p style="margin:0;font-size:14px;line-height:1.6;color:#475569;">Best regards,<br /><strong>{{ app_name }}</strong></p>
-                <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">© {{ current_year }} {{ app_name }}. All rights reserved.</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+            </td>
+        </tr>
     </table>
-  </body>
+</body>
+
 </html>
