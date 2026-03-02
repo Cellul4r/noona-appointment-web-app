@@ -85,6 +85,17 @@ class Settings(BaseSettings):
     frontend_login_success_uri: str = "http://localhost:8080/login-success"  # Default
     vite_api_base_url: str = "http://localhost:56733/api"  # Default
 
+    mail_username: str = "your@example.com"
+    mail_password: str = "your password"
+    mail_from: str = mail_username
+    mail_from_name: str = "Noona Appointment Management System"
+    mail_port: int = 587
+    mail_server: str = "smtp.gmail.com"
+    mail_starttls: bool = True
+    mail_ssl_tls: bool = False
+    use_credentials: bool = True
+    validate_certs: bool = True
+
     @validator("allowed_origins", pre=True, always=True)
     def assemble_allowed_origins(cls, v):
         logging.info(f"Raw value for allowed_origins: {v!r}")
