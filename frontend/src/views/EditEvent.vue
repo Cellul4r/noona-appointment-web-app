@@ -98,9 +98,10 @@
               <p class="text-xs text-base-content/40 mt-1">Add at least one session so users can register.</p>
             </div>
 
+            <!-- Paginated Sessions View -->
             <div 
-              v-for="(s, index) in sessions" 
-              :key="index"
+              v-for="(s, index) in paginatedSessions" 
+              :key="getGlobalIndex(index)"
               class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 border border-base-200 rounded-xl p-4 hover:shadow-md transition-all group"
             >
               <!-- LEFT INFO -->
@@ -153,25 +154,39 @@
 
               <!-- RIGHT ACTIONS -->
               <div class="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity self-end sm:self-auto mt-2 sm:mt-0">
-                <button @click="copySession(s)" class="btn btn-sm btn-circle btn-ghost tooltip" data-tip="Duplicate">
+                <button @click="openDuplicateModal(s)" class="btn btn-sm btn-circle btn-ghost tooltip" data-tip="Duplicate">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
                   </svg>
-
                 </button>
-                <button @click="openEditModal(s, index)" class="btn btn-sm btn-circle btn-ghost text-info tooltip" data-tip="Edit">
+                <button @click="openEditModal(s, getGlobalIndex(index))" class="btn btn-sm btn-circle btn-ghost text-info tooltip" data-tip="Edit">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                   </svg>
-
                 </button>
-                <button @click="removeSession(index)" class="btn btn-sm btn-circle btn-ghost text-error tooltip" data-tip="Remove">
+                <button @click="removeSession(getGlobalIndex(index))" class="btn btn-sm btn-circle btn-ghost text-error tooltip" data-tip="Remove">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                   </svg>
-
                 </button>
               </div>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div v-if="totalPages > 1" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
+              <button class="btn btn-sm btn-ghost" @click="currentPage--" :disabled="currentPage === 1">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg>
+                Prev
+              </button>
+              <span class="text-sm font-semibold text-base-content/70">Page {{ currentPage }} of {{ totalPages }}</span>
+              <button class="btn btn-sm btn-ghost" @click="currentPage++" :disabled="currentPage === totalPages">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
             </div>
             
             <!-- Add New Session Button (Triggers Modal) -->
@@ -179,7 +194,6 @@
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
-
               <span class="text-lg">Add New Session</span>
             </button>
           </div>
@@ -316,11 +330,34 @@
       </form>
     </dialog>
 
+    <!-- ========================================== -->
+    <!-- DUPLICATE SESSION MODAL                    -->
+    <!-- ========================================== -->
+    <dialog id="duplicate_modal" class="modal" ref="duplicateModalRef">
+      <div class="modal-box max-w-sm">
+        <form method="dialog">
+          <button @click="closeDuplicateModal" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+        <h3 class="font-bold text-lg mb-4">Duplicate Session</h3>
+        <p class="text-sm text-base-content/70 mb-4">How many copies of this session would you like to create?</p>
+        <div class="form-control mb-4">
+          <input type="number" v-model="duplicateCount" min="1" max="50" class="input input-bordered w-full" />
+        </div>
+        <div class="modal-action">
+          <button class="btn btn-ghost" @click="closeDuplicateModal">Cancel</button>
+          <button class="btn btn-primary" @click="confirmDuplicate">Duplicate</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button @click="closeDuplicateModal">close</button>
+      </form>
+    </dialog>
+
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue"
+import { ref, watch, onMounted, computed } from "vue"
 import { useRouter, useRoute } from 'vue-router'
 import { getEvent, getSessions, updateEvent } from '@/services/event.js'
 
@@ -342,6 +379,15 @@ const limit = ref(1)
 const sessions = ref([])
 const originalSessions = ref([]) // Used to track which sessions were deleted
 
+// Pagination State
+const currentPage = ref(1)
+const itemsPerPage = 4
+
+// Duplicate State
+const duplicateModalRef = ref(null)
+const sessionToDuplicate = ref(null)
+const duplicateCount = ref(1)
+
 // Form state for modal
 const isEditing = ref(false)
 const editingIndex = ref(null)
@@ -358,6 +404,26 @@ const newSession = ref({
 const repeatEndEnabled = ref(false)
 const repeatEnd = ref({ type: "never", date: "", count: null })
 const repeatsChoose = ref({ type: "Does not repeat", interval: "" })
+
+// --- COMPUTED (Pagination) ---
+const totalPages = computed(() => Math.max(1, Math.ceil(sessions.value.length / itemsPerPage)))
+
+const paginatedSessions = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  return sessions.value.slice(start, start + itemsPerPage)
+})
+
+// Gets the actual array index of a session mapped from the paginated view
+const getGlobalIndex = (index) => {
+  return (currentPage.value - 1) * itemsPerPage + index
+}
+
+// Watch sessions length to adjust current page if it goes out of bounds (e.g. from deleting)
+watch(() => sessions.value.length, () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = Math.max(1, totalPages.value)
+  }
+})
 
 // --- LIFECYCLE (DATA HYDRATION) ---
 onMounted(async () => {
@@ -412,13 +478,13 @@ const openAddModal = () => {
   sessionModalRef.value.showModal()
 }
 
-const openEditModal = (s, index) => {
+const openEditModal = (s, globalIndex) => {
   newSession.value = { ...s }
   isEditing.value = true
-  editingIndex.value = index
+  editingIndex.value = globalIndex
   backupSession.value = { ...s }
   
-  sessions.value.splice(index, 1)
+  sessions.value.splice(globalIndex, 1)
   sessionModalRef.value.showModal()
 }
 
@@ -428,6 +494,34 @@ const closeSessionModal = () => {
   }
   sessionModalRef.value.close()
   resetForm()
+}
+
+// --- DUPLICATE LOGIC ---
+const openDuplicateModal = (s) => {
+  sessionToDuplicate.value = s
+  duplicateCount.value = 1
+  duplicateModalRef.value.showModal()
+}
+
+const closeDuplicateModal = () => {
+  duplicateModalRef.value.close()
+  sessionToDuplicate.value = null
+}
+
+const confirmDuplicate = () => {
+  if (!sessionToDuplicate.value || duplicateCount.value < 1) return
+  
+  for (let i = 0; i < duplicateCount.value; i++) {
+    const s = sessionToDuplicate.value
+    // Strip id and uuid so the backend sees them as new creations
+    const clone = { ...s, start: s.start, end: s.end, id: undefined, uuid: undefined }
+    sessions.value.push(clone)
+  }
+  
+  closeDuplicateModal()
+  
+  // Navigate to the newly created items on the last page
+  currentPage.value = Math.max(1, Math.ceil(sessions.value.length / itemsPerPage))
 }
 
 // --- SESSION ACTIONS ---
@@ -497,6 +591,9 @@ function addSession() {
   
   sessionModalRef.value.close()
   resetForm()
+  
+  // Jump to last page to see newly added sessions
+  currentPage.value = Math.max(1, Math.ceil(sessions.value.length / itemsPerPage))
 }
 
 function saveEdit() {
@@ -507,15 +604,10 @@ function saveEdit() {
   resetForm()
 }
 
-function removeSession(index) {
+function removeSession(globalIndex) {
   if(confirm("Remove this session?")) {
-    sessions.value.splice(index, 1)
+    sessions.value.splice(globalIndex, 1)
   }
-}
-
-function copySession(s) {
-  const clone = { ...s, start: s.start, end: s.end, id: undefined, uuid: undefined }
-  sessions.value.push(clone)
 }
 
 function resetForm() {
