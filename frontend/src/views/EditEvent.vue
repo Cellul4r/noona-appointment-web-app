@@ -264,12 +264,6 @@
               <label class="label pt-0 pb-1"><span class="label-text font-semibold">Location <span class="opacity-60 font-normal">(optional)</span></span></label>
               <input type="text" v-model="newSession.location" placeholder="Specific room/link" class="input input-bordered w-full focus:input-primary" />
             </div>
-            
-            <!-- Description -->
-            <div class="sm:col-span-2">
-              <label class="label pt-0 pb-1"><span class="label-text font-semibold">Session Notes <span class="opacity-60 font-normal">(optional)</span></span></label>
-              <textarea v-model="newSession.description" class="textarea textarea-bordered w-full min-h-[80px]" placeholder="Specific instructions for this session..."></textarea>
-            </div>
           </div>
 
           <!-- Repeat Settings (Hidden if Editing to prevent complex logic clashes, optional to show) -->
