@@ -26,6 +26,7 @@ class EventPublic(EventBase):
     is_draft: bool
     updated_at: datetime
 
+
 class EventSessionPublic(EventPublic):
     sessions: List[SessionPublic]
 
@@ -43,8 +44,10 @@ class EventUpdate(BaseModel):
     is_draft: bool | None = None
     max_sessions_per_user: int | None = Field(default=None, ge=1)
 
+    sessions: List[SessionOperation] | None = None
+
 
 from app.schemas.user import UserPublic
-from app.schemas.session import SessionCreate, SessionPublic
+from app.schemas.session import SessionCreate, SessionOperation, SessionPublic
 
 EventSessionPublic.model_rebuild()
