@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.services.session_service import SessionService
@@ -23,6 +23,7 @@ from fastapi_pagination.cursor import CursorPage, CursorParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.schemas.user import UserPublic, UserWithSessionStatus
+from app.services.notification_service import NotificationService
 
 import uuid
 
@@ -32,6 +33,7 @@ logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
 router = APIRouter()
 
 session_service = SessionService()
+notification_service = NotificationService()
 
 
 def transform_session(row):
@@ -126,7 +128,9 @@ def register_session(
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
     session_service.register_session(session.id, current_user.id, db)
-    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    row = session_service.get_session_with_user_status(
+        session_uuid, current_user.id, db
+    )
     return transform_session(row)
 
 
@@ -138,7 +142,9 @@ def confirm_session(
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
     session_service.confirm_session(session.id, current_user.id, db)
-    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    row = session_service.get_session_with_user_status(
+        session_uuid, current_user.id, db
+    )
     return transform_session(row)
 
 
@@ -151,10 +157,20 @@ def unregister_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    session_service.unregister_session(session.id, current_user.id, db)
-    row = session_service.get_session_with_user_status(session_uuid, current_user.id, db)
+    recipients = session_service.unregister_session(
+        session.id,
+        current_user.id,
+        db,
+    )
+    notification_service.queue_available_seat_email(
+        background_tasks, recipients, session.id
+    )
+    row = session_service.get_session_with_user_status(
+        session_uuid, current_user.id, db
+    )
     return transform_session(row)
 
 
@@ -166,10 +182,17 @@ def unregister_user_from_session(
     user_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    return session_service.unregister_user_from_session(
-        session.id, current_user.id, user_id, db
+    recipients = session_service.unregister_user_from_session(
+        session.id,
+        current_user.id,
+        user_id,
+        db,
+    )
+    notification_service.queue_available_seat_email(
+        background_tasks, recipients, session.id
     )
 
 
