@@ -23,7 +23,7 @@
                 Save Changes & Leave
               </button>
 
-              <button type="button" @click="goToDashboard" class="btn flex-1">
+              <button type="button" @click="goToPreviousPage" class="btn flex-1">
                 Leave without saving
               </button>
             </div>
@@ -207,7 +207,7 @@
 
       <!-- Footer Actions -->
       <div class="flex gap-4 justify-end pt-4 border-t border-base-300">
-        <button @click="goToDashboard" class="btn btn-ghost">
+        <button @click="goToPreviousPage" class="btn btn-ghost">
           Cancel
         </button>
         <button @click="submit" class="btn btn-primary px-8">
@@ -717,6 +717,7 @@ const submit = async () => {
 }
 
 const goToDashboard = () => router.push("/events")
+const goToPreviousPage = () => window.history.length > 1 ? router.back() : router.push("/events")
 
 // --- FORMATTERS ---
 // Format the input strings ("yyyy-MM-dd'T'HH:mm") representing userTimezone directly into readable pieces
