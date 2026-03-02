@@ -710,7 +710,6 @@ const submit = async () => {
   }
 }
 
-const goToDashboard = () => router.push("/events")
 const goToPreviousPage = () => window.history.length > 1 ? router.back() : router.push("/events")
 
 // --- FORMATTERS ---
