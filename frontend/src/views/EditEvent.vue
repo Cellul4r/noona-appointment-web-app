@@ -455,6 +455,7 @@ onMounted(async () => {
       start: s.start_datetime ? s.start_datetime.substring(0, 16) : "",
       end: s.end_datetime ? s.end_datetime.substring(0, 16) : "",
       capacity: s.seat_capacity,
+      taken: s.seat_taken,
       location: s.location || "",
       description: s.description || ""
     }));
@@ -600,7 +601,10 @@ function addSession() {
 }
 
 function saveEdit() {
-  if (!newSession.value.start || !newSession.value.end) return
+  if (!newSession.value.start || !newSession.value.end) return alert("Please provide both start and end times.")
+  if (newSession.value.start >= newSession.value.end) return alert("End time must be after start time.")
+  if (newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
+  
   
   sessions.value.splice(editingIndex.value, 0, { ...newSession.value })
   sessionModalRef.value.close()
@@ -689,6 +693,10 @@ const submit = async () => {
     router.push('/events')
   } catch (err) {
     console.error("Update event failed:", err)
+    if (err.response && err.response.status === 400) {
+      alert("Validation Error: Please check your input and try again.\nDetails: " + JSON.stringify(err.response.data));
+      return;
+    }
     
     // Dynamic error message logic: This will extract the exact 422 error from Pydantic!
     let errorMsg = "Failed to save changes.";
