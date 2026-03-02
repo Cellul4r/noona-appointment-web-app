@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "../store/authStore"
-import { logout } from "../services/auth"
 import { useRouter } from "vue-router"
 
 const isLoggedIn = computed(() => !!authStore.user)
@@ -20,7 +19,7 @@ const getAvatar = () => {
 }
 
 const handleLogout = () => {
-    logout()
+    authStore.logout()
     router.push("/login")
 }
 </script>
