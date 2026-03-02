@@ -1,9 +1,14 @@
+from re import DEBUG
+
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from app.config import settings
 from app.schemas.email import EmailSchema
 
 
 class EmailService:
+
+    def __init__(self):
+        self.fm = FastMail(self.get_connection_config())
 
     def get_connection_config(self):
         return ConnectionConfig(
@@ -20,7 +25,6 @@ class EmailService:
         )
 
     async def send_emails(self, subject: str, email: EmailSchema, html: str):
-        conf = self.get_connection_config()
         message = MessageSchema(
             subject=subject,
             recipients=email.model_dump().get("email"),
@@ -28,6 +32,5 @@ class EmailService:
             subtype=MessageType.html,
         )
 
-        fm = FastMail(conf)
-        await fm.send_message(message)
+        await self.fm.send_message(message)
         return {"message": "Email has been sent"}
