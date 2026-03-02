@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Annotated, Literal
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -56,6 +57,29 @@ class SessionUpdate(BaseModel):
     end_datetime: datetime | None = Field(default=None)
     location: str | None = Field(default=None, max_length=255)
     seat_capacity: int | None = Field(default=None, ge=1)
+
+
+class SessionCreateOperation(BaseModel):
+    action: Literal["create"]
+    data: SessionCreate
+
+
+class SessionUpdateOperation(BaseModel):
+    action: Literal["update"]
+    session_uuid: uuid.UUID
+    data: SessionUpdate
+
+
+class SessionDeleteOperation(BaseModel):
+    action: Literal["delete"]
+    session_uuid: uuid.UUID
+
+
+# Pydantic Discrimanated Unions with action discriminators
+SessionOperation = Annotated[
+    SessionCreateOperation | SessionUpdateOperation | SessionDeleteOperation,
+    Field(discriminator="action"),
+]
 
 
 from app.schemas.event import EventPublic
