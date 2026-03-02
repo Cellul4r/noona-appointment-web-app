@@ -4,7 +4,7 @@ import logging
 from typing import Annotated
 import uuid
 from fastapi import Depends, HTTPException, status
-from sqlalchemy import and_, case, literal, or_, select
+from sqlalchemy import and_, case, func, literal, or_, select
 from app.schemas.session import (
     SessionUpdate,
 )
@@ -387,6 +387,22 @@ class SessionService:
                 session.seat_capacity is None
                 or session.seat_taken < session.seat_capacity
             ):
+                # count current registration sessions of this event (max_sessions_per_user)
+                event = session.event
+                current_registrations = db.execute(
+                    select(func.count(SessionRegistration.id)).where(
+                        SessionRegistration.session.has(
+                            SessionModel.event_id == session.event_id
+                        ),
+                        SessionRegistration.user_id == user_id,
+                        SessionRegistration.status == RegistrationStatus.CONFIRMED,
+                    )
+                ).scalar_one()
+                if current_registrations >= event.max_sessions_per_user:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"User has already registered for {event.max_sessions_per_user} sessions.",
+                    )
                 new_registration = SessionRegistration(
                     session_id=session_id,
                     user_id=user_id,
@@ -470,6 +486,22 @@ class SessionService:
                     detail="Session's capacity is full, can not confirm to register this session",
                 )
             # set to confirm status
+            event = session.event
+            current_registrations = db.execute(
+                select(func.count(SessionRegistration.id)).where(
+                    SessionRegistration.session.has(
+                        SessionModel.event_id == session.event_id
+                    ),
+                    SessionRegistration.user_id == user_id,
+                    SessionRegistration.status == RegistrationStatus.CONFIRMED,
+                )
+            ).scalar_one()
+            if current_registrations >= event.max_sessions_per_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"User has already registered for {event.max_sessions_per_user} sessions.",
+                )
+
             registration.status = RegistrationStatus.CONFIRMED
             session.seat_taken += 1
             if (
