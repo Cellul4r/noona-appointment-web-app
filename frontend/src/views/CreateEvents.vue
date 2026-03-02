@@ -137,14 +137,14 @@
                   : Math.max(1, Number($event.target.value))" class="input input-bordered w-full" />
               </div>
             </div>
-              <!-- Location -->
-              <div>
-                <span class="text-sm">Location</span>
-                <span class="text-sm opacity-60"> (optional)</span>
-                <input type="text" v-model="newSession.location" placeholder="e.g. Room 101"
-                  class="input input-bordered w-full" />
-              </div>
-            
+            <!-- Location -->
+            <div>
+              <span class="text-sm">Location</span>
+              <span class="text-sm opacity-60"> (optional)</span>
+              <input type="text" v-model="newSession.location" placeholder="e.g. Room 101"
+                class="input input-bordered w-full" />
+            </div>
+
 
 
 
@@ -269,11 +269,11 @@
                             d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                           <path stroke-linecap="round" stroke-linejoin="round"
                             d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                          </svg>
+                        </svg>
 
-                            {{ getEffectiveSessionLocation(s) }}
+                        {{ getEffectiveSessionLocation(s) }}
                       </span>
-                          <span v-if="getEffectiveSessionLocation(s) && s.capacity != null" class="opacity-40">|</span>
+                      <span v-if="getEffectiveSessionLocation(s) && s.capacity != null" class="opacity-40">|</span>
 
                       <!-- SEATS + BADGE -->
                       <span v-if="s.capacity != null" class="flex items-center gap-1">
@@ -346,9 +346,42 @@
     <div class="fixed bottom-0 left-0 w-full z-20">
       <div
         class="bg-base-100 border-t border-base-300 p-4 pointer-events-auto flex justify-end gap-3 px-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <button @click="handleCancel" class="btn">
-          Cancel
+        <button @click="showDiscardModal = true" class="btn">
+          Discard changes
         </button>
+        <!-- Discard Modal -->
+        <div v-if="showDiscardModal"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/20 backdrop-blur-[2px]"
+          @click.self="showDiscardModal = false">
+          <div class="bg-base-100 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden border border-base-300">
+            <div class="p-8 flex flex-col items-center text-center">
+
+              <!-- Icon -->
+              <div class="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                  stroke="currentColor" class="size-6 text-warning">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+              </div>
+
+              <h3 class="text-xl font-bold mb-2">Discard Changes?</h3>
+              <p class="text-sm opacity-60 mb-8 leading-relaxed">
+                Are you sure you want to discard your changes? All unsaved information will be lost.
+              </p>
+
+              <div class="flex gap-3 w-full">
+                <button class="flex-1 btn btn-outline rounded-full" @click="showDiscardModal = false">
+                  Keep Editing
+                </button>
+                <button class="flex-1 btn rounded-full bg-red-400 hover:bg-red-500 text-white border-none"
+                  @click="discardChanges">
+                  Discard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <button @click="submit" class="btn btn-primary">
           Create Event
@@ -369,6 +402,7 @@ const editingIndex = ref(null)
 const backupSession = ref(null)
 const submitted = ref(false)
 const titleInput = ref(null)
+const showDiscardModal = ref(false)
 
 const trimFields = () => {
   if (event.value.title != null) {
@@ -431,6 +465,12 @@ const handleCancel = () => {
 
 const goToDashboard = () => {
   router.push("/dashboard")
+}
+
+const discardChanges = () => {
+  handleCancel()
+  resetForm()
+  showDiscardModal.value = false
 }
 
 
