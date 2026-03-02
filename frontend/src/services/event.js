@@ -39,6 +39,11 @@ export async function createEvent(payload) {
     return res.data;
 }
 
+export async function updateEvent(uuid, payload) {
+    const res = await axios.patch(`${API_URL}/events/${uuid}`, payload);
+    return res.data;
+}
+
 export async function deleteEvent(uuid) {
     await axios.delete(`${API_URL}/events/${uuid}`);
 }
