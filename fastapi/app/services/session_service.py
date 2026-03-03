@@ -548,8 +548,8 @@ class SessionService:
         session_id: int,
         user_id: int,
         db: Session,
-    ) -> list[str]:
-        notification_recipients: list[str] = []
+    ) -> list[int]:
+        notification_recipients: list[int] = []
         try:
             session = db.execute(
                 select(SessionModel)
@@ -607,8 +607,8 @@ class SessionService:
         current_user_id: int,
         user_id: int,
         db: Session,
-    ) -> list[str]:
-        notification_recipients: list[str] = []
+    ) -> list[int]:
+        notification_recipients: list[int] = []
         try:
             session = db.execute(
                 select(SessionModel)
@@ -671,7 +671,7 @@ class SessionService:
         session_id: int,
         user_id: int,
         db: Session,
-    ) -> list[str]:
+    ) -> list[int]:
         registrations = (
             db.execute(
                 select(SessionRegistration)
@@ -685,7 +685,7 @@ class SessionService:
             .scalars()
             .all()
         )
-        notification_recipients: list[str] = []
+        notification_recipients: list[int] = []
         for r in registrations:
             # transaction set to available status
             r.status = RegistrationStatus.AVAILABLE
@@ -694,7 +694,7 @@ class SessionService:
                 or dt.datetime.now(dt.timezone.utc) - r.last_available_notified_at
                 >= timedelta(hours=1)
             ):
-                notification_recipients.append(r.user.email)
+                notification_recipients.append(r.user_id)
 
         logger.info(
             f"Prepared available-seat notifications for users: {notification_recipients}"

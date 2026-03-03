@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.services.session_service import SessionService
@@ -153,11 +153,10 @@ def confirm_session(
     status_code=status.HTTP_200_OK,
     response_model=SessionWithEventPublic,
 )
-def unregister_session(
+async def unregister_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    background_tasks: BackgroundTasks,
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
     recipients = session_service.unregister_session(
@@ -165,8 +164,9 @@ def unregister_session(
         current_user.id,
         db,
     )
-    notification_service.queue_available_seat_email(
-        background_tasks, recipients, session.id
+    notification_service.enqueue_waitlist_available_jobs(
+        session=session,
+        recipient_user_ids=recipients,
     )
     row = session_service.get_session_with_user_status(
         session_uuid, current_user.id, db
@@ -177,12 +177,11 @@ def unregister_session(
 @router.delete(
     "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_200_OK
 )
-def unregister_user_from_session(
+async def unregister_user_from_session(
     session_uuid: uuid.UUID,
     user_id: int,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    background_tasks: BackgroundTasks,
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
     recipients = session_service.unregister_user_from_session(
@@ -191,8 +190,9 @@ def unregister_user_from_session(
         user_id,
         db,
     )
-    notification_service.queue_available_seat_email(
-        background_tasks, recipients, session.id
+    notification_service.enqueue_waitlist_available_jobs(
+        session=session,
+        recipient_user_ids=recipients,
     )
 
 
