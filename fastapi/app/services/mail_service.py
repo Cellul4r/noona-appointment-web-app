@@ -16,6 +16,7 @@ from app.services.session_service import SessionService
 from app.services.email_template_service import (
     build_event_overview_url,
     render_available_seat_html,
+    render_registration_removed_by_host_html,
     render_registration_summary_html,
     render_session_reminder_html,
 )
@@ -259,6 +260,78 @@ class EmailService:
         except Exception:
             logger.exception(
                 "Failed to send session reminder email for user_id=%s, session_id=%s",
+                user_id,
+                session_id,
+            )
+            raise
+        finally:
+            db.close()
+
+    async def send_registration_removed_by_host(
+        self, user_id: int, session_id: int, registration_status: RegistrationStatus
+    ):
+        db = SessionLocal()
+        try:
+            user = db.execute(
+                select(User).where(User.id == user_id)
+            ).scalar_one_or_none()
+            if not user:
+                logger.warning(
+                    "Failed to send registration removed email: user not found for user_id=%s",
+                    user_id,
+                )
+                return
+            session = db.execute(
+                select(SessionModel)
+                .options(selectinload(SessionModel.event))
+                .where(SessionModel.id == session_id)
+            ).scalar_one_or_none()
+            if not session:
+                logger.warning(
+                    "Failed to send registration removed email: session not found for session_id=%s",
+                    session_id,
+                )
+                return
+            if session.event is None:
+                logger.warning(
+                    "Failed to send registration removed email: event not found for session_id=%s",
+                    session_id,
+                )
+                return
+
+            if not user.email:
+                logger.warning(
+                    "Failed to send registration removed email: user has no email for user_id=%s",
+                    user_id,
+                )
+                return
+
+            overview_url = build_event_overview_url(
+                settings.frontend_login_success_uri,
+                str(session.event.share_uuid),
+            )
+
+            html_body = render_registration_removed_by_host_html(
+                app_name=settings.mail_from_name,
+                full_name=user.full_name,
+                event_title=session.event.title,
+                session_start=session.start_datetime,
+                session_end=session.end_datetime,
+                session_location=session.location or session.event.location or "TBA",
+                registration_status=registration_status.value,
+                overview_url=overview_url,
+                timezone=user.timezone or "Europe/London",
+            )
+
+            await self.send_emails(
+                f"Registration removed from {session.event.title}",
+                EmailSchema(email=[user.email]),
+                html_body,
+            )
+
+        except Exception:
+            logger.exception(
+                "Failed to send registration removed by host email for user_id=%s, session_id=%s",
                 user_id,
                 session_id,
             )

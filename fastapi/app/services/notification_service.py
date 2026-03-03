@@ -14,7 +14,7 @@ from app.models.session import Session as SessionModel
 from app.schemas.email import EmailSchema
 from app.services.mail_service import EmailService
 
-from app.models.session_registration import SessionRegistration
+from app.models.session_registration import RegistrationStatus, SessionRegistration
 from app.models.user import User
 from app.models.event import Event
 from app.models.notification_job import (
@@ -112,12 +112,18 @@ class NotificationService:
             "00" if run_at.minute < 30 else "30"
         )
         payload = {"event_uuid": str(event_uuid)}
+        logger.info(
+            "Enqueuing registration summary job for user_id=%s, event_uuid=%s, run_at=%s",
+            user_id,
+            event_uuid,
+            run_at.isoformat(),
+        )
         self.enqueue_notification_job(
             notification_type=NotificationType.REGISTRATION_SUMMARY,
             user_id=user_id,
             payload=payload,
             run_at=run_at,
-            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{dedupe_window}",
+            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{dedupe_window}:{run_at.strftime('%Y%m%d%H%M')}",
         )
 
     def enqueue_session_reminder_job(
@@ -140,6 +146,51 @@ class NotificationService:
                 payload=payload,
                 dedupe_key=f"session_reminder:{user_id}:{session_id}:{minutes_before}",
             )
+
+    def dequeue_session_reminder_jobs(self, user_id: int, session_id: int):
+        # This is used when user unregisters from a session,
+        # we want to update status of that notification job to CANCELLED
+        db = SessionLocal()
+        try:
+            jobs = (
+                db.execute(
+                    select(NotificationJob).where(
+                        NotificationJob.type == NotificationType.SESSION_REMINDER,
+                        NotificationJob.user_id == user_id,
+                        NotificationJob.session_id == session_id,
+                        NotificationJob.status == NotificationJobStatus.PENDING,
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            for job in jobs:
+                job.status = NotificationJobStatus.CANCELLED
+                job.dedupe_key = None  # clear dedupe key to allow new reminder jobs if user re-registers
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("Failed to dequeue session reminder jobs")
+            raise
+        finally:
+            db.close()
+
+    def enqueue_registered_removed_by_host_job(
+        self, user_id: int, session_id: int, registration_status: RegistrationStatus
+    ):
+        now = datetime.utcnow()
+        payload = {
+            "session_id": session_id,
+            "registration_status": registration_status.value,
+        }
+        self.enqueue_notification_job(
+            notification_type=NotificationType.REGISTRATION_REMOVED_BY_HOST,
+            user_id=user_id,
+            session_id=session_id,
+            payload=payload,
+            run_at=now,
+            dedupe_key=f"registration_removed_by_host:{user_id}:{session_id}:{now.strftime('%Y%m%d%H%M')}",
+        )
 
     def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
         delay_minutes = min(2 ** max(attempts - 1, 0), 60)
@@ -203,6 +254,18 @@ class NotificationService:
                             user_id=job.user_id,
                             session_id=job.session_id,
                             minutes_before=minutes_before,
+                        )
+                    elif job.type == NotificationType.REGISTRATION_REMOVED_BY_HOST:
+                        if job.session_id is None:
+                            job.status = NotificationJobStatus.CANCELLED
+                            result["skipped"] += 1
+                            continue
+                        status_value = (job.payload or {}).get("registration_status")
+                        registration_status = RegistrationStatus(status_value)
+                        await self.email_service.send_registration_removed_by_host(
+                            user_id=job.user_id,
+                            session_id=job.session_id,
+                            registration_status=registration_status,
                         )
                     else:
                         job.status = NotificationJobStatus.CANCELLED

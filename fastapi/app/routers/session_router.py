@@ -147,12 +147,19 @@ def confirm_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    reminder_minutes_before: list[int] = Query(default=[], max_length=2),
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
     session_service.confirm_session(session.id, current_user.id, db)
     row = session_service.get_session_with_user_status(
         session_uuid, current_user.id, db
     )
+
+    # Queue notification job for reminder the user
+    if len(reminder_minutes_before) > 0:
+        notification_service.enqueue_session_reminder_job(
+            current_user.id, session.id, session.start_datetime, reminder_minutes_before
+        )
     return transform_session(row)
 
 
@@ -172,10 +179,13 @@ def unregister_session(
         current_user.id,
         db,
     )
+    # send notification to user that is waitlist -> available session
     notification_service.enqueue_waitlist_available_jobs(
         session=session,
         recipient_user_ids=recipients,
     )
+    #
+    notification_service.dequeue_session_reminder_jobs(current_user.id, session.id)
     row = session_service.get_session_with_user_status(
         session_uuid, current_user.id, db
     )
@@ -192,15 +202,24 @@ def unregister_user_from_session(
     current_user: Annotated[User, Depends(get_current_user)],
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
-    recipients = session_service.unregister_user_from_session(
-        session.id,
-        current_user.id,
-        user_id,
-        db,
+    recipients, removed_registration_status = (
+        session_service.unregister_user_from_session(
+            session.id,
+            current_user.id,
+            user_id,
+            db,
+        )
     )
     notification_service.enqueue_waitlist_available_jobs(
         session=session,
         recipient_user_ids=recipients,
+    )
+    if removed_registration_status == RegistrationStatus.CONFIRMED:
+        notification_service.dequeue_session_reminder_jobs(user_id, session.id)
+    notification_service.enqueue_registered_removed_by_host_job(
+        user_id=user_id,
+        session_id=session.id,
+        registration_status=removed_registration_status,
     )
 
 

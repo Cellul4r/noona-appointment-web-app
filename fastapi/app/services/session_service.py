@@ -607,7 +607,7 @@ class SessionService:
         current_user_id: int,
         user_id: int,
         db: Session,
-    ) -> list[int]:
+    ) -> tuple[list[int], RegistrationStatus]:
         notification_recipients: list[int] = []
         try:
             session = db.execute(
@@ -644,6 +644,8 @@ class SessionService:
             ):
                 session.seat_taken -= 1
 
+            removed_registration_status = registration.status
+
             db.delete(registration)
 
             # if seat is available let the all user that is waitlist -> available
@@ -658,7 +660,7 @@ class SessionService:
                 )
 
             db.commit()
-            return notification_recipients
+            return notification_recipients, removed_registration_status
         except SQLAlchemyError:
             db.rollback()
             raise HTTPException(
