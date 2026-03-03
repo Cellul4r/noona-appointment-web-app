@@ -14,7 +14,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     full_name: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=8)
-
+    timezone: TimeZoneName = Field(default="Europe/London", max_length=64)
 
 class UserPublic(UserBase):
     model_config = ConfigDict(from_attributes=True)
