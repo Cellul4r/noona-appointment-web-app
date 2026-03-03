@@ -153,7 +153,7 @@ def confirm_session(
     status_code=status.HTTP_200_OK,
     response_model=SessionWithEventPublic,
 )
-async def unregister_session(
+def unregister_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -177,7 +177,7 @@ async def unregister_session(
 @router.delete(
     "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_200_OK
 )
-async def unregister_user_from_session(
+def unregister_user_from_session(
     session_uuid: uuid.UUID,
     user_id: int,
     db: Annotated[Session, Depends(get_db)],

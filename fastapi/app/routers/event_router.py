@@ -120,21 +120,18 @@ def get_event_sessions(
     )
 
 
-@router.get(
+@router.post(
     "/{event_uuid}/registration-summary", response_model=list[SessionWithOptionalStatus]
 )
-def get_registration_summary(
+def send_registration_summary(
     event_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    background_tasks: BackgroundTasks,
 ):
     session_registrations = session_service.get_registration_summary(
         event_uuid, current_user.id, db
     )
-    notification_service.queue_registration_summary_email(
-        background_tasks, current_user.id, event_uuid
-    )
+    notification_service.enqueue_registration_summary_job(current_user.id, event_uuid)
     return session_registrations
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import uuid
 
@@ -101,6 +101,21 @@ class NotificationService:
                 dedupe_key=f"waitlist_available:{session.id}:{target_user_id}:{scheduled_at.strftime('%Y%m%d%H')}",
             )
 
+    def enqueue_registration_summary_job(self, user_id: int, event_uuid: uuid.UUID):
+        now = datetime.utcnow()
+        payload = {"event_uuid": str(event_uuid)}
+        self.enqueue_notification_job(
+            notification_type=NotificationType.REGISTRATION_SUMMARY,
+            user_id=user_id,
+            payload=payload,
+            run_at=now,
+            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{now.strftime('%Y%m%d%H')}",
+        )
+
+    def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
+        delay_minutes = min(2 ** max(attempts - 1, 0), 60)
+        return now + timedelta(minutes=delay_minutes)
+
     async def dispatch_pending_jobs(self, batch_size: int = 50) -> dict:
         db = SessionLocal()
         now = datetime.utcnow()
@@ -135,7 +150,9 @@ class NotificationService:
                             result["skipped"] += 1
                             continue
 
-                        await self.send_available_seat_email([user.email], job.session_id)
+                        await self.send_available_seat_email(
+                            [user.email], job.session_id
+                        )
                     elif job.type == NotificationType.REGISTRATION_SUMMARY:
                         event_uuid = (job.payload or {}).get("event_uuid")
                         if not event_uuid:
@@ -148,11 +165,13 @@ class NotificationService:
                         )
                     else:
                         job.status = NotificationJobStatus.CANCELLED
+                        job.next_retry_at = None
                         result["skipped"] += 1
                         continue
 
                     job.status = NotificationJobStatus.SENT
                     job.sent_at = datetime.utcnow()
+                    job.next_retry_at = None
                     job.last_error = None
                     result["sent"] += 1
                 except Exception as exc:
@@ -160,6 +179,12 @@ class NotificationService:
                     job.last_error = str(exc)
                     if job.attempts >= job.max_attempts:
                         job.status = NotificationJobStatus.FAILED
+                        job.next_retry_at = None
+                    else:
+                        next_retry_at = self._calculate_next_retry_at(job.attempts, now)
+                        job.status = NotificationJobStatus.PENDING
+                        job.next_retry_at = next_retry_at
+                        job.run_at = next_retry_at
                     result["failed"] += 1
 
             db.commit()
@@ -234,6 +259,7 @@ class NotificationService:
         except Exception:
             db.rollback()
             logger.exception("Failed to update available-seat notification timestamps")
+            raise
         finally:
             db.close()
 
@@ -303,14 +329,6 @@ class NotificationService:
                 user_id,
                 event_uuid,
             )
+            raise
         finally:
             db.close()
-
-    def queue_registration_summary_email(
-        self, background_tasks: BackgroundTasks, user_id: int, event_uuid: str
-    ):
-        background_tasks.add_task(
-            self.send_registration_summary_email,
-            user_id,
-            event_uuid,
-        )
