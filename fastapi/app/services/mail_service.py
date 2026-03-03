@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 import uuid
+from zoneinfo import ZoneInfo
 
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 from sqlalchemy import select
@@ -16,6 +17,7 @@ from app.services.session_service import SessionService
 from app.services.email_template_service import (
     build_event_overview_url,
     render_available_seat_html,
+    render_event_cancelled_summary_html,
     render_event_updated_summary_html,
     render_registration_removed_by_host_html,
     render_registration_summary_html,
@@ -394,6 +396,77 @@ class EmailService:
                 "Failed to send event update email for user_id=%s, event_id=%s",
                 user_id,
                 event_id,
+            )
+            raise
+        finally:
+            db.close()
+
+    async def send_event_cancelled_email(
+        self,
+        user_id: int,
+        event_title: str,
+        session_rows: list[dict],
+    ):
+        db = SessionLocal()
+        try:
+            user = db.execute(
+                select(User).where(User.id == user_id)
+            ).scalar_one_or_none()
+            if not user or not user.email:
+                logger.warning(
+                    "Failed to send event cancelled email: user not found/email missing for user_id=%s",
+                    user_id,
+                )
+                return
+
+            timezone = user.timezone or "Europe/London"
+            tz = ZoneInfo(timezone)
+            formatted_rows: list[dict] = []
+            for row in session_rows or []:
+                start_raw = row.get("start_datetime")
+                end_raw = row.get("end_datetime")
+                start = (
+                    datetime.fromisoformat(str(start_raw))
+                    .astimezone(tz)
+                    .strftime("%d %b %Y, %I:%M %p")
+                    if start_raw
+                    else "-"
+                )
+                end = (
+                    datetime.fromisoformat(str(end_raw))
+                    .astimezone(tz)
+                    .strftime("%d %b %Y, %I:%M %p")
+                    if end_raw
+                    else "-"
+                )
+
+                formatted_rows.append(
+                    {
+                        "session_uuid": row.get("session_uuid"),
+                        "start": start,
+                        "end": end,
+                        "location": row.get("location") or "-",
+                        "registration_status": row.get("registration_status") or "unknown",
+                    }
+                )
+
+            html_body = render_event_cancelled_summary_html(
+                app_name=settings.mail_from_name,
+                full_name=user.full_name,
+                event_title=event_title,
+                session_rows=formatted_rows,
+                timezone=timezone,
+            )
+
+            await self.send_emails(
+                f"{event_title} has been cancelled",
+                EmailSchema(email=[user.email]),
+                html_body,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send event cancelled email for user_id=%s",
+                user_id,
             )
             raise
         finally:

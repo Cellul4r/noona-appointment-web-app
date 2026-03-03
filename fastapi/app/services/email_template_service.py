@@ -220,3 +220,23 @@ def render_event_updated_summary_html(
         timezone=timezone,
         current_year=datetime.utcnow().year,
     )
+
+
+def render_event_cancelled_summary_html(
+    *,
+    app_name: str,
+    full_name: str,
+    event_title: str,
+    session_rows: list[dict],
+    timezone: str = "Europe/London",
+) -> str:
+    template = _template_env().get_template("email/event_cancelled_summary.html")
+
+    return template.render(
+        app_name=app_name,
+        full_name=full_name,
+        event_title=event_title,
+        session_rows=session_rows,
+        timezone=timezone,
+        current_year=datetime.utcnow().year,
+    )

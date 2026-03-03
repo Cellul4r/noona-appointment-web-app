@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy import select, or_, exists
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -240,6 +240,80 @@ class EventService:
         except SQLAlchemyError:
             db.rollback()
             raise ValueError("Database error")
+
+    def get_event_sesions_changes(
+        self, event_uuid: UUID, event_in: EventUpdate, db: Session
+    ):
+        old_ev = event_service.get_event(event_uuid, db)
+        if not old_ev:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+            )
+
+        target_user_ids = (
+            db.execute(
+                select(SessionRegistration.user_id)
+                .join(
+                    SessionModel,
+                    SessionModel.id == SessionRegistration.session_id,
+                )
+                .where(SessionModel.event_id == old_ev.id)
+                .distinct()
+            )
+            .scalars()
+            .all()
+        )
+        event_change: dict = {}
+        if event_in:
+            if event_in.title and event_in.title != old_ev.title:
+                event_change["title"] = {
+                    "old": old_ev.title,
+                    "new": event_in.title,
+                }
+            if event_in.description and event_in.description != old_ev.description:
+                event_change["description"] = {
+                    "old": old_ev.description,
+                    "new": event_in.description,
+                }
+            if event_in.location and event_in.location != old_ev.location:
+                event_change["location"] = {
+                    "old": old_ev.location,
+                    "new": event_in.location,
+                }
+            if (
+                event_in.max_sessions_per_user
+                and event_in.max_sessions_per_user != old_ev.max_sessions_per_user
+            ):
+                event_change["max_sessions_per_user"] = {
+                    "old": old_ev.max_sessions_per_user,
+                    "new": event_in.max_sessions_per_user,
+                }
+
+        session_changes: list[dict] = []
+        if event_in.sessions:
+            for operation in event_in.sessions:
+                item: dict = {"action": operation.action}
+                if (
+                    hasattr(operation, "session_uuid")
+                    and operation.session_uuid is not None
+                ):
+                    item["session_uuid"] = str(operation.session_uuid)
+                if hasattr(operation, "data") and operation.data is not None:
+                    data = operation.data
+                    item["start_datetime"] = (
+                        data.start_datetime.isoformat()
+                        if getattr(data, "start_datetime", None)
+                        else None
+                    )
+                    item["end_datetime"] = (
+                        data.end_datetime.isoformat()
+                        if getattr(data, "end_datetime", None)
+                        else None
+                    )
+                    item["location"] = getattr(data, "location", None)
+                session_changes.append(item)
+
+        return target_user_ids, event_change, session_changes
 
 
 event_service = EventService()

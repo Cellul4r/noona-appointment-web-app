@@ -241,6 +241,67 @@ class NotificationService:
                 dedupe_key=f"event_updated:{target_user_id}:{event_id}:{scheduled_at.strftime('%Y%m%d%H%M')}",
             )
 
+    def enqueue_event_cancelled_jobs(
+        self,
+        *,
+        event_id: int,
+        event_uuid: str,
+        event_title: str,
+        run_at: datetime | None = None,
+    ):
+        db = SessionLocal()
+        try:
+            rows = db.execute(
+                select(
+                    SessionRegistration.user_id,
+                    SessionModel.uuid,
+                    SessionModel.start_datetime,
+                    SessionModel.end_datetime,
+                    SessionModel.location,
+                    SessionRegistration.status,
+                )
+                .join(SessionModel, SessionModel.id == SessionRegistration.session_id)
+                .where(SessionModel.event_id == event_id)
+            ).all()
+        finally:
+            db.close()
+
+        if not rows:
+            return
+
+        sessions_by_user: dict[int, list[dict]] = {}
+        for row in rows:
+            user_id = int(row.user_id)
+            sessions_by_user.setdefault(user_id, []).append(
+                {
+                    "session_uuid": str(row.uuid),
+                    "start_datetime": row.start_datetime.isoformat(),
+                    "end_datetime": row.end_datetime.isoformat(),
+                    "location": row.location,
+                    "registration_status": row.status.value,
+                }
+            )
+
+        scheduled_at = run_at or datetime.utcnow()
+        for target_user_id, session_rows in sessions_by_user.items():
+            payload = {
+                "event_id": event_id,
+                "event_uuid": event_uuid,
+                "event_title": event_title,
+                "session_rows": session_rows,
+            }
+            try:
+                self.enqueue_notification_job(
+                    notification_type=NotificationType.EVENT_CANCELLED,
+                    user_id=target_user_id,
+                    payload=payload,
+                    run_at=scheduled_at,
+                    dedupe_key=f"event_cancelled:{target_user_id}:{event_id}:{scheduled_at.strftime('%Y%m%d%H%M')}",
+                )
+            except HTTPException as exc:
+                if exc.status_code != status.HTTP_409_CONFLICT:
+                    raise
+
     def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
         delay_minutes = min(2 ** max(attempts - 1, 0), 60)
         return now + timedelta(minutes=delay_minutes)
@@ -329,6 +390,19 @@ class NotificationService:
                             session_changes=(job.payload or {}).get(
                                 "session_changes", []
                             ),
+                        )
+                    elif job.type == NotificationType.EVENT_CANCELLED:
+                        event_title = (job.payload or {}).get("event_title")
+                        session_rows = (job.payload or {}).get("session_rows") or []
+                        if not event_title:
+                            job.status = NotificationJobStatus.CANCELLED
+                            result["skipped"] += 1
+                            continue
+
+                        await self.email_service.send_event_cancelled_email(
+                            user_id=job.user_id,
+                            event_title=str(event_title),
+                            session_rows=session_rows,
                         )
                     else:
                         job.status = NotificationJobStatus.CANCELLED
