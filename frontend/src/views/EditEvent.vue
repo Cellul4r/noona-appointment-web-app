@@ -387,7 +387,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/authStore'
 import { getEvent, getSessions, updateEvent } from '@/services/event.js'
 // Import date-fns & TZ package
-import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
+import { format, addDays, addWeeks, addMonths, addYears, parse } from "date-fns"
 import { TZDate } from "@date-fns/tz"
 
 const router = useRouter()
@@ -480,15 +480,15 @@ onMounted(async () => {
     const sessionsData = sessionsRes.items || [];
 
     const mappedSessions = sessionsData.map(s => {
-      // 1. Convert Backend UTC ISO string to the User's Timezone string format expected by datetime-local (yyyy-MM-ddTHH:mm)
-      const startStr = s.start_datetime ? format(new TZDate(s.start_datetime, userTimezone.value), "yyyy-MM-dd'T'HH:mm") : "";
-      const endStr = s.end_datetime ? format(new TZDate(s.end_datetime, userTimezone.value), "yyyy-MM-dd'T'HH:mm") : "";
+      // 1. Keep as strict Date objects! No string formatting here!
+      const startObj = s.start_datetime ? new TZDate(s.start_datetime, userTimezone.value) : null;
+      const endObj = s.end_datetime ? new TZDate(s.end_datetime, userTimezone.value) : null;
 
       return {
         id: s.id,
         uuid: s.uuid,
-        start: startStr,
-        end: endStr,
+        start: startObj,
+        end: endObj,
         capacity: s.seat_capacity,
         taken: s.seat_taken,
         location: s.location || "",
@@ -519,10 +519,15 @@ const openAddModal = () => {
 }
 
 const openEditModal = (s, globalIndex) => {
-  newSession.value = { ...s }
+  // Convert to string ONLY to populate the modal's input fields
+  newSession.value = { 
+    ...s, 
+    start: s.start ? format(s.start, "yyyy-MM-dd'T'HH:mm") : "",
+    end: s.end ? format(s.end, "yyyy-MM-dd'T'HH:mm") : ""
+  }
   isEditing.value = true
   editingIndex.value = globalIndex
-  backupSession.value = { ...s }
+  backupSession.value = { ...s } // Backup stays as absolute Date objects
   
   sessions.value.splice(globalIndex, 1)
   sessionModalRef.value.showModal()
@@ -553,8 +558,8 @@ const confirmDuplicate = () => {
   
   for (let i = 0; i < duplicateCount.value; i++) {
     const s = sessionToDuplicate.value
-    // Strip id and uuid so the backend sees them as new creations
-    const clone = { ...s, start: s.start, end: s.end, id: undefined, uuid: undefined }
+    // Strip id and uuid so the backend sees them as new creations (s.start/s.end are already Date objects!)
+    const clone = { ...s, id: undefined, uuid: undefined }
     sessions.value.push(clone)
   }
   
@@ -575,19 +580,16 @@ function addSession() {
     return
   }
 
-  // Safe validation using exact string comparison matched to user's timezone!
-  // Both strings represent the exact YYYY-MM-DDTHH:mm format in userTimezone, 
-  // ensuring zero cross-timezone parse issues.
-  const nowStr = format(new TZDate(new Date(), userTimezone.value), "yyyy-MM-dd'T'HH:mm");
-  if (newSession.value.start < nowStr) {
+  // Parse the local datetime strings strictly into TZDate objects
+  const startDate = parseDatetimeLocal(newSession.value.start, userTimezone.value)
+  const endDate = parseDatetimeLocal(newSession.value.end, userTimezone.value)
+  
+  // Safe validation using exact object comparison
+  if (startDate < new Date()) {
     alert("A new session's start time cannot be before the current time.")
     return
   }
 
-  // Use TZDate to parse local datetime-local strings as UserTimezone!
-  const startDate = new TZDate(newSession.value.start, userTimezone.value)
-  const endDate = new TZDate(newSession.value.end, userTimezone.value)
-  
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
 
@@ -599,13 +601,11 @@ function addSession() {
     return date
   }
 
-  const formatLocal = (date) => format(date, "yyyy-MM-dd'T'HH:mm")
-
   if (type === "Does not repeat") {
     sessions.value.push({
       ...newSession.value,
-      start: formatLocal(startDate),
-      end: formatLocal(endDate),
+      start: startDate,
+      end: endDate,
     })
   } else {
     let currentStart = startDate
@@ -615,8 +615,8 @@ function addSession() {
     while (true) {
       sessions.value.push({
         ...newSession.value,
-        start: formatLocal(currentStart),
-        end: formatLocal(currentEnd),
+        start: currentStart,
+        end: currentEnd,
         recurring: type
       })
       i++
@@ -624,15 +624,16 @@ function addSession() {
       if (repeatEndEnabled.value && repeatEnd.value.type === "count") {
         if (repeatEnd.value.count && i >= repeatEnd.value.count) break
       }
-      if (repeatEndEnabled.value && repeatEnd.value.type === "date") {
-        // Evaluate limit using user Timezone
-        const limitDate = new TZDate(repeatEnd.value.date, userTimezone.value)
+      if (repeatEndEnabled.value && repeatEnd.value.type === "date" && repeatEnd.value.date) {
+        // Evaluate limit cleanly by adding end-of-day time to the repeat limit
+        const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", userTimezone.value)
         if (currentStart >= limitDate) break
       }
       if (i > 100) break 
       
-      currentStart = addByType(currentStart)
-      currentEnd = addByType(currentEnd)
+      // Keep recurrence calculations strictly as TZDate objects
+      currentStart = new TZDate(addByType(currentStart), userTimezone.value)
+      currentEnd = new TZDate(addByType(currentEnd), userTimezone.value)
     }
   }
   
@@ -647,9 +648,22 @@ function saveEdit() {
   if (newSession.value.start >= newSession.value.end) return alert("End time must be after start time.")
   if (newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
   
-  sessions.value.splice(editingIndex.value, 0, { ...newSession.value })
+  sessions.value.splice(editingIndex.value, 0, { 
+    ...newSession.value,
+    // Convert back from form strings into strict Date objects for the main array memory!
+    start: parseDatetimeLocal(newSession.value.start, userTimezone.value),
+    end: parseDatetimeLocal(newSession.value.end, userTimezone.value)
+  })
   sessionModalRef.value.close()
   resetForm()
+}
+
+function parseDatetimeLocal(dateStr, timezone) {
+  const [datePart, timePart] = dateStr.split("T")
+  const [year, month, day] = datePart.split("-").map(Number)
+  const [hour, minute] = timePart.split(":").map(Number)
+
+  return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
 }
 
 function removeSession(globalIndex) {
@@ -699,11 +713,10 @@ const submit = async () => {
   // 2. Mark Created and Updated Sessions
   sessions.value.forEach(s => {
     
-    // Parse the local strings back out as TZDate bound to the User Timezone
-    // and extract the correct UTC ISOString for the backend!
+    // Because s.start & s.end are actual Date objects, .toISOString() effortlessly returns exactly what the backend needs (UTC)
     const data = {
-      start_datetime: s.start ? new TZDate(s.start, userTimezone.value).toISOString() : null,
-      end_datetime: s.end ? new TZDate(s.end, userTimezone.value).toISOString() : null,
+      start_datetime: s.start ? s.start.toISOString() : null,
+      end_datetime: s.end ? s.end.toISOString() : null,
     };
     
     if (s.capacity) data.seat_capacity = Number(s.capacity);
@@ -755,29 +768,22 @@ const goToPreviousPage = () => window.history.length > 1 ? router.back() : route
 
 // --- FORMATTERS ---
 
-const isSessionEnded = (endStr) => {
-  if (!endStr) return false;
-  // Compare lexicographically! Both are zero-padded 'yyyy-MM-ddTHH:mm' formats.
-  // 1. Get exact current moment
-  const now = new Date();
-  // 2. Format current moment to the user's timezone exactly like the endStr
-  const nowStr = format(new TZDate(now, userTimezone.value), "yyyy-MM-dd'T'HH:mm");
-  
-  // 3. String comparison (safe from Date parsing timezone shifts)
-  return endStr < nowStr;
+const isSessionEnded = (endObj) => {
+  if (!endObj) return false;
+  return endObj < new Date();
 }
 
-// Format the input strings ("yyyy-MM-dd'T'HH:mm") representing userTimezone directly into readable pieces
-function formatDay(dateStr) { 
-  if(!dateStr) return '';
-  return format(new TZDate(dateStr, userTimezone.value), 'd');
+// Format pieces for display from absolute Date objects directly!
+function formatDay(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'd');
 }
-function formatMonth(dateStr) { 
-  if(!dateStr) return '';
-  return format(new TZDate(dateStr, userTimezone.value), 'MMM').toUpperCase(); 
+function formatMonth(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'MMM').toUpperCase(); 
 }
-function formatTime(dateStr) { 
-  if(!dateStr) return '';
-  return format(new TZDate(dateStr, userTimezone.value), 'hh:mm a'); 
+function formatTime(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'hh:mm a'); 
 }
 </script>
