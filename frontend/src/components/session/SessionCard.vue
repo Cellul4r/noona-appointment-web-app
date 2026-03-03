@@ -90,7 +90,7 @@ const showRegisteredUsers = () => {
     if (!props.isCurrentUserHost) return
     const sessionUuid = props.session.uuid
     if (!sessionUuid) return
-    emit('open-registered-users', sessionUuid) // emit event to parent to open the modal and pass sessionUuid value
+    emit('open-registered-users', sessionUuid, isPast.value) // emit event to parent to open the modal and pass sessionUuid value
 }
 
 /* ---------------- DATE & TIME ---------------- */
@@ -115,6 +115,11 @@ const isSameDay = computed(() => {
         startDate.value.getMonth() === endDate.value.getMonth() &&
         startDate.value.getDate() === endDate.value.getDate()
     )
+})
+
+const isPast = computed(() => {
+    const now = new TZDate(new Date(), props.timezone)
+    return endDate.value ? endDate.value < now : false
 })
 
 // only used if start and end are on the same day, format: "Mon, Feb 24, 2026 - 02:30 PM - 03:30 PM"

@@ -38,6 +38,11 @@ export async function confirmSession(sessionUuid) {
   return res.data;
 }
 
+export async function unregisterUserByHost(sessionUuid, userId) {
+  const res = await axios.delete(`${API_URL}/sessions/${sessionUuid}/registrations/${userId}`);
+  return res;
+}
+
 export async function getRegisteredUsers(sessionUuid, status = "confirmed", cursor = null, size = 10) {
   const params = { status, size }
   if (cursor) params.cursor = cursor

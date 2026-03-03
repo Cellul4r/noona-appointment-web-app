@@ -192,7 +192,8 @@
 
         <RegisteredUsersModal v-if="isShowRegisteredUser && selectedSessionUuid"
             :is-show-registered-user="isShowRegisteredUser" :is-current-user-host="isCurrentUserHost"
-            :session-uuid="selectedSessionUuid" @close="closeRegisteredUsersModal" />
+            :session-uuid="selectedSessionUuid" :is-past-session="isPastSession" @close="closeRegisteredUsersModal"
+            @user-unregistered="handleUserUnregistered" />
     </div>
 </template>
 
@@ -204,6 +205,7 @@ import SessionCard from '../components/session/SessionCard.vue'
 import RegisteredUsersModal from '../components/session/RegisteredUsersModal.vue'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
 import { deleteEvent, getEvent, getSessions } from '../services/event'
+import { getSessionByUuid } from '../services/session'
 import { useAuthStore } from '../store/authStore'
 
 const route = useRoute()
@@ -225,6 +227,7 @@ const sessionsLoading = ref(false)
 const nextCursor = ref(null)
 const selectedSessionUuid = ref(null)
 const isShowRegisteredUser = ref(false)
+const isPastSession = ref(false)
 const deletingEvent = ref(false)
 
 const error = ref(null)
@@ -287,16 +290,32 @@ function goToRegister() {
     router.push({ name: 'Calendar' })
 }
 
-function openRegisteredUsersModal(sessionUuid) {
+function openRegisteredUsersModal(sessionUuid, isPast) {
     if (!isCurrentUserHost.value) return
     if (!sessionUuid) return
     selectedSessionUuid.value = sessionUuid
     isShowRegisteredUser.value = true
+    isPastSession.value = isPast
 }
 
 function closeRegisteredUsersModal() {
     isShowRegisteredUser.value = false
     selectedSessionUuid.value = null
+}
+
+async function handleUserUnregistered(payload) {
+    const sessionUuid = payload?.sessionUuid
+    if (!sessionUuid) return
+
+    const sessionIndex = sessions.value.findIndex((session) => session.uuid === sessionUuid)
+    if (sessionIndex === -1) return
+
+    try {
+        const updatedSession = await getSessionByUuid(sessionUuid)
+        sessions.value.splice(sessionIndex, 1, updatedSession)
+    } catch (err) {
+        error.value = 'Failed to refresh session card.'
+    }
 }
 
 /* ---------------- FETCH EVENT ---------------- */
@@ -323,7 +342,7 @@ async function fetchEvent(uuid) {
 
 /* ---------------- FETCH SESSIONS ---------------- */
 
-async function fetchSessions(uuid, cursor = null, size = 5) {
+async function fetchSessions(uuid, cursor = null, size = 6) {
     sessionsLoading.value = true
     try {
         if (!cursor) {
