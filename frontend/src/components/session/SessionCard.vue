@@ -25,13 +25,13 @@
             </div>
         </div>
 
+        <div v-if="session.location" class="mb-3 text-sm text-base-content/80">
+            <span class="font-semibold">Location:</span> {{ session.location }}
+        </div>
+
         <!-- Status Badge -->
         <div class="mb-3 flex flex-wrap items-center gap-2">
             <span class="badge badge-sm" :class="statusClass">{{ statusText }}</span>
-        </div>
-
-        <div v-if="session.location" class="mb-3 text-sm text-base-content/80">
-            <span class="font-semibold">Location:</span> {{ session.location }}
         </div>
 
         <!-- Capacity Progress -->

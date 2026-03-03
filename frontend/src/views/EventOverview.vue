@@ -27,7 +27,7 @@
                             </h2>
 
                             <div class="space-y-3 text-base">
-                                <p class="flex items-start gap-2">
+                                <p v-if="event.location" class="flex items-start gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                         stroke-width="1.5" stroke="currentColor"
                                         class="size-5 shrink-0 mt-0.5 text-primary">
@@ -48,9 +48,9 @@
                                 </div>
                             </div>
 
-                            <div class="divider my-0"></div>
+                            <div v-if="event.description" class="divider my-0"></div>
 
-                            <div class="text-base wrap-break-word">
+                            <div v-if="event.description" class="text-base wrap-break-word">
                                 <h3 class="font-semibold mb-2 text-base-content">Event Description</h3>
                                 <p class="opacity-80 leading-relaxed">
                                     {{ event.description }}
@@ -131,7 +131,7 @@
                     <!-- Sessions -->
                     <div id="event-sessions-section" class="mt-8">
 
-                        <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center justify-between mb-5 flex-wrap">
                             <h2 class="text-xl font-bold">Session Details <span
                                     class="badge badge-sm badge-soft">Timezone:
                                     {{
