@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import add_pagination
 from app.config import settings
 from app.db import Base, engine
-from app.routers import auth, session_router, event_router, user_router
+from app.routers import auth, session_router, event_router, user_router, notification_router
 from app.env_detector import should_auto_create_tables
 
 from app.models import *
@@ -82,6 +82,11 @@ fastapi_app.include_router(
 )
 fastapi_app.include_router(
     user_router.router, prefix=f"{api_prefix}/users", tags=["User"]
+)
+fastapi_app.include_router(
+    notification_router.router,
+    prefix=f"{api_prefix}/notifications",
+    tags=["Notifications"],
 )
 
 
