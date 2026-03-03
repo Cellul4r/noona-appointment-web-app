@@ -5,7 +5,15 @@ from urllib import response
 from uuid import UUID
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Path,
+    status,
+)
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -31,11 +39,13 @@ from app.schemas.session import (
 )
 
 from app.services.session_service import SessionService
+from app.services.notification_service import NotificationService
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 session_service = SessionService()
+notification_service = NotificationService()
 
 
 @router.get("/", response_model=CursorPage[EventPrivate])
@@ -108,6 +118,24 @@ def get_event_sessions(
             for session, status in items
         ],
     )
+
+
+@router.get(
+    "/{event_uuid}/registration-summary", response_model=list[SessionWithOptionalStatus]
+)
+def get_registration_summary(
+    event_uuid: uuid.UUID,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    background_tasks: BackgroundTasks,
+):
+    session_registrations = session_service.get_registration_summary(
+        event_uuid, current_user.id, db
+    )
+    notification_service.queue_registration_summary_email(
+        background_tasks, current_user.id, event_uuid
+    )
+    return session_registrations
 
 
 @router.post(
