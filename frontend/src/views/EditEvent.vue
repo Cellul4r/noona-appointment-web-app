@@ -232,8 +232,11 @@
         <button @click="goToPreviousPage" class="btn btn-ghost">
           Cancel
         </button>
-        <button @click="submit" class="btn btn-primary px-8">
-          Save Changes
+        <button @click="submit" :class="event.is_draft ? 'btn-outline border-base-300' : 'btn-primary'" class="btn px-8">
+          {{ event.is_draft ? 'Save Draft' : 'Save Changes' }}
+        </button>
+        <button v-if="event.is_draft" @click="publish" class="btn btn-primary px-8 shadow-sm shadow-primary/20">
+          Publish
         </button>
       </div>
 
@@ -659,6 +662,12 @@ function resetForm() {
 const saveChangesAndLeave = async () => {
   await submit()
   document.getElementById("my_modal_3")?.close()
+}
+
+const publish = async () => {
+  if (!confirm("Are you sure you want to publish this event? It will become visible to users.")) return;
+  event.value.is_draft = false;
+  await submit();
 }
 
 const submit = async () => {
