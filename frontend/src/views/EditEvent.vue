@@ -101,10 +101,10 @@
               <p class="text-xs text-base-content/40 mt-1">Add at least one session so users can register.</p>
             </div>
 
-            <!-- Paginated Sessions View -->
+            <!-- Server Paginated Sessions View -->
             <div 
-              v-for="(s, index) in paginatedSessions" 
-              :key="getGlobalIndex(index)"
+              v-for="(s, index) in sessions" 
+              :key="s.uuid || index"
               class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border rounded-xl p-4 transition-all group"
               :class="isSessionEnded(s.end) ? 'bg-base-200/50 opacity-60 grayscale border-base-300' : 'bg-base-100 border-base-200 hover:shadow-md'"
             >
@@ -175,7 +175,7 @@
 
                 <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Edit disabled (Session ended)' : 'Edit'">
                   <button 
-                    @click="!isSessionEnded(s.end) && openEditModal(s, getGlobalIndex(index))" 
+                    @click="!isSessionEnded(s.end) && openEditModal(s, index)" 
                     class="btn btn-sm btn-circle btn-ghost" 
                     :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-info'"
                   >
@@ -187,7 +187,7 @@
 
                 <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Remove disabled (Session ended)' : 'Remove'">
                   <button 
-                    @click="!isSessionEnded(s.end) && removeSession(getGlobalIndex(index))" 
+                    @click="!isSessionEnded(s.end) && removeSession(index)" 
                     class="btn btn-sm btn-circle btn-ghost" 
                     :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-error'"
                   >
@@ -200,16 +200,16 @@
               </div>
             </div>
             
-            <!-- Pagination Controls -->
-            <div v-if="totalPages > 1" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
-              <button class="btn btn-sm btn-ghost" @click="currentPage--" :disabled="currentPage === 1">
+            <!-- Server Pagination Controls -->
+            <div v-if="currentCursorIndex > 0 || nextCursor" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
+              <button class="btn btn-sm btn-ghost" @click="goPrev" :disabled="currentCursorIndex === 0">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
                 Prev
               </button>
-              <span class="text-sm font-semibold text-base-content/70">Page {{ currentPage }} of {{ totalPages }}</span>
-              <button class="btn btn-sm btn-ghost" @click="currentPage++" :disabled="currentPage === totalPages">
+              <span class="text-sm font-semibold text-base-content/70">Page {{ currentCursorIndex + 1 }}</span>
+              <button class="btn btn-sm btn-ghost" @click="goNext" :disabled="!nextCursor">
                 Next
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -289,6 +289,12 @@
             <div>
               <label class="label pt-0 pb-1"><span class="label-text font-semibold">Location <span class="opacity-60 font-normal">(optional)</span></span></label>
               <input type="text" v-model="newSession.location" placeholder="Specific room/link" class="input input-bordered w-full focus:input-primary" />
+            </div>
+            
+            <!-- Description -->
+            <div class="sm:col-span-2">
+              <label class="label pt-0 pb-1"><span class="label-text font-semibold">Session Notes <span class="opacity-60 font-normal">(optional)</span></span></label>
+              <textarea v-model="newSession.description" class="textarea textarea-bordered w-full min-h-[80px]" placeholder="Specific instructions for this session..."></textarea>
             </div>
           </div>
 
@@ -387,7 +393,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/authStore'
 import { getEvent, getSessions, updateEvent } from '@/services/event.js'
 // Import date-fns & TZ package
-import { format, addDays, addWeeks, addMonths, addYears, parse } from "date-fns"
+import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
 import { TZDate } from "@date-fns/tz"
 
 const router = useRouter()
@@ -412,11 +418,13 @@ const limitEnabled = ref(false)
 const limit = ref(1)
 
 const sessions = ref([])
-const originalSessions = ref([]) // Used to track which sessions were deleted
+const originalSessions = ref([]) // Maps minimal representation for backend diffs
 
-// Pagination State
-const currentPage = ref(1)
-const itemsPerPage = 4
+// Server Pagination State
+const currentCursorIndex = ref(0)
+const cursorHistory = ref([null])
+const nextCursor = ref(null)
+const hasUnsavedSessionChanges = ref(false) // Guard to block navigation before saving
 
 // Duplicate State
 const duplicateModalRef = ref(null)
@@ -440,24 +448,6 @@ const repeatEndEnabled = ref(false)
 const repeatEnd = ref({ type: "never", date: "", count: null })
 const repeatsChoose = ref({ type: "Does not repeat", interval: "" })
 
-// --- COMPUTED (Pagination) ---
-const totalPages = computed(() => Math.max(1, Math.ceil(sessions.value.length / itemsPerPage)))
-
-const paginatedSessions = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return sessions.value.slice(start, start + itemsPerPage)
-})
-
-const getGlobalIndex = (index) => {
-  return (currentPage.value - 1) * itemsPerPage + index
-}
-
-watch(() => sessions.value.length, () => {
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = Math.max(1, totalPages.value)
-  }
-})
-
 // --- LIFECYCLE (DATA HYDRATION) ---
 onMounted(async () => {
   const eventId = route.params.event_uuid;
@@ -476,28 +466,8 @@ onMounted(async () => {
       limit.value = data.max_sessions_per_user;
     }
 
-    const sessionsRes = await getSessions(eventId, null, 100) 
-    const sessionsData = sessionsRes.items || [];
-
-    const mappedSessions = sessionsData.map(s => {
-      // 1. Keep as strict Date objects! No string formatting here!
-      const startObj = s.start_datetime ? new TZDate(s.start_datetime, userTimezone.value) : null;
-      const endObj = s.end_datetime ? new TZDate(s.end_datetime, userTimezone.value) : null;
-
-      return {
-        id: s.id,
-        uuid: s.uuid,
-        start: startObj,
-        end: endObj,
-        capacity: s.seat_capacity,
-        taken: s.seat_taken,
-        location: s.location || "",
-        description: s.description || ""
-      }
-    });
-
-    sessions.value = mappedSessions;
-    originalSessions.value = JSON.parse(JSON.stringify(mappedSessions));
+    // Load initial sessions explicitly with cursor=null
+    await loadSessions(null);
 
   } catch (error) {
     console.error("Failed to load event details:", error);
@@ -511,6 +481,67 @@ watch(limitEnabled, (val) => {
   else limit.value = null
 })
 
+// --- SERVER PAGINATION LOGIC ---
+const loadSessions = async (cursor) => {
+  const eventId = route.params.event_uuid;
+  
+  // API requests exactly 10 sessions according to the backend configuration
+  const sessionsRes = await getSessions(eventId, cursor, 10) 
+  const sessionsData = sessionsRes.items || [];
+
+  const mappedSessions = sessionsData.map(s => {
+    // 1. Keep as strict Date objects! No string formatting here!
+    const startObj = s.start_datetime ? new TZDate(s.start_datetime, userTimezone.value) : null;
+    const endObj = s.end_datetime ? new TZDate(s.end_datetime, userTimezone.value) : null;
+
+    return {
+      id: s.id,
+      uuid: s.uuid,
+      start: startObj,
+      end: endObj,
+      capacity: s.seat_capacity,
+      taken: s.seat_taken,
+      location: s.location || "",
+      description: s.description || ""
+    }
+  });
+
+  sessions.value = mappedSessions;
+  
+  // Map just UUID to identify deletes in diff (avoids deep copy TZDate issues)
+  originalSessions.value = mappedSessions.map(s => ({ uuid: s.uuid }));
+  nextCursor.value = sessionsRes.next_page;
+  hasUnsavedSessionChanges.value = false;
+}
+
+const goNext = async () => {
+  if (hasUnsavedSessionChanges.value) {
+    alert("You have unsaved session changes on this page. Please save them before navigating to another page.");
+    return;
+  }
+  if (!nextCursor.value) return;
+  
+  cursorHistory.value.push(nextCursor.value);
+  currentCursorIndex.value++;
+  await loadSessions(nextCursor.value);
+}
+
+const goPrev = async () => {
+  if (hasUnsavedSessionChanges.value) {
+    alert("You have unsaved session changes on this page. Please save them before navigating to another page.");
+    return;
+  }
+  if (currentCursorIndex.value === 0) return;
+  
+  currentCursorIndex.value--;
+  const prevCursor = cursorHistory.value[currentCursorIndex.value];
+  
+  // Reslice history so future "nexts" don't misbehave
+  cursorHistory.value = cursorHistory.value.slice(0, currentCursorIndex.value + 1);
+  await loadSessions(prevCursor);
+}
+
+
 // --- MODAL CONTROLS ---
 const openAddModal = () => {
   resetForm()
@@ -518,7 +549,7 @@ const openAddModal = () => {
   sessionModalRef.value.showModal()
 }
 
-const openEditModal = (s, globalIndex) => {
+const openEditModal = (s, index) => {
   // Convert to string ONLY to populate the modal's input fields
   newSession.value = { 
     ...s, 
@@ -526,10 +557,10 @@ const openEditModal = (s, globalIndex) => {
     end: s.end ? format(s.end, "yyyy-MM-dd'T'HH:mm") : ""
   }
   isEditing.value = true
-  editingIndex.value = globalIndex
+  editingIndex.value = index
   backupSession.value = { ...s } // Backup stays as absolute Date objects
   
-  sessions.value.splice(globalIndex, 1)
+  sessions.value.splice(index, 1)
   sessionModalRef.value.showModal()
 }
 
@@ -563,10 +594,8 @@ const confirmDuplicate = () => {
     sessions.value.push(clone)
   }
   
+  hasUnsavedSessionChanges.value = true;
   closeDuplicateModal()
-  
-  // Navigate to the newly created items on the last page
-  currentPage.value = Math.max(1, Math.ceil(sessions.value.length / itemsPerPage))
 }
 
 // --- SESSION ACTIONS ---
@@ -585,7 +614,8 @@ function addSession() {
   const endDate = parseDatetimeLocal(newSession.value.end, userTimezone.value)
   
   // Safe validation using exact object comparison
-  if (startDate < new Date()) {
+  const now = parseDatetimeLocal(format(new Date(), "yyyy-MM-dd'T'HH:mm"), userTimezone.value)
+  if (startDate < now) {
     alert("A new session's start time cannot be before the current time.")
     return
   }
@@ -637,10 +667,9 @@ function addSession() {
     }
   }
   
+  hasUnsavedSessionChanges.value = true;
   sessionModalRef.value.close()
   resetForm()
-  
-  currentPage.value = Math.max(1, Math.ceil(sessions.value.length / itemsPerPage))
 }
 
 function saveEdit() {
@@ -654,6 +683,8 @@ function saveEdit() {
     start: parseDatetimeLocal(newSession.value.start, userTimezone.value),
     end: parseDatetimeLocal(newSession.value.end, userTimezone.value)
   })
+  
+  hasUnsavedSessionChanges.value = true;
   sessionModalRef.value.close()
   resetForm()
 }
@@ -666,9 +697,10 @@ function parseDatetimeLocal(dateStr, timezone) {
   return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
 }
 
-function removeSession(globalIndex) {
+function removeSession(index) {
   if(confirm("Remove this session?")) {
-    sessions.value.splice(globalIndex, 1)
+    sessions.value.splice(index, 1)
+    hasUnsavedSessionChanges.value = true;
   }
 }
 
@@ -748,6 +780,7 @@ const submit = async () => {
 
   try {
     await updateEvent(eventId, payload);
+    hasUnsavedSessionChanges.value = false;
     router.push('/events')
   } catch (err) {
     console.error("Update event failed:", err)
