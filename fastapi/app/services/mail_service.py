@@ -16,6 +16,7 @@ from app.services.session_service import SessionService
 from app.services.email_template_service import (
     build_event_overview_url,
     render_available_seat_html,
+    render_event_updated_summary_html,
     render_registration_removed_by_host_html,
     render_registration_summary_html,
     render_session_reminder_html,
@@ -334,6 +335,65 @@ class EmailService:
                 "Failed to send registration removed by host email for user_id=%s, session_id=%s",
                 user_id,
                 session_id,
+            )
+            raise
+        finally:
+            db.close()
+
+    async def send_event_update_email(
+        self,
+        user_id: int,
+        event_id: int,
+        event_change: dict,
+        session_changes: list[dict],
+    ):
+        # function for send via email of event updated, session updated/cancelled
+        db = SessionLocal()
+        try:
+            user = db.execute(
+                select(User).where(User.id == user_id)
+            ).scalar_one_or_none()
+            if not user or not user.email:
+                logger.warning(
+                    "Failed to send event update email: user not found/email missing for user_id=%s",
+                    user_id,
+                )
+                return
+
+            event = db.execute(
+                select(Event).where(Event.id == event_id)
+            ).scalar_one_or_none()
+            if not event:
+                logger.warning(
+                    "Failed to send event update email: event not found for event_id=%s",
+                    event_id,
+                )
+                return
+
+            overview_url = build_event_overview_url(
+                settings.frontend_login_success_uri,
+                str(event.share_uuid),
+            )
+            html_body = render_event_updated_summary_html(
+                app_name=settings.mail_from_name,
+                full_name=user.full_name,
+                event_title=event.title,
+                overview_url=overview_url,
+                event_change=event_change,
+                session_changes=session_changes,
+                timezone=user.timezone or "Europe/London",
+            )
+
+            await self.send_emails(
+                f"Update summary for {event.title}",
+                EmailSchema(email=[user.email]),
+                html_body,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send event update email for user_id=%s, event_id=%s",
+                user_id,
+                event_id,
             )
             raise
         finally:

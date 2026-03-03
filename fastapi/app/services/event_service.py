@@ -114,6 +114,9 @@ class EventService:
             "is_draft",
             "max_sessions_per_user",
         }
+
+        if not ev.is_draft and event_in.is_draft:
+            raise ValueError("Cannot change a published event back to draft")
         for field in event_in.model_fields_set:
             if field in UPDATABLE_FIELDS:
                 setattr(ev, field, getattr(event_in, field))

@@ -159,3 +159,64 @@ def render_registration_removed_by_host_html(
         current_year=datetime.utcnow().year,
         timezone=timezone,
     )
+
+
+def render_event_updated_summary_html(
+    *,
+    app_name: str,
+    full_name: str,
+    event_title: str,
+    overview_url: str,
+    event_change: dict,
+    session_changes: list[dict],
+    timezone: str = "Europe/London",
+) -> str:
+    template = _template_env().get_template("email/event_updated_summary.html")
+
+    rows: list[dict] = []
+    tz = ZoneInfo(timezone)
+    for change in session_changes or []:
+        start_raw = change.get("start_datetime")
+        end_raw = change.get("end_datetime")
+        start_formatted = None
+        end_formatted = None
+
+        if start_raw:
+            start_formatted = datetime.fromisoformat(str(start_raw)).astimezone(tz).strftime(
+                "%d %b %Y, %I:%M %p"
+            )
+        if end_raw:
+            end_formatted = datetime.fromisoformat(str(end_raw)).astimezone(tz).strftime(
+                "%d %b %Y, %I:%M %p"
+            )
+
+        rows.append(
+            {
+                "action": change.get("action") or "update",
+                "session_uuid": change.get("session_uuid"),
+                "start": start_formatted,
+                "end": end_formatted,
+                "location": change.get("location") or "-",
+            }
+        )
+
+    event_rows: list[dict] = []
+    for field, values in (event_change or {}).items():
+        event_rows.append(
+            {
+                "field": field,
+                "old": (values or {}).get("old"),
+                "new": (values or {}).get("new"),
+            }
+        )
+
+    return template.render(
+        app_name=app_name,
+        full_name=full_name,
+        event_title=event_title,
+        event_rows=event_rows,
+        session_rows=rows,
+        overview_url=overview_url,
+        timezone=timezone,
+        current_year=datetime.utcnow().year,
+    )

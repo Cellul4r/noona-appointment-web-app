@@ -192,6 +192,55 @@ class NotificationService:
             dedupe_key=f"registration_removed_by_host:{user_id}:{session_id}:{now.strftime('%Y%m%d%H%M')}",
         )
 
+    def enqueue_event_updated_jobs(
+        self,
+        *,
+        event_id: int,
+        event_uuid: str,
+        event_change: dict,
+        session_changes: list[dict],
+        target_user_ids: list[int] | None = None,
+        run_at: datetime | None = None,
+    ):
+        if target_user_ids is None:
+            db = SessionLocal()
+            try:
+                target_user_ids = (
+                    db.execute(
+                        select(SessionRegistration.user_id)
+                        .join(
+                            SessionModel,
+                            SessionModel.id == SessionRegistration.session_id,
+                        )
+                        .where(SessionModel.event_id == event_id)
+                        .distinct()
+                    )
+                    .scalars()
+                    .all()
+                )
+            finally:
+                db.close()
+
+        if not target_user_ids:
+            return
+
+        scheduled_at = run_at or datetime.utcnow()
+        payload = {
+            "event_id": event_id,
+            "event_uuid": event_uuid,
+            "event_change": event_change,
+            "session_changes": session_changes,
+        }
+        for target_user_id in target_user_ids:
+            self.enqueue_notification_job(
+                notification_type=NotificationType.EVENT_UPDATED,
+                user_id=target_user_id,
+                event_id=event_id,
+                payload=payload,
+                run_at=scheduled_at,
+                dedupe_key=f"event_updated:{target_user_id}:{event_id}:{scheduled_at.strftime('%Y%m%d%H%M')}",
+            )
+
     def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
         delay_minutes = min(2 ** max(attempts - 1, 0), 60)
         return now + timedelta(minutes=delay_minutes)
@@ -266,6 +315,20 @@ class NotificationService:
                             user_id=job.user_id,
                             session_id=job.session_id,
                             registration_status=registration_status,
+                        )
+                    elif job.type == NotificationType.EVENT_UPDATED:
+                        event_id = (job.payload or {}).get("event_id")
+                        if not event_id:
+                            job.status = NotificationJobStatus.CANCELLED
+                            result["skipped"] += 1
+                            continue
+                        await self.email_service.send_event_update_email(
+                            user_id=job.user_id,
+                            event_id=int(event_id),
+                            event_change=(job.payload or {}).get("event_change", {}),
+                            session_changes=(job.payload or {}).get(
+                                "session_changes", []
+                            ),
                         )
                     else:
                         job.status = NotificationJobStatus.CANCELLED
