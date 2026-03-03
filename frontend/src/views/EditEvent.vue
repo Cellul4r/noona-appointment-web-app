@@ -411,8 +411,8 @@ const localPageIndex = ref(0)
 
 // Server Pagination State
 const currentCursorIndex = ref(0)
-const cursorHistory = ref([null])
 const nextCursor = ref(null)
+const prevCursor = ref(null)
 const hasUnsavedSessionChanges = ref(false) // Guard to block navigation before saving
 
 const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
@@ -428,7 +428,7 @@ const localTotalPages = computed(() => Math.max(1, Math.ceil(sessions.value.leng
 
 const shouldShowPagination = computed(() => {
   if (isUsingLocalPagination.value) return sessions.value.length > pageSize
-  return currentCursorIndex.value > 0 || !!nextCursor.value
+  return !!prevCursor.value || !!nextCursor.value
 })
 
 const displayedPageNumber = computed(() => {
@@ -438,7 +438,7 @@ const displayedPageNumber = computed(() => {
 
 const isPrevDisabled = computed(() => {
   if (isUsingLocalPagination.value) return localPageIndex.value === 0
-  return currentCursorIndex.value === 0
+  return !prevCursor.value
 })
 
 const isNextDisabled = computed(() => {
@@ -535,6 +535,7 @@ const loadSessions = async (cursor) => {
   // Map just UUID to identify deletes in diff (avoids deep copy TZDate issues)
   originalSessions.value = mappedSessions.map(s => ({ uuid: s.uuid }));
   nextCursor.value = sessionsRes.next_page;
+  prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
   hasUnsavedSessionChanges.value = false;
   localPageIndex.value = 0;
 }
@@ -548,7 +549,6 @@ const goNext = async () => {
   }
   if (!nextCursor.value) return;
   
-  cursorHistory.value.push(nextCursor.value);
   currentCursorIndex.value++;
   await loadSessions(nextCursor.value);
 }
@@ -560,14 +560,10 @@ const goPrev = async () => {
     }
     return;
   }
-  if (currentCursorIndex.value === 0) return;
+  if (!prevCursor.value) return;
   
   currentCursorIndex.value--;
-  const prevCursor = cursorHistory.value[currentCursorIndex.value];
-  
-  // Reslice history so future "nexts" don't misbehave
-  cursorHistory.value = cursorHistory.value.slice(0, currentCursorIndex.value + 1);
-  await loadSessions(prevCursor);
+  await loadSessions(prevCursor.value);
 }
 
 
