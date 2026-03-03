@@ -105,7 +105,8 @@
             <div 
               v-for="(s, index) in paginatedSessions" 
               :key="getGlobalIndex(index)"
-              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-base-100 border border-base-200 rounded-xl p-4 hover:shadow-md transition-all group"
+              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border rounded-xl p-4 transition-all group"
+              :class="isSessionEnded(s.end) ? 'bg-base-200/50 opacity-60 grayscale border-base-300' : 'bg-base-100 border-base-200 hover:shadow-md'"
             >
               <!-- LEFT INFO -->
               <div class="flex items-center gap-4 w-full sm:w-auto">
@@ -574,12 +575,19 @@ function addSession() {
     return
   }
 
-  const type = repeatsChoose.value.type
-  const interval = Number(repeatsChoose.value.interval) || 1
-  
   // Use TZDate to parse local datetime-local strings as UserTimezone!
   const startDate = new TZDate(newSession.value.start, userTimezone.value)
+  
+  // Validation: Start time cannot be in the past for new sessions
+  if (startDate < new Date()) {
+    alert("A new session's start time cannot be before the current time.")
+    return
+  }
+
   const endDate = new TZDate(newSession.value.end, userTimezone.value)
+  
+  const type = repeatsChoose.value.type
+  const interval = Number(repeatsChoose.value.interval) || 1
 
   const addByType = (date) => {
     if (type === "Daily") return addDays(date, interval)
