@@ -30,10 +30,12 @@ const handleLogout = () => {
         <!-- Top Bar -->
         <div class="flex justify-between items-center h-20">
 
+            <template v-if="isLoggedIn">
             <!-- Hamburger Button (left on mobile) -->
             <button class="md:hidden text-2xl" @click="isOpen = !isOpen">
                 ☰
             </button>
+            </template>
 
             <!-- Left: Logo + Desktop Nav -->
             <div class="flex items-center space-x-4 text-xl font-bold">
