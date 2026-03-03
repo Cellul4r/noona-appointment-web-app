@@ -874,13 +874,6 @@ const submit = async () => {
   }
 }
 
-function formatDay(date) {
-  return new Date(date).getDate();
-}
-
-function formatMonth(date) {
-  return new Date(date).toLocaleString('en-US', { month: 'short' }).toUpperCase();
-}
 
 function formatDate(date) {
   const tzDate = toTZDate(date)
