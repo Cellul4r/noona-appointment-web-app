@@ -103,7 +103,7 @@
 
             <!-- Server Paginated Sessions View -->
             <div 
-              v-for="(s, index) in sessions" 
+              v-for="(s, index) in displayedSessions" 
               :key="s.uuid || index"
               class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border rounded-xl p-4 transition-all group"
               :class="isSessionEnded(s.end) ? 'bg-base-200/50 opacity-60 grayscale border-base-300' : 'bg-base-100 border-base-200 hover:shadow-md'"
@@ -171,7 +171,7 @@
 
                 <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Edit disabled (Session ended)' : 'Edit'">
                   <button 
-                    @click="!isSessionEnded(s.end) && openEditModal(s, index)" 
+                    @click="!isSessionEnded(s.end) && openEditModal(s, getAbsoluteIndex(index))" 
                     class="btn btn-sm btn-circle btn-ghost" 
                     :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-info'"
                   >
@@ -183,7 +183,7 @@
 
                 <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Remove disabled (Session ended)' : 'Remove'">
                   <button 
-                    @click="!isSessionEnded(s.end) && removeSession(index)" 
+                    @click="!isSessionEnded(s.end) && removeSession(getAbsoluteIndex(index))" 
                     class="btn btn-sm btn-circle btn-ghost" 
                     :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-error'"
                   >
@@ -197,15 +197,15 @@
             </div>
             
             <!-- Server Pagination Controls -->
-            <div v-if="currentCursorIndex > 0 || nextCursor" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
-              <button class="btn btn-sm btn-ghost" @click="goPrev" :disabled="currentCursorIndex === 0">
+            <div v-if="shouldShowPagination" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
+              <button class="btn btn-sm btn-ghost" @click="goPrev" :disabled="isPrevDisabled">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
                 </svg>
                 Prev
               </button>
-              <span class="text-sm font-semibold text-base-content/70">Page {{ currentCursorIndex + 1 }}</span>
-              <button class="btn btn-sm btn-ghost" @click="goNext" :disabled="!nextCursor">
+              <span class="text-sm font-semibold text-base-content/70">Page {{ displayedPageNumber }}</span>
+              <button class="btn btn-sm btn-ghost" @click="goNext" :disabled="isNextDisabled">
                 Next
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
@@ -406,12 +406,50 @@ const limit = ref(1)
 
 const sessions = ref([])
 const originalSessions = ref([]) // Maps minimal representation for backend diffs
+const pageSize = 10
+const localPageIndex = ref(0)
 
 // Server Pagination State
 const currentCursorIndex = ref(0)
 const cursorHistory = ref([null])
 const nextCursor = ref(null)
 const hasUnsavedSessionChanges = ref(false) // Guard to block navigation before saving
+
+const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
+
+const displayedSessions = computed(() => {
+  if (!isUsingLocalPagination.value) return sessions.value
+  const start = localPageIndex.value * pageSize
+  const end = start + pageSize
+  return sessions.value.slice(start, end)
+})
+
+const localTotalPages = computed(() => Math.max(1, Math.ceil(sessions.value.length / pageSize)))
+
+const shouldShowPagination = computed(() => {
+  if (isUsingLocalPagination.value) return sessions.value.length > pageSize
+  return currentCursorIndex.value > 0 || !!nextCursor.value
+})
+
+const displayedPageNumber = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndex.value + 1
+  return currentCursorIndex.value + 1
+})
+
+const isPrevDisabled = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndex.value === 0
+  return currentCursorIndex.value === 0
+})
+
+const isNextDisabled = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndex.value >= localTotalPages.value - 1
+  return !nextCursor.value
+})
+
+const getAbsoluteIndex = (visibleIndex) => {
+  if (!isUsingLocalPagination.value) return visibleIndex
+  return localPageIndex.value * pageSize + visibleIndex
+}
 
 // Duplicate State
 const duplicateModalRef = ref(null)
@@ -498,11 +536,14 @@ const loadSessions = async (cursor) => {
   originalSessions.value = mappedSessions.map(s => ({ uuid: s.uuid }));
   nextCursor.value = sessionsRes.next_page;
   hasUnsavedSessionChanges.value = false;
+  localPageIndex.value = 0;
 }
 
 const goNext = async () => {
-  if (hasUnsavedSessionChanges.value) {
-    alert("You have unsaved session changes on this page. Please save them before navigating to another page.");
+  if (isUsingLocalPagination.value) {
+    if (localPageIndex.value < localTotalPages.value - 1) {
+      localPageIndex.value++;
+    }
     return;
   }
   if (!nextCursor.value) return;
@@ -513,8 +554,10 @@ const goNext = async () => {
 }
 
 const goPrev = async () => {
-  if (hasUnsavedSessionChanges.value) {
-    alert("You have unsaved session changes on this page. Please save them before navigating to another page.");
+  if (isUsingLocalPagination.value) {
+    if (localPageIndex.value > 0) {
+      localPageIndex.value--;
+    }
     return;
   }
   if (currentCursorIndex.value === 0) return;
@@ -581,6 +624,7 @@ const confirmDuplicate = () => {
   }
   
   hasUnsavedSessionChanges.value = true;
+  localPageIndex.value = localTotalPages.value - 1;
   closeDuplicateModal()
 }
 
@@ -666,6 +710,7 @@ function addSession() {
   }
   
   hasUnsavedSessionChanges.value = true;
+  localPageIndex.value = localTotalPages.value - 1;
   sessionModalRef.value.close()
   resetForm()
 }
@@ -683,6 +728,9 @@ function saveEdit() {
   })
   
   hasUnsavedSessionChanges.value = true;
+  if (localPageIndex.value >= localTotalPages.value) {
+    localPageIndex.value = localTotalPages.value - 1
+  }
   sessionModalRef.value.close()
   resetForm()
 }
@@ -699,6 +747,9 @@ function removeSession(index) {
   if(confirm("Remove this session?")) {
     sessions.value.splice(index, 1)
     hasUnsavedSessionChanges.value = true;
+    if (localPageIndex.value >= localTotalPages.value) {
+      localPageIndex.value = localTotalPages.value - 1
+    }
   }
 }
 
