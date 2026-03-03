@@ -150,10 +150,6 @@
 
                       {{ s.capacity || 'Unlimited' }} seats
                     </span>
-                    <span v-if="s.recurring" class="badge badge-primary badge-sm badge-outline text-[10px] font-bold">
-                      <span class="material-symbols-outlined text-[12px] mr-1">repeat</span>
-                      {{ s.recurring }}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -617,12 +613,22 @@ function addSession() {
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
 
-  const addByType = (date) => {
-    if (type === "Daily") return addDays(date, interval)
-    if (type === "Weekly") return addWeeks(date, interval)
-    if (type === "Monthly") return addMonths(date, interval)
-    if (type === "Yearly") return addYears(date, interval)
-    return date
+  const addByType = (dateStr) => {
+    const [datePart, timePart] = dateStr.split("T")
+    const [year, month, day] = datePart.split("-").map(Number)
+    const [hour, minute] = timePart.split(":").map(Number)
+
+    const d = new Date(Date.UTC(year, month - 1, day, hour, minute))
+
+    let next;
+    if (type === "Daily") next = addDays(d, interval)
+    else if (type === "Weekly") next = addWeeks(d, interval)
+    else if (type === "Monthly") next = addMonths(d, interval)
+    else if (type === "Yearly") next = addYears(d, interval)
+    else next = d;
+
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}T${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}`
   }
 
   if (type === "Does not repeat") {
@@ -632,11 +638,14 @@ function addSession() {
       end: endDate,
     })
   } else {
-    let currentStart = startDate
-    let currentEnd = endDate
+    let currentStartStr = newSession.value.start
+    let currentEndStr = newSession.value.end
     let i = 0
 
     while (true) {
+      const currentStart = parseDatetimeLocal(currentStartStr, userTimezone.value)
+      const currentEnd = parseDatetimeLocal(currentEndStr, userTimezone.value)
+
       sessions.value.push({
         ...newSession.value,
         start: currentStart,
@@ -655,9 +664,8 @@ function addSession() {
       }
       if (i > 100) break 
       
-      // Keep recurrence calculations strictly as TZDate objects
-      currentStart = new TZDate(addByType(currentStart), userTimezone.value)
-      currentEnd = new TZDate(addByType(currentEnd), userTimezone.value)
+      currentStartStr = addByType(currentStartStr)
+      currentEndStr = addByType(currentEndStr)
     }
   }
   
