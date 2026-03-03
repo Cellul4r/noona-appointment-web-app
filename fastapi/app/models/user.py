@@ -8,10 +8,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
+
 if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.oauth_user import OAuthUser
     from app.models.session_registration import SessionRegistration
+    from app.models.notification_job import NotificationJob
 
 
 class User(Base):
@@ -26,7 +28,9 @@ class User(Base):
         nullable=True,
         default=None,
     )
-    timezone: Mapped[str] = mapped_column(String(64), default="Europe/London", nullable=False)
+    timezone: Mapped[str] = mapped_column(
+        String(64), default="Europe/London", nullable=False
+    )
     email_notifications: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.utcnow()
@@ -43,12 +47,15 @@ class User(Base):
     sessions_registered: Mapped[list[SessionRegistration]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    notification_jobs: Mapped[list[NotificationJob]] = relationship(
+        back_populates="user",
+        passive_deletes=True,
+    )
 
     @property
     def has_password(self) -> bool:
         """Indicates whether the user has a usable password set."""
         return bool(self.password_hash)
-
 
     """
     @property

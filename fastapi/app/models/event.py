@@ -14,6 +14,7 @@ from app.db import Base
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.session import Session
+    from app.models.notification_job import NotificationJob
 
 
 class Event(Base):
@@ -40,4 +41,8 @@ class Event(Base):
     host: Mapped["User"] = relationship(back_populates="events")
     sessions: Mapped[list["Session"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
+    )
+    notification_jobs: Mapped[list[NotificationJob]] = relationship(
+        back_populates="event",
+        passive_deletes=True,
     )

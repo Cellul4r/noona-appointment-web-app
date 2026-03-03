@@ -10,9 +10,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.db import Base
 import uuid
 
+
 if TYPE_CHECKING:
     from app.models.event import Event
     from app.models.session_registration import SessionRegistration
+    from app.models.notification_job import NotificationJob
 
 
 class Session(Base):
@@ -40,4 +42,8 @@ class Session(Base):
 
     sessions_registered: Mapped[list["SessionRegistration"]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
+    )
+    notification_jobs: Mapped[list[NotificationJob]] = relationship(
+        back_populates="session",
+        passive_deletes=True,
     )

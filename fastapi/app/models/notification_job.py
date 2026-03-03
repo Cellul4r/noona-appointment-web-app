@@ -2,11 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum as PyEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Integer, JSON, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.event import Event
+    from app.models.session import Session
+    from app.models.user import User
 
 
 class NotificationType(PyEnum):
@@ -40,13 +46,13 @@ class NotificationJob(Base):
     )
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False, index=True
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     event_id: Mapped[int | None] = mapped_column(
-        ForeignKey("events.id"), nullable=True, index=True
+        ForeignKey("events.id", ondelete="CASCADE"), nullable=True, index=True
     )
     session_id: Mapped[int | None] = mapped_column(
-        ForeignKey("sessions.id"), nullable=True, index=True
+        ForeignKey("sessions.id", ondelete="CASCADE"), nullable=True, index=True
     )
 
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
@@ -76,3 +82,7 @@ class NotificationJob(Base):
         default=lambda: datetime.utcnow(),
         onupdate=lambda: datetime.utcnow(),
     )
+
+    user: Mapped[User] = relationship(back_populates="notification_jobs")
+    session: Mapped[Session | None] = relationship(back_populates="notification_jobs")
+    event: Mapped[Event | None] = relationship(back_populates="notification_jobs")
