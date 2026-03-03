@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, background, status
 from sqlalchemy import and_, case, func, literal, or_, select
 from app.schemas.session import (
     SessionUpdate,
+    SessionWithOptionalStatus,
 )
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -299,6 +300,21 @@ class SessionService:
         query = query.options(selectinload(User.sessions_registered))
         query = query
         return query
+
+    def get_registration_summary(
+        self, event_uuid: uuid.UUID, user_id: int, db: Session
+    ):
+        query = self.get_all_sessions_by_event(
+            event_uuid, user_id=user_id, scope="joined"
+        )
+        session_registration = db.execute(query).all()
+        return [
+            SessionWithOptionalStatus(
+                **session.__dict__,
+                registration_status=status,
+            )
+            for session, status in session_registration
+        ]
 
     def update_session(
         self, session_id: int, user_id: int, session: SessionUpdate, db: Session
