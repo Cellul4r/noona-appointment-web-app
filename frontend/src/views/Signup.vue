@@ -139,7 +139,7 @@ export default {
             full_name: fullname.value,
             email: email.value,
             password: password.value,
-
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
           })
         });
 
