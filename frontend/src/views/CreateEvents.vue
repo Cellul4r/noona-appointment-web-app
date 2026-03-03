@@ -86,12 +86,13 @@
           </div>
 
           <div class="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-base-300">
+            <input type="checkbox" v-model="limitEnabled" class="toggle toggle-primary" />
             <span class="text-md font-normal flex-1">
               Max sessions per participant
               <span class="text-sm opacity-40 font-normal">(optional)</span>
             </span>
             <div class="flex flex-wrap items-center gap-x-1">
-              <input type="checkbox" v-model="limitEnabled" class="toggle toggle-primary" />
+              <span>|</span>
               <div class="flex items-center gap-2"></div>
               <input type="number" v-model="limit" :min="limitEnabled ? 1 : undefined" :disabled="!limitEnabled"
                 class="input input-bordered w-20" />
@@ -251,7 +252,7 @@
                   <div class="flex flex-col gap-2">
 
 
-                    <!-- TIME + LOCATION -->
+                    <!-- TIME -->
                     <div class="flex items-center gap-2 text-base font-semibold">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="size-6">
@@ -261,6 +262,8 @@
                       <span>{{ formatDate(s.start) }}, {{ formatTime(s.start) }} – {{ formatDate(s.end) }} ,{{
                         formatTime(s.end) }}</span>
                     </div>
+
+                    <!-- LOCATION -->
                     <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm opacity-60">
                       <span v-if="getEffectiveSessionLocation(s)" class="flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -275,7 +278,7 @@
                       </span>
                       <span v-if="getEffectiveSessionLocation(s) && s.capacity != null" class="opacity-40">|</span>
 
-                      <!-- SEATS + BADGE -->
+                      <!-- SEATS -->
                       <span v-if="s.capacity != null" class="flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                           stroke="currentColor" class="size-6">
@@ -285,20 +288,7 @@
                         {{ s.capacity }} seats
                       </span>
 
-                      <span v-if="s.recurring"
-                        class="flex items-center text-primary bg-primary/10 px-2 py-0.5 rounded text-xs font-medium opacity-100">
-                        {{ s.recurring }}
-                      </span>
-
-                      <span v-if="s.repeat_every_text"
-                        class="flex items-center text-secondary bg-secondary/10 px-2 py-0.5 rounded text-xs font-medium opacity-100">
-                        {{ s.repeat_every_text }}
-                      </span>
-
-                      <span v-if="s.repeat_until_text"
-                        class="flex items-center text-info bg-info/10 px-2 py-0.5 rounded text-xs font-medium opacity-100">
-                        {{ s.repeat_until_text }}
-                      </span>
+                      
                     </div>
 
                   </div>
