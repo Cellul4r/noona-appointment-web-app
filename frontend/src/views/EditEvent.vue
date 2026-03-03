@@ -314,12 +314,9 @@
             </div>
 
             <div v-if="repeatsChoose.type !== 'Does not repeat'" class="mt-4 pt-4 border-t border-base-300">
-              <label class="flex items-center gap-2 cursor-pointer mb-3">
-                <input type="checkbox" v-model="repeatEndEnabled" class="checkbox checkbox-primary checkbox-sm" />
-                <span class="font-semibold text-sm">Set end limit</span>
-              </label>
+              <h4 class="font-semibold text-sm mb-3">End Limit <span class="text-error">*</span></h4>
 
-              <div v-if="repeatEndEnabled" class="grid sm:grid-cols-2 gap-4 bg-base-100 p-3 rounded-lg border border-base-200">
+              <div class="grid sm:grid-cols-2 gap-4 bg-base-100 p-3 rounded-lg border border-base-200">
                 <div class="space-y-2">
                   <label class="flex items-center gap-2 text-sm cursor-pointer">
                     <input type="radio" value="date" v-model="repeatEnd.type" class="radio radio-primary radio-sm" /> Until Date
@@ -434,7 +431,6 @@ const newSession = ref({
   description: ""
 })
 
-const repeatEndEnabled = ref(false)
 const repeatEnd = ref({ type: "never", date: "", count: null })
 const repeatsChoose = ref({ type: "Does not repeat", interval: "" })
 
@@ -654,10 +650,10 @@ function addSession() {
       })
       i++
 
-      if (repeatEndEnabled.value && repeatEnd.value.type === "count") {
+      if (repeatEnd.value.type === "count") {
         if (repeatEnd.value.count && i >= repeatEnd.value.count) break
       }
-      if (repeatEndEnabled.value && repeatEnd.value.type === "date" && repeatEnd.value.date) {
+      if (repeatEnd.value.type === "date" && repeatEnd.value.date) {
         // Evaluate limit cleanly by adding end-of-day time to the repeat limit
         const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", userTimezone.value)
         if (currentStart >= limitDate) break
@@ -710,7 +706,6 @@ function resetForm() {
   newSession.value = { start: "", end: "", capacity: null, location: "", description: "" }
   repeatsChoose.value = { type: "Does not repeat", interval: "" }
   repeatEnd.value = { type: "never", date: "", count: null }
-  repeatEndEnabled.value = false
   isEditing.value = false
   editingIndex.value = null
   backupSession.value = null
