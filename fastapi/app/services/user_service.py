@@ -37,6 +37,7 @@ class UserService:
             full_name=user.full_name,
             password_hash=hash_password(user.password),
             profile_image=default_avatar,
+            timezone=user.timezone
         )
 
         db.add(new_user)
