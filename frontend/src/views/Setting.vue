@@ -173,7 +173,7 @@
 
               <!-- Unlocked: new password fields -->
               <template v-else>
-                <input v-model="new_password" type="password" class="w-full input validator" required minlength="8" 
+                <input v-model="new_password" type="password" class="w-full input validator" required 
                   pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
                   title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                   <p class="validator-hint hidden">
@@ -188,7 +188,7 @@
                       >Confirm New Password</span
                     ></label
                   >
-                  <input v-model = "confirm_password" type="password" class="w-full input validator" required minlength="8" 
+                  <input v-model = "confirm_password" type="password" class="w-full input validator" required 
                     pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
                     title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                     <p class="validator-hint hidden">
@@ -500,6 +500,24 @@ export default {
   },
 
   methods: {
+    isBlank(value) {
+      return typeof value === "string" && value.trim().length === 0;
+    },
+
+    trimFields() {
+      if (typeof this.formData.full_name === "string") {
+        this.formData.full_name = this.formData.full_name.trim();
+      }
+
+      if (typeof this.new_password === "string") {
+        this.new_password = this.new_password.trim();
+      }
+
+      if (typeof this.confirm_password === "string") {
+        this.confirm_password = this.confirm_password.trim();
+      }
+    },
+
     async fetchUserData() {
       try {
         console.log("Fetching user data from API...");
@@ -544,6 +562,14 @@ export default {
     async submitForm() {
       try {
         this.submitting = true;
+        this.trimFields();
+
+        if (this.isBlank(this.formData.full_name)) {
+          alert("Full name cannot be empty or spaces only");
+          this.submitting = false;
+          return;
+        }
+
         const data = {
           full_name: this.formData.full_name,
           profile_image: this.formData.profile_image,
@@ -553,6 +579,12 @@ export default {
 
         // Only send new password if user has a password, verified current one, and provided a new one
         if (this.formData.has_password && this.passwordVerified && this.new_password) {
+          if (this.isBlank(this.new_password) || this.isBlank(this.confirm_password)) {
+            alert("New password cannot be empty or spaces only");
+            this.submitting = false;
+            return;
+          }
+
           if (this.new_password !== this.confirm_password) {
             alert("Passwords do not match");
             this.submitting = false;
@@ -627,6 +659,11 @@ export default {
     },
     async verifyPassword() {
       try {
+        if (this.isBlank(this.current_password)) {
+          alert("Current password cannot be empty or spaces only");
+          return;
+        }
+
         console.log("verifying password", this.current_password);
         const res = await axios.post(`${this.apiBaseUrl}/users/verify-password`, {
           password: this.current_password,
