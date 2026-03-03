@@ -125,12 +125,20 @@ def register_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    reminder_minutes_before: list[int] = Query(default=[], max_length=2),
 ):
     session = session_service.get_session_by_uuid(session_uuid, db)
+    # Register the user of this session
     session_service.register_session(session.id, current_user.id, db)
     row = session_service.get_session_with_user_status(
         session_uuid, current_user.id, db
     )
+
+    # Queue notification job for reminder the user
+    if len(reminder_minutes_before) > 0:
+        notification_service.enqueue_session_reminder_job(
+            current_user.id, session.id, session.start_datetime, reminder_minutes_before
+        )
     return transform_session(row)
 
 

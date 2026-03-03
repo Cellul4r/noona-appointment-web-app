@@ -95,3 +95,35 @@ def render_registration_summary_html(
         current_year=datetime.utcnow().year,
         timezone=timezone,
     )
+
+
+def render_session_reminder_html(
+    *,
+    app_name: str,
+    full_name: str,
+    event_title: str,
+    session_start: datetime,
+    session_end: datetime,
+    session_location: str,
+    overview_url: str,
+    minutes_before: int | None = None,
+    timezone: str = "Europe/London",
+) -> str:
+    template = _template_env().get_template("email/session_reminder.html")
+    tz = ZoneInfo(timezone)
+
+    session_start_local = session_start.astimezone(tz)
+    session_end_local = session_end.astimezone(tz)
+
+    return template.render(
+        app_name=app_name,
+        full_name=full_name,
+        event_title=event_title,
+        session_start=session_start_local.strftime("%d %b %Y, %I:%M %p"),
+        session_end=session_end_local.strftime("%d %b %Y, %I:%M %p"),
+        session_location=session_location,
+        minutes_before=minutes_before,
+        overview_url=overview_url,
+        current_year=datetime.utcnow().year,
+        timezone=timezone,
+    )

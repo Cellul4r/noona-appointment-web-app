@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+import email
 import logging
 import uuid
 
-from fastapi import BackgroundTasks
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
@@ -47,7 +48,7 @@ class NotificationService:
         event_id: int | None = None,
         session_id: int | None = None,
         dedupe_key: str | None = None,
-    ) -> NotificationJob | None:
+    ) -> NotificationJob:
         db = SessionLocal()
         try:
             job = NotificationJob(
@@ -69,7 +70,10 @@ class NotificationService:
                 "Skip duplicate notification job for dedupe_key=%s",
                 dedupe_key,
             )
-            return None
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A similar notification job is already scheduled. Please try again later.",
+            )
         finally:
             db.close()
 
@@ -103,18 +107,39 @@ class NotificationService:
 
     def enqueue_registration_summary_job(self, user_id: int, event_uuid: uuid.UUID):
         now = datetime.utcnow()
-        if now.minute < 30:
-            now.replace(minute=0)
-        else:
-            now.replace(minute=30)
+        run_at = now + timedelta(minutes=30)
+        dedupe_window = run_at.strftime("%Y%m%d%H") + (
+            "00" if run_at.minute < 30 else "30"
+        )
         payload = {"event_uuid": str(event_uuid)}
         self.enqueue_notification_job(
             notification_type=NotificationType.REGISTRATION_SUMMARY,
             user_id=user_id,
             payload=payload,
-            run_at=now,
-            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{now.strftime('%Y%m%d%H%M')}",
+            run_at=run_at,
+            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{dedupe_window}",
         )
+
+    def enqueue_session_reminder_job(
+        self, user_id: int, session_id: int, start_time: datetime, reminders: list[int]
+    ):
+        reminders = sorted(reminders, reverse=True)[:2]
+        for minutes_before in reminders:  # limit to max 2 reminder alerts
+            run_at = start_time - timedelta(minutes=minutes_before)
+            payload = {
+                "session_id": session_id,
+                "minutes_before": minutes_before,
+                "start_time": start_time.isoformat(),
+            }
+            # reminders is expected to be a list of minutes before session start
+            self.enqueue_notification_job(
+                notification_type=NotificationType.SESSION_REMINDER,
+                user_id=user_id,
+                session_id=session_id,
+                run_at=run_at,
+                payload=payload,
+                dedupe_key=f"session_reminder:{user_id}:{session_id}:{minutes_before}",
+            )
 
     def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
         delay_minutes = min(2 ** max(attempts - 1, 0), 60)
@@ -139,6 +164,7 @@ class NotificationService:
                 .all()
             )
 
+            # re-instantiate to avoid potential issues with long-running process
             for job in jobs:
                 result["processed"] += 1
                 try:
@@ -154,7 +180,7 @@ class NotificationService:
                             result["skipped"] += 1
                             continue
 
-                        await self.send_available_seat_email(
+                        await self.email_service.send_available_seat_email(
                             [user.email], job.session_id
                         )
                     elif job.type == NotificationType.REGISTRATION_SUMMARY:
@@ -163,9 +189,20 @@ class NotificationService:
                             job.status = NotificationJobStatus.CANCELLED
                             result["skipped"] += 1
                             continue
-                        await self.send_registration_summary_email(
+                        await self.email_service.send_registration_summary_email(
                             user_id=job.user_id,
                             event_uuid=uuid.UUID(str(event_uuid)),
+                        )
+                    elif job.type == NotificationType.SESSION_REMINDER:
+                        if job.session_id is None:
+                            job.status = NotificationJobStatus.CANCELLED
+                            result["skipped"] += 1
+                            continue
+                        minutes_before = (job.payload or {}).get("minutes_before")
+                        await self.email_service.send_session_reminder_email(
+                            user_id=job.user_id,
+                            session_id=job.session_id,
+                            minutes_before=minutes_before,
                         )
                     else:
                         job.status = NotificationJobStatus.CANCELLED
@@ -196,143 +233,6 @@ class NotificationService:
         except Exception:
             db.rollback()
             logger.exception("Failed to dispatch pending notification jobs")
-            raise
-        finally:
-            db.close()
-
-    async def send_available_seat_email(self, recipients: list[str], session_id: int):
-        db = SessionLocal()
-        try:
-            session = (
-                db.execute(
-                    select(SessionModel)
-                    .options(selectinload(SessionModel.event))
-                    .where(SessionModel.id == session_id)
-                )
-                .scalars()
-                .one_or_none()
-            )
-
-            if session is None or session.event is None:
-                logger.warning(
-                    "Skip available-seat email: session or event missing for session_id=%s",
-                    session_id,
-                )
-                return
-
-            overview_url = build_event_overview_url(
-                settings.frontend_login_success_uri,
-                str(session.event.share_uuid),
-            )
-
-            now = datetime.utcnow()
-            for recipient in recipients:
-                user = db.execute(
-                    select(User).where(User.email == recipient)
-                ).scalar_one_or_none()
-                if not user:
-                    continue
-
-                timezone = user.timezone or "Europe/London"
-                html_body = render_available_seat_html(
-                    app_name=settings.mail_from_name,
-                    event_title=session.event.title,
-                    session_start=session.start_datetime,
-                    session_end=session.end_datetime,
-                    overview_url=overview_url,
-                    timezone=timezone,
-                )
-
-                await self.email_service.send_emails(
-                    "Yay! A Seat is now available.",
-                    EmailSchema(email=[recipient]),
-                    html_body,
-                )
-
-                registration = db.execute(
-                    select(SessionRegistration).where(
-                        SessionRegistration.session_id == session_id,
-                        SessionRegistration.user_id == user.id,
-                    )
-                ).scalar_one_or_none()
-
-                if registration is not None:
-                    registration.last_available_notified_at = now
-
-            db.commit()
-        except Exception:
-            db.rollback()
-            logger.exception("Failed to update available-seat notification timestamps")
-            raise
-        finally:
-            db.close()
-
-    async def send_registration_summary_email(
-        self, user_id: int, event_uuid: uuid.UUID
-    ):
-        # function for send via email of registration summary
-        db = SessionLocal()
-        try:
-            event_uuid_value = event_uuid
-
-            user = db.execute(
-                select(User).where(User.id == user_id)
-            ).scalar_one_or_none()
-            if not user:
-                logger.warning(
-                    "Failed to send registration summary email: user not found for user_id=%s",
-                    user_id,
-                )
-                return
-
-            event = db.execute(
-                select(Event).where(Event.share_uuid == event_uuid_value)
-            ).scalar_one_or_none()
-            if not event:
-                logger.warning(
-                    "Failed to send registration summary email: event not found for event_uuid=%s",
-                    event_uuid,
-                )
-                return
-
-            session_service = SessionService()
-            session_registrations = session_service.get_registration_summary(
-                event_uuid_value, user_id, db
-            )
-
-            if not session_registrations:
-                logger.warning(
-                    "No session registrations found for user_id=%s, event_uuid=%s",
-                    user_id,
-                    event_uuid,
-                )
-                return
-
-            overview_url = build_event_overview_url(
-                settings.frontend_login_success_uri,
-                str(event.share_uuid),
-            )
-            html_body = render_registration_summary_html(
-                app_name=settings.mail_from_name,
-                full_name=user.full_name,
-                event_title=event.title,
-                event_location=event.location,
-                session_registrations=session_registrations,
-                overview_url=overview_url,
-                timezone=user.timezone or "Europe/London",
-            )
-
-            await self.email_service.send_emails(
-                f"Your Registration Summary for {event.title}",
-                EmailSchema(email=[user.email]),
-                html_body,
-            )
-        except Exception:
-            logger.exception(
-                "Failed to send registration summary email for user_id=%s, event_uuid=%s",
-                user_id,
-                event_uuid,
-            )
             raise
         finally:
             db.close()
