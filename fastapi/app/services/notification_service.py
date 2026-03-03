@@ -103,13 +103,17 @@ class NotificationService:
 
     def enqueue_registration_summary_job(self, user_id: int, event_uuid: uuid.UUID):
         now = datetime.utcnow()
+        if now.minute < 30:
+            now.replace(minute=0)
+        else:
+            now.replace(minute=30)
         payload = {"event_uuid": str(event_uuid)}
         self.enqueue_notification_job(
             notification_type=NotificationType.REGISTRATION_SUMMARY,
             user_id=user_id,
             payload=payload,
             run_at=now,
-            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{now.strftime('%Y%m%d%H')}",
+            dedupe_key=f"registration_summary:{user_id}:{event_uuid}:{now.strftime('%Y%m%d%H%M')}",
         )
 
     def _calculate_next_retry_at(self, attempts: int, now: datetime) -> datetime:
