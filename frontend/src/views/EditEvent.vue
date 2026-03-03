@@ -575,15 +575,17 @@ function addSession() {
     return
   }
 
-  // Use TZDate to parse local datetime-local strings as UserTimezone!
-  const startDate = new TZDate(newSession.value.start, userTimezone.value)
-  
-  // Validation: Start time cannot be in the past for new sessions
-  if (startDate < new Date()) {
+  // Safe validation using exact string comparison matched to user's timezone!
+  // Both strings represent the exact YYYY-MM-DDTHH:mm format in userTimezone, 
+  // ensuring zero cross-timezone parse issues.
+  const nowStr = format(new TZDate(new Date(), userTimezone.value), "yyyy-MM-dd'T'HH:mm");
+  if (newSession.value.start < nowStr) {
     alert("A new session's start time cannot be before the current time.")
     return
   }
 
+  // Use TZDate to parse local datetime-local strings as UserTimezone!
+  const startDate = new TZDate(newSession.value.start, userTimezone.value)
   const endDate = new TZDate(newSession.value.end, userTimezone.value)
   
   const type = repeatsChoose.value.type
@@ -755,10 +757,14 @@ const goToPreviousPage = () => window.history.length > 1 ? router.back() : route
 
 const isSessionEnded = (endStr) => {
   if (!endStr) return false;
-  // Parse the session time string into an absolute Date object applying the user's timezone rules
-  const endDate = new TZDate(endStr, userTimezone.value);
-  // Compare it against the current live time
-  return endDate < new Date(); 
+  // Compare lexicographically! Both are zero-padded 'yyyy-MM-ddTHH:mm' formats.
+  // 1. Get exact current moment
+  const now = new Date();
+  // 2. Format current moment to the user's timezone exactly like the endStr
+  const nowStr = format(new TZDate(now, userTimezone.value), "yyyy-MM-dd'T'HH:mm");
+  
+  // 3. String comparison (safe from Date parsing timezone shifts)
+  return endStr < nowStr;
 }
 
 // Format the input strings ("yyyy-MM-dd'T'HH:mm") representing userTimezone directly into readable pieces
