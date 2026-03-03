@@ -110,7 +110,7 @@
             text-xs font-medium">
           <span class="text-xs mr-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-              stroke="currentColor" class="size-6">
+              stroke="currentColor" class="size-5">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
             </svg>
@@ -138,13 +138,13 @@
               <!-- Start -->
               <div class="flex flex-col">
                 <label class="text-sm ">Start</label>
-                <input type="datetime-local" v-model="newSession.start" class="input input-bordered w-full" />
+                <input type="datetime-local" v-model="newSession.start" :min="minStartDateTime" class="input input-bordered w-full" />
               </div>
 
               <!-- End -->
               <div class="flex flex-col">
                 <label class="text-sm">End</label>
-                <input type="datetime-local" v-model="newSession.end" class="input input-bordered w-full" />
+                <input type="datetime-local" v-model="newSession.end" :min="newSession.start" class="input input-bordered w-full" />
               </div>
 
 
@@ -401,10 +401,11 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, computed } from "vue"
+import { ref, watch, nextTick, computed, onMounted } from "vue"
 import { useRouter } from 'vue-router'
 import { createEvent } from "@/services/event"
 import { TZDate } from '@date-fns/tz'
+import { useAuthStore } from "@/store/authStore"
 
 const router = useRouter()
 const isEditing = ref(false)
@@ -413,16 +414,78 @@ const backupSession = ref(null)
 const submitted = ref(false)
 const titleInput = ref(null)
 const showDiscardModal = ref(false)
+const authStore = useAuthStore()
 
-const timezoneLabel = computed(() => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC")
+onMounted(() => {
+  if (!authStore.user) {
+    authStore.updateUser()
+  }
+})
+
+const timezoneLabel = computed(() =>
+  authStore.user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+)
 const eventTimezone = computed(() => timezoneLabel.value)
 
-const toTZDate = (value) => {
-  if (!value) return null
-  return new TZDate(value, eventTimezone.value)
+function parseDatetimeLocal(dateStr, timezone) {
+  const [datePart, timePart] = dateStr.split("T")
+  const [year, month, day] = datePart.split("-").map(Number)
+  const [hour, minute] = timePart.split(":").map(Number)
+
+  return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
 }
 
+const minStartDateTime = computed(() => {
+  const now = new Date()
+
+  // convert to timezone correctly
+  const nowTz = new TZDate(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    0,
+    eventTimezone.value
+  )
+
+  const pad = (n) => String(n).padStart(2, "0")
+
+  return `${nowTz.getFullYear()}-${pad(nowTz.getMonth() + 1)}-${pad(nowTz.getDate())}T${pad(nowTz.getHours())}:${pad(nowTz.getMinutes())}`
+})
+
+
+function toTZDate(value) {
+  if (!value) return null
+
+  try {
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return parseDatetimeLocal(value, eventTimezone.value)
+    }
+    if (value instanceof Date) {
+      return new TZDate(
+        value.getFullYear(),
+        value.getMonth(),
+        value.getDate(),
+        value.getHours(),
+        value.getMinutes(),
+        value.getSeconds(),
+        eventTimezone.value
+      )
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+
 const formatLocalDateTime = (value) => {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+    return parseDatetimeLocal(value, eventTimezone.value).toISOString()
+  }
+
   const tzDate = toTZDate(value)
   return tzDate ? tzDate.toISOString() : null
 }
@@ -438,6 +501,8 @@ const trimFields = () => {
     event.value.description = event.value.description.trim()
   }
 }
+
+const isBlank = (value) => typeof value === "string" && value.trim().length === 0
 
 const getEffectiveSessionLocation = (session) => {
   const sessionLocation = typeof session?.location === "string" ? session.location.trim() : ""
@@ -607,11 +672,27 @@ function addSession() {
     alert("End must be after start")
     return
   }
+
+  const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
+  const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
+  const now = new Date()
+  const nowInEventTimezone = new TZDate(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes(),
+    0,
+    eventTimezone.value
+  )
+
+  if (startDate < nowInEventTimezone) {
+    alert("A new session's start time cannot be before the current time.")
+    return
+  }
+
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
-
-  const startDate = new Date(newSession.value.start)
-  const endDate = new Date(newSession.value.end)
 
   const clone = (d) => new Date(d.getTime())
 
@@ -694,6 +775,8 @@ function addSession() {
 }
 
 const saveDraftAndLeave = async () => {
+  trimFields()
+
   const payload = {
     title: event.value.title,
     location: event.value.location,
@@ -755,7 +838,7 @@ function removeSession(index) {
 const submit = async () => {
   submitted.value = true
   trimFields()
-  if (!event.value.title) {
+  if (!event.value.title || isBlank(event.value.title)) {
     titleInput.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     titleInput.value?.focus()
     return
