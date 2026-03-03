@@ -63,15 +63,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/not-found',
-    name: 'NotFound',
-    component: NotFound,
-    meta: { hideNavbar: true }
-  },
-  {
     path: '/about-us',
     name: 'AboutUs',
     component: () => import('../views/AboutUs.vue'),
+  },
+  {
+    path: '/:patchMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound,
+    meta: { hideNavbar: true }
+    // catch-all route, should be last in the list
   },
 ];
 
@@ -99,7 +100,7 @@ router.beforeEach(async (to, from, next) => {
   if ((to.name === 'Login' || to.name === 'Signup') && authStore.isAuthenticated) {
     return next({ name: 'Dashboard' });
   }
-  next();
+  return next();
 })
 
 
