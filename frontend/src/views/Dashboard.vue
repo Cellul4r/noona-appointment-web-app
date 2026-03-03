@@ -337,7 +337,7 @@ const upcomingSessions = ref([]);
 const pastSessions = ref([]);
 
 // --- PAGINATION per-section ---
-const sessionsPageSize = 4;
+const sessionsPageSize = 5;
 const waitVisible = ref(sessionsPageSize);
 const upcomingVisible = ref(sessionsPageSize);
 const pastVisible = ref(sessionsPageSize);
