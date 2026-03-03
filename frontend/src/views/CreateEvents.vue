@@ -436,18 +436,7 @@ function parseDatetimeLocal(dateStr, timezone) {
 }
 
 const minStartDateTime = computed(() => {
-  const now = new Date()
-
-  // convert to timezone correctly
-  const nowTz = new TZDate(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-    0,
-    eventTimezone.value
-  )
+  const nowTz = new TZDate(new Date(), eventTimezone.value)
 
   const pad = (n) => String(n).padStart(2, "0")
 
@@ -463,15 +452,7 @@ function toTZDate(value) {
       return parseDatetimeLocal(value, eventTimezone.value)
     }
     if (value instanceof Date) {
-      return new TZDate(
-        value.getFullYear(),
-        value.getMonth(),
-        value.getDate(),
-        value.getHours(),
-        value.getMinutes(),
-        value.getSeconds(),
-        eventTimezone.value
-      )
+      return new TZDate(value, eventTimezone.value)
     }
 
     return null
@@ -482,6 +463,8 @@ function toTZDate(value) {
 
 
 const formatLocalDateTime = (value) => {
+  // get year, ... from value and create TZDate in eventTimezone, then convert to ISO string 
+  // // TZDate(year, month (0-11), date, hour, minute, userTimezone.value)
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
     return parseDatetimeLocal(value, eventTimezone.value).toISOString()
   }
@@ -675,16 +658,7 @@ function addSession() {
 
   const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
   const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
-  const now = new Date()
-  const nowInEventTimezone = new TZDate(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes(),
-    0,
-    eventTimezone.value
-  )
+  const nowInEventTimezone = new TZDate(new Date(), eventTimezone.value)
 
   if (startDate < nowInEventTimezone) {
     alert("A new session's start time cannot be before the current time.")
@@ -705,6 +679,8 @@ function addSession() {
     if (type === "Yearly") d.setFullYear(d.getFullYear() + interval)
 
     return d
+    
+
   }
 
   const format = (date) => {
