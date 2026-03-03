@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     github_client_secret: str | None
     frontend_login_success_uri: str = "http://localhost:8080/login-success"  # Default
     vite_api_base_url: str = "http://localhost:56733/api"  # Default
+    cron_secret: Optional[str] = None
 
     mail_username: str = "your@example.com"
     mail_password: str = "your password"
