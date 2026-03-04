@@ -94,8 +94,9 @@
             <div class="flex flex-wrap items-center gap-x-1">
               <div class="w-px h-8 bg-base-300"></div>
               <div class="flex items-center gap-2">
-                <input type="number" pattern="[0-9]*" v-model="limit" :min="limitEnabled ? 1 : undefined"
-                  :disabled="!limitEnabled" class="input input-bordered w-14 validator" />
+                <input type="number" pattern="[0-9]*" inputmode="numeric" v-model="limit"
+                  :min="limitEnabled ? 1 : undefined" :disabled="!limitEnabled" @input="onLimitInput"
+                  class="input input-bordered w-14 validator" />
               </div>
             </div>
           </div>
@@ -181,6 +182,12 @@
                 Repeat session
               </h2>
 
+              <p v-if="isEditing" class="text-xs opacity-60">
+                Repeat settings are locked while editing a session.
+              </p>
+
+              <fieldset :disabled="isEditing" class="space-y-4">
+
               <!-- content -->
               <div class="grid md:grid-cols-3 gap-3">
                 <div>
@@ -232,11 +239,15 @@
                     <input v-if="repeatEnd.type === 'date'" type="date" v-model="repeatEnd.date"
                       class="input input-bordered w-full" />
 
-                    <input v-if="repeatEnd.type === 'count'" type="number" min="1" v-model="repeatEnd.count"
-                      placeholder="Number of times" class="input input-bordered w-full" />
+                    <input v-if="repeatEnd.type === 'count'" type="number" min="1" max="100" v-model="repeatEnd.count"
+                      placeholder="Number of times" pattern="[0-9]*" class="input input-bordered w-full validator" />
+                    <p v-if="repeatEnd.type === 'count' && Number(repeatEnd.count) > 100" class="text-error text-xs mt-1">
+                      You can only repeat up to 100 sessions at a time.
+                    </p>
                   </div>
                 </div>
               </div>
+              </fieldset>
             </div>
 
             <div class="flex gap-2">
