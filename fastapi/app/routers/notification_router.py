@@ -1,16 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 
 from app.config import settings
 from app.services.notification_service import NotificationService
+from app.dependencies.auth import csrf_protect
 
 
 router = APIRouter()
 notification_service = NotificationService()
 
 
-@router.post("/dispatch")
+@router.post("/dispatch", dependencies=[Depends(csrf_protect)])
 async def dispatch_notifications(
     size: int = Query(default=50, ge=1, le=200),
     x_cron_secret: Annotated[str | None, Header()] = None,

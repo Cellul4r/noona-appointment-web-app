@@ -14,7 +14,7 @@ from app.schemas.session import (
     SessionWithEventPublic,
     SessionWithOptionalStatus,
 )
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import csrf_protect, get_current_user
 from app.models.user import User
 from app.models.session_registration import RegistrationStatus
 from app.models.session import Session as SessionModel
@@ -120,7 +120,11 @@ def get_session_by_uuid(
     return transform_session(row)
 
 
-@router.post("/{session_uuid}/registration", response_model=SessionWithEventPublic)
+@router.post(
+    "/{session_uuid}/registration",
+    response_model=SessionWithEventPublic,
+    dependencies=[Depends(csrf_protect)],
+)
 def register_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
@@ -142,7 +146,11 @@ def register_session(
     return transform_session(row)
 
 
-@router.post("/{session_uuid}/confirm", response_model=SessionWithEventPublic)
+@router.post(
+    "/{session_uuid}/confirm",
+    response_model=SessionWithEventPublic,
+    dependencies=[Depends(csrf_protect)],
+)
 def confirm_session(
     session_uuid: uuid.UUID,
     db: Annotated[Session, Depends(get_db)],
@@ -167,6 +175,7 @@ def confirm_session(
     "/{session_uuid}/registration",
     status_code=status.HTTP_200_OK,
     response_model=SessionWithEventPublic,
+    dependencies=[Depends(csrf_protect)],
 )
 def unregister_session(
     session_uuid: uuid.UUID,
@@ -193,7 +202,9 @@ def unregister_session(
 
 
 @router.delete(
-    "/{session_uuid}/registrations/{user_id}", status_code=status.HTTP_200_OK
+    "/{session_uuid}/registrations/{user_id}",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
 )
 def unregister_user_from_session(
     session_uuid: uuid.UUID,
@@ -223,7 +234,13 @@ def unregister_user_from_session(
     )
 
 
-@router.patch("/{session_id}", response_model=SessionPrivate)
+@router.patch(
+    "/{session_id}",
+    response_model=SessionPrivate,
+    dependencies=[
+        Depends(csrf_protect),
+    ],
+)
 def update_session(
     session_id: int,
     session: SessionUpdate,
@@ -233,7 +250,11 @@ def update_session(
     return session_service.update_session(session_id, current_user.id, session, db)
 
 
-@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{session_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
 def delete_session(
     session_id: int,
     db: Annotated[Session, Depends(get_db)],

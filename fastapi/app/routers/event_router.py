@@ -24,7 +24,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 
 from app.db import get_db
 
-from app.dependencies.auth import get_current_user, get_optional_user
+from app.dependencies.auth import csrf_protect, get_current_user, get_optional_user
 from app.services.event_service import event_service
 from app.models.user import User
 from app.models.session import Session as SessionModel
@@ -124,7 +124,9 @@ def get_event_sessions(
 
 
 @router.post(
-    "/{event_uuid}/registration-summary", response_model=list[SessionWithOptionalStatus]
+    "/{event_uuid}/registration-summary",
+    response_model=list[SessionWithOptionalStatus],
+    dependencies=[Depends(csrf_protect)],
 )
 def send_registration_summary(
     event_uuid: uuid.UUID,
@@ -139,7 +141,10 @@ def send_registration_summary(
 
 
 @router.post(
-    "/", response_model=EventSessionPublic, status_code=status.HTTP_201_CREATED
+    "/",
+    response_model=EventSessionPublic,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
 )
 def create_event(
     event_in: EventCreate,
@@ -157,7 +162,11 @@ def create_event(
         )
 
 
-@router.patch("/{event_uuid}", response_model=EventSessionPublic)
+@router.patch(
+    "/{event_uuid}",
+    response_model=EventSessionPublic,
+    dependencies=[Depends(csrf_protect)],
+)
 def update_event(
     event_in: EventUpdate,
     event_uuid: UUID,
@@ -196,7 +205,11 @@ def update_event(
         )
 
 
-@router.delete("/{event_uuid}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{event_uuid}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(csrf_protect)],
+)
 def delete_event(
     event_uuid: UUID = Path(...),
     db: Session = Depends(get_db),

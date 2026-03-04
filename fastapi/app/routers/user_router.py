@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db
-from app.dependencies.auth import get_current_user
+from app.dependencies.auth import csrf_protect, get_current_user
 from app.dependencies.sso import get_google_sso, get_github_sso
 from app.models.user import User
 from app.services.user_service import UserService
@@ -33,26 +33,36 @@ def get_settings(
     return user_service.get_user_settings(db, current_user.id)
 
 
-@router.patch("/me", response_model=UserPrivate)
+@router.patch(
+    "/me",
+    response_model=UserPrivate,
+    dependencies=[Depends(csrf_protect)],
+)
 def update_settings(
     user_update: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
 
-
     return user_service.update_user_settings(db, current_user.id, user_update)
 
-@router.post("/verify-password")
+
+@router.post(
+    "/verify-password",
+    dependencies=[Depends(csrf_protect)],
+)
 def verify_current_password(
     password: str = Body(..., embed=True),
     current_user: User = Depends(get_current_user),
 ):
-    
+
     logger.debug("Verifying password for user %s", current_user.email)
 
     if not current_user.password_hash:
-        logger.warning("User %s attempted password verify but has no password set", current_user.email)
+        logger.warning(
+            "User %s attempted password verify but has no password set",
+            current_user.email,
+        )
         raise HTTPException(status_code=400, detail="No password set for this account")
 
     try:
@@ -66,7 +76,7 @@ def verify_current_password(
         raise HTTPException(status_code=400, detail="Incorrect password")
 
     return {"verified": True}
- 
+
 
 @router.get("/link-accounts/{provider}")
 async def start_link(
@@ -94,7 +104,7 @@ async def start_link(
     raise HTTPException(status_code=400, detail="Unsupported provider")
 
 
-@router.delete("/unlink-accounts/{provider}")
+@router.delete("/unlink-accounts/{provider}", dependencies=[Depends(csrf_protect)])
 def unlink_account(
     provider: str,
     db: Session = Depends(get_db),
