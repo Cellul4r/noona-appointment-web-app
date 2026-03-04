@@ -24,11 +24,31 @@ axios.interceptors.request.use(
 
 // Fetch User Settings
 export async function fetchUserSettings() {
-    try {
-        const response = await axios.get(`${API_URL}/users/settings`, { withCredentials: true });
-        return response.data; // email, full_name, profile_image, timezone, email_notifications
-    } catch (err) {
-        console.error("Error fetching user settings:", err);
-        return null;
-    }
+    const response = await axios.get(`${API_URL}/users/settings`, { withCredentials: true });
+    return response.data;
+}
+
+export async function updateUserProfile(payload) {
+    const response = await axios.patch(`${API_URL}/users/me`, payload, { withCredentials: true });
+    return response.data;
+}
+
+export async function verifyUserPassword(password) {
+    const response = await axios.post(
+        `${API_URL}/users/verify-password`,
+        { password },
+        { withCredentials: true }
+    );
+    return response.data;
+}
+
+export async function unlinkOAuthAccount(provider) {
+    const response = await axios.delete(`${API_URL}/users/unlink-accounts/${provider}`, {
+        withCredentials: true,
+    });
+    return response.data;
+}
+
+export function getLinkAccountUrl(provider) {
+    return `${API_URL}/users/link-accounts/${provider}`;
 }
