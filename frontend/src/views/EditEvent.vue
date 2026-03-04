@@ -29,7 +29,6 @@
             </div>
           </div>
         </dialog>
-
       </div>
     </nav>
     <div class="max-w-4xl mx-auto p-4 lg:p-6 space-y-6 mt-4">
@@ -102,7 +101,10 @@
 
             <!-- Sessions List -->
             <div class="flex flex-col gap-4">
-              <div v-for="(s, index) in displayedSessions" :key="s.uuid || index"
+              <!-- NEWLY ADDED SESSIONS -->
+              <div v-if="newlyAddedSessions.length > 0" class="space-y-4">
+                <h3 class="font-bold text-lg text-primary">Newly Added Sessions</h3>
+                <div v-for="(s, index) in displayedNewSessions" :key="'new-' + getAbsoluteNewIndex(index)"
                 class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border border-base-300 bg-base-200 hover:border-primary/50 transition-colors"
                 :class="isSessionEnded(s.end) ? 'opacity-60 grayscale' : ''">
 
@@ -153,13 +155,13 @@
                 <!-- RIGHT -->
                 <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
                   <div class="flex items-center gap-2">
-                    <template v-if="activeCopyIndex === getAbsoluteIndex(index)">
-                      <input v-if="activeCopyIndex === getAbsoluteIndex(index)" ref="copyInput" type="number" v-model.number="duplicateCount"
+                    <template v-if="activeCopyIndex === getAbsoluteNewIndex(index)">
+                      <input v-if="activeCopyIndex === getAbsoluteNewIndex(index)" ref="copyInput" type="number" v-model.number="duplicateCount"
                         min="1" class="input input-bordered w-20" />
-                      <button v-if="activeCopyIndex === getAbsoluteIndex(index)" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
+                      <button v-if="activeCopyIndex === getAbsoluteNewIndex(index)" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
                     </template>
                     <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
-                      @click="handleCopyClick(s, getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      @click="handleCopyClick(s, getAbsoluteNewIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                       stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round"
                         d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
@@ -167,14 +169,14 @@
                   </div>
 
                   <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
-                    @click="openEditModal(s, getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    @click="openEditModal(s, getAbsoluteNewIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                   </svg>
 
                   <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-red-500"
-                    @click="removeSession(getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    @click="removeSession(getAbsoluteNewIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -182,23 +184,127 @@
 
                 </div>
               </div>
+
+              <!-- Pagination for Newly Added Sessions -->
+              <div v-if="shouldShowNewPagination" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
+                <button class="btn btn-sm btn-ghost" @click="localPageIndexNew > 0 && localPageIndexNew--" :disabled="isNewPrevDisabled">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  </svg>
+                  Prev
+                </button>
+                <span class="text-sm font-semibold text-base-content/70">Page {{ displayedNewPageNumber }}</span>
+                <button class="btn btn-sm btn-ghost" @click="localPageIndexNew < newSessionsPageSize - 1 && localPageIndexNew++" :disabled="isNewNextDisabled">
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            
-            <!-- Server Pagination Controls -->
-            <div v-if="shouldShowPagination" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
-              <button class="btn btn-sm btn-ghost" @click="goPrev" :disabled="isPrevDisabled">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                </svg>
-                Prev
-              </button>
-              <span class="text-sm font-semibold text-base-content/70">Page {{ displayedPageNumber }}</span>
-              <button class="btn btn-sm btn-ghost" @click="goNext" :disabled="isNextDisabled">
-                Next
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
+
+            <!-- DIVIDER -->
+            <div v-if="newlyAddedSessions.length > 0 && existingSessions.length > 0" class="divider my-6 font-semibold text-base-content/50">Existing Sessions</div>
+
+            <!-- EXISTING SESSIONS -->
+            <div v-if="existingSessions.length > 0" class="space-y-4">
+              <div v-for="(s, index) in displayedExistingSessions" :key="'existing-' + s.uuid"
+                class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border border-base-300 bg-base-200 hover:border-primary/50 transition-colors"
+                :class="isSessionEnded(s.end) ? 'opacity-60 grayscale' : ''">
+
+                <!-- LEFT -->
+                <div class="flex-1 min-w-0 w-full">
+                  <div class="flex flex-col gap-2">
+
+                    <!-- TIME -->
+                    <div class="flex items-center gap-2 text-base font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                      <span>{{ formatDate(s.start) }}, {{ formatTime(s.start) }} – {{ formatDate(s.end) }}, {{ formatTime(s.end) }}</span>
+                    </div>
+
+                    <!-- LOCATION -->
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm opacity-60">
+                      <span v-if="s.location || event.location" class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        </svg>
+
+                        {{ s.location || event.location }}
+                      </span>
+                      <span v-if="(s.location || event.location) && s.capacity != null" class="opacity-40">|</span>
+
+                      <!-- SEATS -->
+                      <span v-if="s.capacity != null" class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                        {{ s.capacity }} seats
+                      </span>
+
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- RIGHT -->
+                <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  <div class="flex items-center gap-2">
+                    <template v-if="activeCopyIndex === getAbsoluteExistingIndex(index)">
+                      <input v-if="activeCopyIndex === getAbsoluteExistingIndex(index)" ref="copyInput" type="number" v-model.number="duplicateCount"
+                        min="1" class="input input-bordered w-20" />
+                      <button v-if="activeCopyIndex === getAbsoluteExistingIndex(index)" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
+                    </template>
+                    <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
+                      @click="handleCopyClick(s, getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                    </svg>
+                  </div>
+
+                  <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
+                    @click="openEditModal(s, getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                  </svg>
+
+                  <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-red-500"
+                    @click="removeSession(getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  </svg>
+
+                </div>
+              </div>
+
+              <!-- Pagination for Existing Sessions -->
+              <div v-if="shouldShowExistingPagination" class="flex justify-between items-center bg-base-100 border border-base-200 p-2 rounded-xl mt-4">
+                <button class="btn btn-sm btn-ghost" @click="goPrev" :disabled="isExistingPrevDisabled">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 mr-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                  </svg>
+                  Prev
+                </button>
+                <span class="text-sm font-semibold text-base-content/70">Page {{ displayedExistingPageNumber }}</span>
+                <button class="btn btn-sm btn-ghost" @click="goNext" :disabled="isExistingNextDisabled">
+                  Next
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 ml-1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
             <!-- Add New Session Button (Triggers Modal) -->
@@ -210,19 +316,18 @@
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Footer Actions -->
-      <div class="flex gap-4 justify-end pt-4 border-t border-base-300">
-        <button @click="goToPreviousPage" class="btn btn-ghost">
-          Cancel
-        </button>
-        <button @click="submit" :class="event.is_draft ? 'btn-outline border-base-300' : 'btn-primary'" class="btn px-8">
-          {{ event.is_draft ? 'Save Draft' : 'Save Changes' }}
-        </button>
-        <button v-if="event.is_draft" @click="publish" class="btn btn-primary px-8 shadow-sm shadow-primary/20">
-          Publish
-        </button>
+        <div class="flex gap-2 justify-end pt-4">
+          <button @click="goToPreviousPage" class="btn btn-ghost">
+            Cancel
+          </button>
+          <button @click="submit" :class="event.is_draft ? 'btn-outline border-base-300' : 'btn-primary'" class="btn px-8">
+            {{ event.is_draft ? 'Save Draft' : 'Save Changes' }}
+          </button>
+          <button v-if="event.is_draft" @click="publish" class="btn btn-primary px-8 shadow-sm shadow-primary/20">
+            Publish
+          </button>
+        </div>
       </div>
 
     </div>
@@ -359,6 +464,8 @@
       </form>
     </dialog>
 
+    </div>
+
   </div>
 </template>
 
@@ -393,50 +500,74 @@ const limitEnabled = ref(false)
 const limit = ref(1)
 
 const sessions = ref([])
-const originalSessions = ref([]) // Maps minimal representation for backend diffs
+const originalSessions = ref([])
 const pageSize = 10
-const localPageIndex = ref(0)
+const localPageIndexNew = ref(0)
+const localPageIndexExisting = ref(0)
 
 // Server Pagination State
 const currentCursorIndex = ref(0)
 const nextCursor = ref(null)
 const prevCursor = ref(null)
-const hasUnsavedSessionChanges = ref(false) // Guard to block navigation before saving
+const hasUnsavedSessionChanges = ref(false)
+
+// Computed to separate new from existing sessions
+const newlyAddedSessions = computed(() => sessions.value.filter(s => !s.uuid))
+const existingSessions = computed(() => sessions.value.filter(s => s.uuid))
 
 const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
 
-const displayedSessions = computed(() => {
-  if (!isUsingLocalPagination.value) return sessions.value
-  const start = localPageIndex.value * pageSize
+// Pagination for newly added sessions
+const displayedNewSessions = computed(() => {
+  if (newlyAddedSessions.value.length === 0) return []
+  const start = localPageIndexNew.value * pageSize
   const end = start + pageSize
-  return sessions.value.slice(start, end)
+  return newlyAddedSessions.value.slice(start, end)
 })
 
-const localTotalPages = computed(() => Math.max(1, Math.ceil(sessions.value.length / pageSize)))
+const newSessionsPageSize = computed(() => Math.max(1, Math.ceil(newlyAddedSessions.value.length / pageSize)))
+const shouldShowNewPagination = computed(() => newlyAddedSessions.value.length > pageSize)
 
-const shouldShowPagination = computed(() => {
-  if (isUsingLocalPagination.value) return sessions.value.length > pageSize
+// Pagination for existing sessions (from server)
+const displayedExistingSessions = computed(() => {
+  if (!isUsingLocalPagination.value) return existingSessions.value
+  const start = localPageIndexExisting.value * pageSize
+  const end = start + pageSize
+  return existingSessions.value.slice(start, end)
+})
+
+const existingSessionsPageSize = computed(() => Math.max(1, Math.ceil(existingSessions.value.length / pageSize)))
+const shouldShowExistingPagination = computed(() => {
+  if (isUsingLocalPagination.value) return existingSessions.value.length > pageSize
   return !!prevCursor.value || !!nextCursor.value
 })
 
-const displayedPageNumber = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndex.value + 1
-  return currentCursorIndex.value + 1
-})
+const isNewPrevDisabled = computed(() => localPageIndexNew.value === 0)
+const isNewNextDisabled = computed(() => localPageIndexNew.value >= newSessionsPageSize.value - 1)
+const displayedNewPageNumber = computed(() => localPageIndexNew.value + 1)
 
-const isPrevDisabled = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndex.value === 0
+const isExistingPrevDisabled = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndexExisting.value === 0
   return !prevCursor.value
 })
 
-const isNextDisabled = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndex.value >= localTotalPages.value - 1
+const isExistingNextDisabled = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndexExisting.value >= existingSessionsPageSize.value - 1
   return !nextCursor.value
 })
 
-const getAbsoluteIndex = (visibleIndex) => {
+const displayedExistingPageNumber = computed(() => {
+  if (isUsingLocalPagination.value) return localPageIndexExisting.value + 1
+  return currentCursorIndex.value + 1
+})
+
+const getAbsoluteNewIndex = (visibleIndex) => {
+  return localPageIndexNew.value * pageSize + visibleIndex
+}
+
+const getAbsoluteExistingIndex = (visibleIndex) => {
   if (!isUsingLocalPagination.value) return visibleIndex
-  return localPageIndex.value * pageSize + visibleIndex
+  return localPageIndexExisting.value * pageSize + visibleIndex
 }
 
 // Duplicate State
@@ -522,18 +653,23 @@ const loadSessions = async (cursor) => {
 
   sessions.value = mappedSessions;
   
-  // Map just UUID to identify deletes in diff (avoids deep copy TZDate issues)
   originalSessions.value = mappedSessions.map(s => ({ uuid: s.uuid }));
   nextCursor.value = sessionsRes.next_page;
   prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
   hasUnsavedSessionChanges.value = false;
-  localPageIndex.value = 0;
+  localPageIndexNew.value = 0;
+  localPageIndexExisting.value = 0;
 }
 
 const goNext = async () => {
   if (isUsingLocalPagination.value) {
-    if (localPageIndex.value < localTotalPages.value - 1) {
-      localPageIndex.value++;
+    if (localPageIndexNew.value < newSessionsPageSize.value - 1) {
+      localPageIndexNew.value++;
+      return;
+    }
+    if (localPageIndexExisting.value < existingSessionsPageSize.value - 1) {
+      localPageIndexExisting.value++;
+      return;
     }
     return;
   }
@@ -545,8 +681,13 @@ const goNext = async () => {
 
 const goPrev = async () => {
   if (isUsingLocalPagination.value) {
-    if (localPageIndex.value > 0) {
-      localPageIndex.value--;
+    if (localPageIndexExisting.value > 0) {
+      localPageIndexExisting.value--;
+      return;
+    }
+    if (localPageIndexNew.value > 0) {
+      localPageIndexNew.value--;
+      return;
     }
     return;
   }
@@ -612,13 +753,13 @@ const confirmDuplicateInline = () => {
   if (duplicateCount.value < 1) return
   
   for (let i = 0; i < duplicateCount.value; i++) {
-    // Strip id and uuid so the backend sees them as new creations (s.start/s.end are already Date objects!)
-    const clone = { ...sessions.value[sessions.value.length - 1], id: undefined, uuid: undefined }
+    const lastSession = sessions.value[sessions.value.length - 1]
+    const clone = { ...lastSession, id: undefined, uuid: undefined }
     sessions.value.push(clone)
   }
   
   hasUnsavedSessionChanges.value = true;
-  localPageIndex.value = localTotalPages.value - 1;
+  localPageIndexNew.value = newSessionsPageSize.value - 1;
   activeCopyIndex.value = null
 }
 
@@ -627,13 +768,12 @@ const confirmDuplicate = () => {
   
   for (let i = 0; i < duplicateCount.value; i++) {
     const s = sessionToDuplicate.value
-    // Strip id and uuid so the backend sees them as new creations (s.start/s.end are already Date objects!)
     const clone = { ...s, id: undefined, uuid: undefined }
     sessions.value.push(clone)
   }
   
   hasUnsavedSessionChanges.value = true;
-  localPageIndex.value = localTotalPages.value - 1;
+  localPageIndexNew.value = newSessionsPageSize.value - 1;
   closeDuplicateModal()
 }
 
@@ -719,7 +859,7 @@ function addSession() {
   }
   
   hasUnsavedSessionChanges.value = true;
-  localPageIndex.value = localTotalPages.value - 1;
+  localPageIndexNew.value = newSessionsPageSize.value - 1;
   sessionModalRef.value.close()
   resetForm()
 }
@@ -737,8 +877,8 @@ function saveEdit() {
   })
   
   hasUnsavedSessionChanges.value = true;
-  if (localPageIndex.value >= localTotalPages.value) {
-    localPageIndex.value = localTotalPages.value - 1
+  if (localPageIndexNew.value >= newSessionsPageSize.value) {
+    localPageIndexNew.value = newSessionsPageSize.value - 1
   }
   sessionModalRef.value.close()
   resetForm()
@@ -756,8 +896,15 @@ function removeSession(index) {
   if(confirm("Remove this session?")) {
     sessions.value.splice(index, 1)
     hasUnsavedSessionChanges.value = true;
-    if (localPageIndex.value >= localTotalPages.value) {
-      localPageIndex.value = localTotalPages.value - 1
+    if (newlyAddedSessions.value.length === 0) {
+      localPageIndexNew.value = 0
+    } else if (localPageIndexNew.value >= newSessionsPageSize.value) {
+      localPageIndexNew.value = newSessionsPageSize.value - 1
+    }
+    if (existingSessions.value.length === 0) {
+      localPageIndexExisting.value = 0
+    } else if (localPageIndexExisting.value >= existingSessionsPageSize.value) {
+      localPageIndexExisting.value = existingSessionsPageSize.value - 1
     }
   }
 }
