@@ -416,10 +416,16 @@
 </template>
 
 <script>
-import axios from "axios";
 import { computed } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "vue-router";
+import {
+  fetchUserSettings,
+  updateUserProfile,
+  verifyUserPassword,
+  unlinkOAuthAccount,
+  getLinkAccountUrl,
+} from "@/services/user";
 
 
 export default {
@@ -434,7 +440,6 @@ export default {
 
   data() {
     return {
-      apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
       avatarPreview: null,
       current_password: "", // In password verification modal
       new_password: "", // For new password input
@@ -522,32 +527,31 @@ export default {
       try {
         console.log("Fetching user data from API...");
 
-        //  Make API request (Axios sends JWT automatically via cookies)
-        const res = await axios.get(`${this.apiBaseUrl}/users/settings`);
+        const data = await fetchUserSettings();
 
-        console.log("API Response Object:", res);
+        console.log("API Response Object:", data);
 
-        if (!res.data) {
+        if (!data) {
           throw new Error("No data received from API");
         }
 
-        console.log("Parsed Data:", res.data);
-        this.formData.email = res.data.email;
-        this.formData.full_name = res.data.full_name;
-        this.formData.profile_image = res.data.profile_image;
-        this.formData.timezone = res.data.timezone;
-        this.formData.email_notifications = res.data.email_notifications;
-        this.formData.has_password = res.data.has_password;
+        console.log("Parsed Data:", data);
+        this.formData.email = data.email;
+        this.formData.full_name = data.full_name;
+        this.formData.profile_image = data.profile_image;
+        this.formData.timezone = data.timezone;
+        this.formData.email_notifications = data.email_notifications;
+        this.formData.has_password = data.has_password;
 
         this.authStore.setUser({
-          id: res.data.id,
-          email: res.data.email,
-          full_name: res.data.full_name,
-          profile_image: res.data.profile_image,
-          timezone: res.data.timezone,
+          id: data.id,
+          email: data.email,
+          full_name: data.full_name,
+          profile_image: data.profile_image,
+          timezone: data.timezone,
         });
 
-        this.oauthAccounts = res.data.oauth_accounts || [];
+        this.oauthAccounts = data.oauth_accounts || [];
 
         // reset any password edit UI state when reloading/cancel changes
         this.passwordVerified = false;
@@ -595,23 +599,23 @@ export default {
         }
 
         console.log("Submitting form data:", data);
-        const res = await axios.patch(`${this.apiBaseUrl}/users/me`, data);
-        console.log("Update successful:", res.data);
+        const updatedUser = await updateUserProfile(data);
+        console.log("Update successful:", updatedUser);
 
         // refresh fields from server in case backend modified anything
-        if (res.data) {
-          this.formData.email = res.data.email;
-          this.formData.full_name = res.data.full_name;
-          this.formData.profile_image = res.data.profile_image;
-          this.formData.timezone = res.data.timezone;
-          this.formData.email_notifications = res.data.email_notifications;
+        if (updatedUser) {
+          this.formData.email = updatedUser.email;
+          this.formData.full_name = updatedUser.full_name;
+          this.formData.profile_image = updatedUser.profile_image;
+          this.formData.timezone = updatedUser.timezone;
+          this.formData.email_notifications = updatedUser.email_notifications;
 
           this.authStore.setUser({
-            id: res.data.id,
-            email: res.data.email,
-            full_name: res.data.full_name,
-            profile_image: res.data.profile_image,
-            timezone: res.data.timezone,
+            id: updatedUser.id,
+            email: updatedUser.email,
+            full_name: updatedUser.full_name,
+            profile_image: updatedUser.profile_image,
+            timezone: updatedUser.timezone,
           });
         }
 
@@ -665,12 +669,10 @@ export default {
         }
 
         console.log("verifying password", this.current_password);
-        const res = await axios.post(`${this.apiBaseUrl}/users/verify-password`, {
-          password: this.current_password,
-        });
-        console.log("verify-password response", res);
+        const verifyResult = await verifyUserPassword(this.current_password);
+        console.log("verify-password response", verifyResult);
 
-        if (res.status === 200 && res.data.verified) {
+        if (verifyResult?.verified) {
           this.passwordVerified = true;
           this.$refs.passwordModal.close();
           this.current_password = "";
@@ -708,14 +710,12 @@ export default {
     },
 
     linkAccount(provider) {
-      window.location.href = `${this.apiBaseUrl}/users/link-accounts/${provider}`;
+      window.location.href = getLinkAccountUrl(provider);
     },
 
     async unlinkAccount(provider) {
       try {
-        await axios.delete(
-          `${this.apiBaseUrl}/users/unlink-accounts/${provider}`,
-        );
+        await unlinkOAuthAccount(provider);
         // refresh from server to be safe
         await this.fetchUserData();
       } catch (err) {
