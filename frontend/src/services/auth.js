@@ -1,6 +1,5 @@
 import axios from "axios";
 import VueCookies from "vue-cookies";
-import { jwtDecode } from "jwt-decode";
 
 const API_URL =
   import.meta.env.VITE_API_BASE_URL;
@@ -11,10 +10,9 @@ axios.defaults.withCredentials = true;
 // Axios interceptor to include X-CSRF-Token header
 axios.interceptors.request.use(
   (config) => {
-    const token = getToken();
-    if (token && ["POST", "PUT", "DELETE"].includes(config.method.toUpperCase())) {
-      const decoded = jwtDecode(token);
-      config.headers["X-CSRF-Token"] = decoded.csrf_token; // Decode JWT for CSRF
+    if (["POST", "PUT", "DELETE"].includes(config.method.toUpperCase())) {
+      const csrfToken = VueCookies.get("fastapi-csrf-token");
+      config.headers["X-CSRF-Token"] = csrfToken; // Decode JWT for CSRF
     }
     // No Authorization header needed since JWT is in cookie
     return config;
