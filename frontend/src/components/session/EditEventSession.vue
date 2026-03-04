@@ -439,7 +439,13 @@ const isExistingNextDisabled = computed(() => {
 })
 
 const displayedExistingPageNumber = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndexExisting.value + 1
+  if (isUsingLocalPagination.value) {
+    // If on first local page but navigating server pages, show server page number
+    if (localPageIndexExisting.value === 0 && currentCursorIndex.value > 0) {
+      return currentCursorIndex.value + 1
+    }
+    return localPageIndexExisting.value + 1
+  }
   return currentCursorIndex.value + 1
 })
 
