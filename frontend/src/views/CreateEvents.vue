@@ -406,6 +406,7 @@ import { useRouter } from 'vue-router'
 import { createEvent } from "@/services/event"
 import { TZDate } from '@date-fns/tz'
 import { useAuthStore } from "@/store/authStore"
+import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
 
 const router = useRouter()
 const isEditing = ref(false)
@@ -427,13 +428,6 @@ const timezoneLabel = computed(() =>
 )
 const eventTimezone = computed(() => timezoneLabel.value)
 
-function parseDatetimeLocal(dateStr, timezone) {
-  const [datePart, timePart] = dateStr.split("T")
-  const [year, month, day] = datePart.split("-").map(Number)
-  const [hour, minute] = timePart.split(":").map(Number)
-
-  return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
-}
 
 const minStartDateTime = computed(() => {
   const nowTz = new TZDate(new Date(), eventTimezone.value)
@@ -463,8 +457,6 @@ function toTZDate(value) {
 
 
 const formatLocalDateTime = (value) => {
-  // get year, ... from value and create TZDate in eventTimezone, then convert to ISO string 
-  // // TZDate(year, month (0-11), date, hour, minute, userTimezone.value)
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
     return parseDatetimeLocal(value, eventTimezone.value).toISOString()
   }
@@ -646,21 +638,25 @@ async function editSession(s, index) {
 
 }
 
+
+// --- SESSION ACTIONS ---
 function addSession() {
   if (!newSession.value.start || !newSession.value.end) {
-    alert("Start and end are required")
+    alert("Please provide both start and end times.")
     return
   }
   if (newSession.value.start >= newSession.value.end) {
-    alert("End must be after start")
+    alert("End time must be after start time.")
     return
   }
 
+  // Parse the local datetime strings strictly into TZDate objects
   const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
   const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
-  const nowInEventTimezone = new TZDate(new Date(), eventTimezone.value)
-
-  if (startDate < nowInEventTimezone) {
+  
+  // Safe validation using exact object comparison
+  const now = parseDatetimeLocal(format(new Date(), "yyyy-MM-dd'T'HH:mm"), eventTimezone.value)
+  if (startDate < now) {
     alert("A new session's start time cannot be before the current time.")
     return
   }
@@ -668,86 +664,90 @@ function addSession() {
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
 
-  const clone = (d) => new Date(d.getTime())
+  const addByType = (dateStr) => {
+    const [datePart, timePart] = dateStr.split("T")
+    const [year, month, day] = datePart.split("-").map(Number)
+    const [hour, minute] = timePart.split(":").map(Number)
 
-  const addByType = (date) => {
-    const d = new Date(date)
+    const d = new Date(Date.UTC(year, month - 1, day, hour, minute))
 
-    if (type === "Daily") d.setDate(d.getDate() + interval)
-    if (type === "Weekly") d.setDate(d.getDate() + 7 * interval)
-    if (type === "Monthly") d.setMonth(d.getMonth() + interval)
-    if (type === "Yearly") d.setFullYear(d.getFullYear() + interval)
+    let next;
+    if (type === "Daily") next = addDays(d, interval)
+    else if (type === "Weekly") next = addWeeks(d, interval)
+    else if (type === "Monthly") next = addMonths(d, interval)
+    else if (type === "Yearly") next = addYears(d, interval)
+    else next = d;
 
-    return d
-    
-
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}T${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}`
   }
-
-  const format = (date) => {
-    const pad = (n) => n.toString().padStart(2, "0")
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  }
-
-  const repeatUntilText =
-    repeatEndEnabled.value && repeatEnd.value.type === "count" && repeatEnd.value.count
-      ? `Repeat session for ${repeatEnd.value.count} time(s)`
-      : repeatEndEnabled.value && repeatEnd.value.type === "date" && repeatEnd.value.date
-        ? `Repeat until ${formatDate(repeatEnd.value.date)}`
-        : null
-
-  const repeatUnitByType = {
-    Daily: "day",
-    Weekly: "week",
-    Monthly: "month",
-    Yearly: "year"
-  }
-
-  const repeatEveryText = type !== "Does not repeat" && repeatUnitByType[type]
-    ? `Every ${interval} ${repeatUnitByType[type]}(s)`
-    : null
 
   if (type === "Does not repeat") {
     sessions.value.push({
       ...newSession.value,
-      start: format(startDate),
-      end: format(endDate),
+      start: startDate,
+      end: endDate,
     })
   } else {
-    let currentStart = clone(startDate)
-    let currentEnd = clone(endDate)
-
+    let currentStartStr = newSession.value.start
+    let currentEndStr = newSession.value.end
     let i = 0
 
     while (true) {
+      const currentStart = parseDatetimeLocal(currentStartStr, eventTimezone.value)
+      const currentEnd = parseDatetimeLocal(currentEndStr, eventTimezone.value)
+
       sessions.value.push({
         ...newSession.value,
-        start: format(currentStart),
-        end: format(currentEnd),
-        recurring: type,
-        repeat_every_text: repeatEveryText,
-        repeat_until_text: repeatUntilText
+        start: currentStart,
+        end: currentEnd,
+        recurring: type
       })
-
       i++
 
-      // stop by count
-      if (repeatEndEnabled.value && repeatEnd.value.type === "count") {
+      if (repeatEnd.value.type === "count") {
         if (repeatEnd.value.count && i >= repeatEnd.value.count) break
       }
-
-      // stop by date
-      if (repeatEndEnabled.value && repeatEnd.value.type === "date") {
-        if (currentStart >= new Date(repeatEnd.value.date)) break
+      if (repeatEnd.value.type === "date" && repeatEnd.value.date) {
+        // Evaluate limit cleanly by adding end-of-day time to the repeat limit
+        const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", eventTimezone.value)
+        if (currentStart >= limitDate) break
       }
-
-      // safety กัน infinite
-      if (i > 1000) break
-
-      currentStart = addByType(currentStart)
-      currentEnd = addByType(currentEnd)
+      if (i > 100) break 
+      
+      currentStartStr = addByType(currentStartStr)
+      currentEndStr = addByType(currentEndStr)
     }
   }
+  
   resetForm()
+}
+
+function parseDatetimeLocal(dateStr, timezone) {
+  const [datePart, timePart] = dateStr.split("T")
+  const [year, month, day] = datePart.split("-").map(Number)
+  const [hour, minute] = timePart.split(":").map(Number)
+
+  return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
+}
+
+
+// Format pieces for display from absolute Date objects directly!
+function formatDay(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'd');
+}
+function formatMonth(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'MMM').toUpperCase(); 
+}
+function formatDate(dateObj) {
+  if (!dateObj) return '';
+  return format(dateObj, 'MMM d, yyyy');
+}
+function formatTime(dateObj) { 
+  if(!dateObj) return '';
+  return format(dateObj, 'hh:mm a'); 
 }
 
 const saveDraftAndLeave = async () => {
@@ -850,27 +850,6 @@ const submit = async () => {
   }
 }
 
-
-function formatDate(date) {
-  const tzDate = toTZDate(date)
-  if (!tzDate) return ""
-
-  return tzDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
-
-function formatTime(date) {
-  const tzDate = toTZDate(date)
-  if (!tzDate) return ""
-
-  return tzDate.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
 
 
 
