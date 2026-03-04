@@ -411,7 +411,6 @@ import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
 const router = useRouter()
 const isEditing = ref(false)
 const editingIndex = ref(null)
-const backupSession = ref(null)
 const submitted = ref(false)
 const titleInput = ref(null)
 const showDiscardModal = ref(false)
@@ -606,36 +605,52 @@ const confirmCopy = (session) => {
 }
 
 function saveEdit() {
-  sessions.value.splice(editingIndex.value, 0, {
-    ...newSession.value
+  if (editingIndex.value == null || editingIndex.value < 0 || editingIndex.value >= sessions.value.length) {
+    resetForm()
+    return
+  }
+
+  if (!newSession.value.start || !newSession.value.end) {
+    alert("Please provide both start and end times.")
+    return
+  }
+  if (newSession.value.start >= newSession.value.end) {
+    alert("End time must be after start time.")
+    return
+  }
+
+  const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
+  const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
+
+  sessions.value.splice(editingIndex.value, 1, {
+    ...sessions.value[editingIndex.value],
+    ...newSession.value,
+    start: startDate,
+    end: endDate,
   })
 
   resetForm()
 }
 
 function cancelEdit() {
-  sessions.value.splice(editingIndex.value, 0, backupSession.value)
 
   resetForm()
 }
 
 async function editSession(s, index) {
-  newSession.value = { ...s }
-
+  newSession.value = { 
+    ...s, 
+    start: formatForDateTimeLocalInput(s.start),
+    end: formatForDateTimeLocalInput(s.end)
+  }
   isEditing.value = true
   editingIndex.value = index
-
-  // เก็บของเดิมไว้
-  backupSession.value = { ...s }
-
-  sessions.value.splice(index, 1)
 
   await nextTick()
   sessionManagementRef.value?.scrollIntoView({
     behavior: "smooth",
     block: "start"
   })
-
 }
 
 
@@ -731,6 +746,13 @@ function parseDatetimeLocal(dateStr, timezone) {
   return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
 }
 
+function formatForDateTimeLocalInput(value) {
+  const tzDate = toTZDate(value)
+  if (!tzDate) return ""
+
+  return format(tzDate, "yyyy-MM-dd'T'HH:mm")
+}
+
 
 // Format pieces for display from absolute Date objects directly!
 function formatDay(dateObj) { 
@@ -804,7 +826,6 @@ function resetForm() {
 
   isEditing.value = false
   editingIndex.value = null
-  backupSession.value = null
 }
 
 function removeSession(index) {
