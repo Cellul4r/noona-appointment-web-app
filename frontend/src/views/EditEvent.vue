@@ -29,6 +29,29 @@
             </div>
           </div>
         </dialog>
+
+        <!-- Limit Change Warning Modal -->
+        <dialog id="limit_change_modal" class="modal">
+          <div class="modal-box">
+            <h3 class="text-lg font-bold text-warning">Reduce Max Sessions Per Participant?</h3>
+            <p class="py-4">
+              You are lowering the maximum sessions per participant from <strong>{{ maxSessionsPerUserOriginal }}</strong> to <strong>{{ limit }}</strong>.
+              Some participants may have already registered for more sessions than this new limit.
+            </p>
+            <p class="py-2 text-sm opacity-70">What would you like to do?</p>
+            <div class="flex flex-col gap-3">
+              <button type="button" class="btn btn-outline" @click="closeLimitChangeModal">
+                Cancel
+              </button>
+              <button type="button" class="btn" @click="proceedWithoutNotify">
+                Save Without Notifying Participants
+              </button>
+              <button type="button" class="btn btn-primary" @click="proceedWithNotify">
+                Save & Notify Participants
+              </button>
+            </div>
+          </div>
+        </dialog>
       </div>
     </nav>
     <div class="max-w-4xl mx-auto p-4 lg:p-6 space-y-6 mt-4">
@@ -173,6 +196,8 @@ const event = ref({
 
 const limitEnabled = ref(false)
 const limit = ref(1)
+const maxSessionsPerUserOriginal = ref(null)
+const pendingSubmitWithNotify = ref(false)
 
 const sessions = ref([])
 
@@ -192,9 +217,11 @@ onMounted(async () => {
     if (data.max_sessions_per_user !== null && data.max_sessions_per_user !== undefined) {
       limitEnabled.value = true;
       limit.value = Number(data.max_sessions_per_user);
+      maxSessionsPerUserOriginal.value = Number(data.max_sessions_per_user);
     } else {
       limitEnabled.value = false;
       limit.value = 1;
+      maxSessionsPerUserOriginal.value = null;
     }
 
     // Load sessions via component
@@ -232,7 +259,37 @@ const publish = async () => {
   await submit();
 }
 
+const closeLimitChangeModal = () => {
+  document.getElementById("limit_change_modal")?.close()
+}
+
+const proceedWithoutNotify = () => {
+  pendingSubmitWithNotify.value = false
+  closeLimitChangeModal()
+  submitPayload()
+}
+
+const proceedWithNotify = () => {
+  pendingSubmitWithNotify.value = true
+  closeLimitChangeModal()
+  submitPayload()
+}
+
 const submit = async () => {
+  const eventId = route.params.event_uuid;
+  const newLimit = limitEnabled.value && limit.value ? Number(limit.value) : null
+  const oldLimit = maxSessionsPerUserOriginal.value
+
+  // Check if lowering the limit
+  if (oldLimit !== null && oldLimit !== undefined && newLimit !== null && newLimit < oldLimit) {
+    document.getElementById("limit_change_modal")?.showModal()
+    return
+  }
+
+  pendingSubmitWithNotify.value = false
+  await submitPayload()
+}
+const submitPayload = async () => {
   const eventId = route.params.event_uuid;
   
   const sessionsPayload = sessions.value.map(s => {
@@ -270,7 +327,7 @@ const submit = async () => {
   }
 
   try {
-    await updateEvent(eventId, payload);
+    await updateEvent(eventId, payload, pendingSubmitWithNotify.value);
     router.push('/event/overview/' + eventId);
   } catch (err) {
     console.error("Update event failed:", err)

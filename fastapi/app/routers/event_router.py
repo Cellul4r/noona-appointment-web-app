@@ -170,22 +170,25 @@ def create_event(
 def update_event(
     event_in: EventUpdate,
     event_uuid: UUID,
+    notify: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        target_user_ids, event_change, session_changes = (
-            event_service.get_event_sesions_changes(event_uuid, event_in, db)
-        )
+        if notify:
+            target_user_ids, event_change, session_changes = (
+                event_service.get_event_sesions_changes(event_uuid, event_in, db)
+            )
 
         ev = event_service.update_event_sessions(event_uuid, event_in, db, current_user)
-        notification_service.enqueue_event_updated_jobs(
-            event_id=ev.id,
-            event_uuid=str(ev.share_uuid),
-            event_change=event_change,
-            session_changes=session_changes,
-            target_user_ids=target_user_ids,
-        )
+        if notify and (event_change or session_changes):
+            notification_service.enqueue_event_updated_jobs(
+                event_id=ev.id,
+                event_uuid=str(ev.share_uuid),
+                event_change=event_change,
+                session_changes=session_changes,
+                target_user_ids=target_user_ids,
+            )
         return ev
     except KeyError:
         raise HTTPException(

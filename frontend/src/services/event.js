@@ -58,8 +58,8 @@ export async function createEvent(payload) {
     return res.data;
 }
 
-export async function updateEvent(uuid, payload) {
-    const res = await axios.patch(`${API_URL}/events/${uuid}`, payload);
+export async function updateEvent(uuid, payload, notify = false) {
+    const res = await axios.patch(`${API_URL}/events/${uuid}`, payload, { params: { notify } });
     return res.data;
 }
 
