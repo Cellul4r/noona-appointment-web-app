@@ -416,7 +416,6 @@ const mapSessionData = (s) => {
 const fetchDashboardData = async () => {
   loadingDashboard.value = true;
   try {
-    const headers = { Authorization: `Bearer ${authStore.token}` };
     const nowISO = new Date().toISOString();
 
     // 1. Fetch Recent Events
@@ -434,7 +433,6 @@ const fetchDashboardData = async () => {
 
     // 2. Fetch Sessions using backend `get_user_sessions` per requested scopes
     // ------------------------------------------------------------------
-    const now = new Date();
 
     // Wait List Sessions: scope=joined, start_datetime=now, registration_status_list = ['waitlist','available']
     const waitRes = await getUserSessions({
@@ -493,7 +491,6 @@ const filteredUpcoming = computed(() => {
   let result = upcomingSessions.value.slice();
 
   // Apply time-range filter
-  const now = new Date();
   let rangeStart = null;
   let rangeEnd = null;
 
