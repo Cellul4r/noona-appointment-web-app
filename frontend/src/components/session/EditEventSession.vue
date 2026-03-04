@@ -475,7 +475,7 @@ const repeatEnd = ref({ type: "never", date: "", count: null })
 const repeatsChoose = ref({ type: "Does not repeat", interval: "" })
 
 // --- SERVER PAGINATION LOGIC ---
-const loadSessions = async (cursor) => {
+const loadSessions = async (cursor, isNavigation = false) => {
   const sessionsRes = await getSessions(props.eventId, cursor, 10) 
   const sessionsData = sessionsRes.items || [];
 
@@ -495,13 +495,21 @@ const loadSessions = async (cursor) => {
     }
   });
 
-  emit('sessionsChange', mappedSessions);
+  // Preserve newly added sessions (those without UUID) and merge with server data
+  const newlyAdded = props.sessions.filter(s => !s.uuid);
+  const allSessions = [...newlyAdded, ...mappedSessions];
+  
+  emit('sessionsChange', allSessions);
   
   nextCursor.value = sessionsRes.next_page;
   prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
-  hasUnsavedSessionChanges.value = false;
-  localPageIndexNew.value = 0;
-  localPageIndexExisting.value = 0;
+  hasUnsavedSessionChanges.value = newlyAdded.length > 0; // Keep true only if we have unsaved new sessions
+  
+  // Only reset on initial load, not on navigation
+  if (!isNavigation) {
+    localPageIndexNew.value = 0;
+    localPageIndexExisting.value = 0;
+  }
 }
 
 const goNext = async () => {
@@ -512,14 +520,14 @@ const goNext = async () => {
     }
     if (nextCursor.value) {
       currentCursorIndex.value++;
-      await loadSessions(nextCursor.value);
+      await loadSessions(nextCursor.value, true);
     }
     return;
   }
   if (!nextCursor.value) return;
   
   currentCursorIndex.value++;
-  await loadSessions(nextCursor.value);
+  await loadSessions(nextCursor.value, true);
 }
 
 const goPrev = async () => {
@@ -530,14 +538,14 @@ const goPrev = async () => {
     }
     if (prevCursor.value) {
       currentCursorIndex.value--;
-      await loadSessions(prevCursor.value);
+      await loadSessions(prevCursor.value, true);
     }
     return;
   }
   if (!prevCursor.value) return;
   
   currentCursorIndex.value--;
-  await loadSessions(prevCursor.value);
+  await loadSessions(prevCursor.value, true);
 }
 
 // --- MODAL CONTROLS ---

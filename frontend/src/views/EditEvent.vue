@@ -67,30 +67,54 @@
 
       <!-- Session Management Card -->
       <div class="card bg-base-100 shadow-sm border border-base-200">
-        <div class="card-body p-6">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div class="flex items-center gap-3">
-              <h2 class="card-title text-xl m-0">
-                Session Management
-              </h2>
-              <span class="badge badge-sm badge-neutral">{{ userTimezone }}</span>
-            </div>
-            
-            <div class="flex items-center gap-3 bg-base-200 px-4 py-2 rounded-lg border border-base-300">
-              <span class="text-sm font-semibold">
-                Limit sessions per user <span class="opacity-60 font-normal hidden md:inline">(optional)</span>
-              </span>
-              <input type="checkbox" v-model="limitEnabled" class="toggle toggle-primary toggle-sm" />
-              <input 
-                type="number" 
-                v-model="limit" 
-                :disabled="!limitEnabled" 
-                min="1"
-                class="input input-sm input-bordered w-16 text-center" 
-                :class="{'opacity-50': !limitEnabled}"
-              />
+        <!-- Session -->
+      <div ref="sessionManagementRef" class="bg-base-100 shadow p-6 rounded-lg">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="size-5 inline">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <span class="text-lg font-semibold inline">Session Management</span>
+
+          </div>
+
+          <div class="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-base-300">
+            <input type="checkbox" v-model="limitEnabled" class="toggle toggle-primary" />
+            <span class="text-md font-normal flex-1">
+              Max sessions per participant
+              <span class="text-sm opacity-40 font-normal">(optional)</span>
+            </span>
+            <div class="flex flex-wrap items-center gap-x-1">
+              <div class="w-px h-8 bg-base-300"></div>
+              <div class="flex items-center gap-2">
+                <input type="number" pattern="[0-9]*" v-model="limit" :min="limitEnabled ? 1 : undefined"
+                  :disabled="!limitEnabled" class="input input-bordered w-14 validator" />
+              </div>
             </div>
           </div>
+        </div>
+
+
+        <!-- Timezone -->
+        <div class="flex items-center justify-center p-1 rounded-lg mt-4
+            bg-blue-50 dark:bg-blue-900/20
+            text-blue-700 dark:text-blue-300
+            border border-blue-100 dark:border-blue-800
+            text-xs font-medium">
+          <span class="text-xs mr-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="size-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+
+          </span>
+          All times are in {{ userTimezone }}
+        </div>
+
+
 
           <!-- Session Management Component -->
           <EditEventSession 
