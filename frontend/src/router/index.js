@@ -70,26 +70,17 @@ const routes = [
   },
   {
     path: `/event/register/:event_uuid`,
-<<<<<<< HEAD
-<<<<<<< HEAD
+    name: "SessionRegistration",
+    component: SessionRegistration,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/:patchMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
     meta: { hideNavbar: true }
     // catch-all route, should be last in the list
-  },
-=======
-    path: "/session/register",
-=======
-    path: `/session/register/:event_uuid`,
->>>>>>> 75781f4 (feat(frontend): implement load more pagination and improve session registration)
-    name: "SessionRegistration",
-    component: SessionRegistration,
-    meta: { requiresAuth: true }
   }
-
-
->>>>>>> ff3a6af (fix config code)
 ];
 
 const router = createRouter({
