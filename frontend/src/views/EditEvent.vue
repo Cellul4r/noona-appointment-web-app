@@ -203,6 +203,14 @@
               </div>
             </div>
 
+            <!-- Add New Session Button (Triggers Modal) -->
+            <button @click="openAddModal" class="btn btn-outline btn-block border-dashed border-2 hover:bg-base-200 hover:text-base-content mt-4 h-auto py-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span class="text-lg">Add New Session</span>
+            </button>
+
             <!-- DIVIDER -->
             <div v-if="newlyAddedSessions.length > 0 && existingSessions.length > 0" class="divider my-6 font-semibold text-base-content/50">Existing Sessions</div>
 
@@ -307,13 +315,6 @@
               </div>
             </div>
             
-            <!-- Add New Session Button (Triggers Modal) -->
-            <button @click="openAddModal" class="btn btn-outline btn-block border-dashed border-2 hover:bg-base-200 hover:text-base-content mt-4 h-auto py-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              <span class="text-lg">Add New Session</span>
-            </button>
           </div>
         </div>
 
