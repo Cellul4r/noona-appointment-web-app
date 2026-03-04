@@ -72,6 +72,7 @@
 import { ref, computed, onMounted, nextTick } from "vue"
 import { useRoute } from "vue-router"
 import { getSessions } from "../services/event"
+import { getEvent } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
 import SessionRegistrationCard from "@/components/session/SessionRegistrationCard.vue"
 
@@ -122,7 +123,10 @@ const toggleSelect = async (session) => {
   const prevStatus = session.registration_status
   const isRegistered = prevStatus === "confirmed"
   const isAcceptedNow = prevStatus === "accepted"
-
+  const event_uuid = route.params.event_uuid
+  const event = await getEvent(event_uuid)
+  event.max_sessions_per_user
+  
   //ถ้าเป็น accepted → ใช้ cancel เหมือนกัน
   const isRemoving = isRegistered || isAcceptedNow
 
@@ -131,6 +135,7 @@ const toggleSelect = async (session) => {
   // optimistic
   session.registration_status = isRemoving ? null : "confirmed"
   session.seat_taken += isRemoving ? -1 : 1
+
 
   loadingSessions.value = new Set([...loadingSessions.value, session.uuid])
 
@@ -141,6 +146,15 @@ const toggleSelect = async (session) => {
 
     Object.assign(session, res)
   } catch (err) {
+    const status = err.response?.status
+
+    if (status === 400) {
+      alert("You reached max session limit")
+    } else if (status === 500) {
+      alert("Internal error, please try again")
+    } else {
+      alert("Something went wrong")
+    }
     session.registration_status = prevStatus
     session.seat_taken += isRemoving ? 1 : -1
   } finally {
