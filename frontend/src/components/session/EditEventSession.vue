@@ -6,11 +6,13 @@
       <p class="text-xs text-base-content/40 mt-1">Add at least one session so users can register.</p>
     </div>
 
+    <!-- DIVIDER -->
+    <div v-if="newlyAddedSessions.length > 0 && existingSessions.length > 0" class="divider my-6 font-semibold text-primary">Newly Added Sessions</div>
+
     <!-- Sessions List -->
     <div class="flex flex-col gap-4">
       <!-- NEWLY ADDED SESSIONS -->
       <div v-if="newlyAddedSessions.length > 0" class="space-y-4">
-        <h3 class="font-bold text-lg text-primary">Newly Added Sessions</h3>
         <div v-for="(s, index) in displayedNewSessions" :key="'new-' + getAbsoluteNewIndex(index)"
         class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border border-base-300 bg-base-200 hover:border-primary/50 transition-colors"
         :class="isSessionEnded(s.end) ? 'opacity-60 grayscale' : ''">
@@ -119,7 +121,7 @@
     </button>
 
     <!-- DIVIDER -->
-    <div v-if="newlyAddedSessions.length > 0 && existingSessions.length > 0" class="divider my-6 font-semibold text-base-content/50">Existing Sessions</div>
+    <div v-if="newlyAddedSessions.length > 0 && existingSessions.length > 0" class="divider my-6 font-semibold text-primary">Existing Sessions</div>
 
     <!-- EXISTING SESSIONS -->
     <div v-if="existingSessions.length > 0" class="space-y-4">
