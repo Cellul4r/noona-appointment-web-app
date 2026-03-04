@@ -305,11 +305,6 @@ const createEvent = () => {
   // console.log("Create event clicked");
 };
 
-const handleLogout = () => {
-  authStore.logout();
-  router.push('/login');
-};
-
 const editEvent = (evt) => {
   router.push({ name: 'EditEvent', params: { event_uuid: evt.share_uuid } });
 };
