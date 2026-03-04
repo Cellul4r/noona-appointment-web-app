@@ -128,7 +128,7 @@
 
         </div>
 
-        <div class="flex gap-2 justify-end pt-4">
+        <div class="flex gap-2 justify-end pt-6 pb-6 pr-6">
           <button @click="goToPreviousPage" class="btn btn-ghost">
             Cancel
           </button>
