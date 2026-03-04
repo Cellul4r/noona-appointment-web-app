@@ -8,7 +8,7 @@ from app.config import settings
 from app import security
 from app.db import Base, engine
 from app.routers import (
-    auth,
+    auth_router,
     session_router,
     event_router,
     user_router,
@@ -77,7 +77,9 @@ except Exception as e:
     # Don't fail the app if table creation fails
 
 # set all router api
-fastapi_app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["Auth"])
+fastapi_app.include_router(
+    auth_router.router, prefix=f"{api_prefix}/auth", tags=["Auth"]
+)
 fastapi_app.include_router(
     event_router.router, prefix=f"{api_prefix}/events", tags=["Events"]
 )

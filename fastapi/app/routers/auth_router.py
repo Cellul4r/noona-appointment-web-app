@@ -6,6 +6,7 @@ import secrets
 from typing import Annotated
 from fastapi import APIRouter, Request, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_csrf_protect import CsrfProtect
 from fastapi_sso import GithubSSO, GoogleSSO
 from app.security import (
     create_access_token,
@@ -18,7 +19,7 @@ from app.config import settings
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
-from app.dependencies.auth import get_current_user, get_optional_user
+from app.dependencies.auth import csrf_protect, get_current_user, get_optional_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
 from app.dependencies.sso import get_github_sso, get_google_sso
@@ -68,6 +69,7 @@ def create_user(
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Session = Depends(get_db),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     user = auth_service.authenticate_user(form_data.username, form_data.password, db)
 
@@ -75,6 +77,7 @@ def login_for_access_token(
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
 
     response = JSONResponse(
         content={
@@ -83,6 +86,7 @@ def login_for_access_token(
     )
 
     auth_service.attach_token_cookie(response, access_token)
+    csrf_protect.set_csrf_cookie(signed_token, response)
     logger.info(f"User logged in: {user.email}")
     return response
 
@@ -113,6 +117,7 @@ async def google_auth(
     request: Request,
     google_sso: GoogleSSO = Depends(get_google_sso),
     db: Session = Depends(get_db),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     state = request.query_params.get("state")
     data = json.loads(state) if state else {}
@@ -141,9 +146,12 @@ async def google_auth(
                 data={"sub": str(user.id)}, expires_delta=access_token_expires
             )
 
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+
             response = RedirectResponse(FRONTEND_LOGIN_SUCCESS_URI)
 
             auth_service.attach_token_cookie(response, access_token)
+            csrf_protect.set_csrf_cookie(signed_token, response)
             return response
 
 
@@ -173,6 +181,7 @@ async def github_auth(
     request: Request,
     github_sso: GithubSSO = Depends(get_github_sso),
     db: Session = Depends(get_db),
+    csrf_protect: CsrfProtect = Depends(),
 ):
     state = request.query_params.get("state")
     data = json.loads(state) if state else {}
@@ -200,10 +209,12 @@ async def github_auth(
             access_token = create_access_token(
                 data={"sub": str(user.id)}, expires_delta=access_token_expires
             )
+            csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
 
             response = RedirectResponse(FRONTEND_LOGIN_SUCCESS_URI)
 
             auth_service.attach_token_cookie(response, access_token)
+            csrf_protect.set_csrf_cookie(signed_token, response)
             return response
 
 
@@ -212,6 +223,7 @@ async def logout(response: Response):
     # To logout remove jwt token from cookies
 
     response.delete_cookie(key="jwt")
+    response.delete_cookie(key="fastapi-csrf-token")
     logger.info("User logged out")
     return {"message": "Logout successful. JWT cookies removed."}
 

@@ -49,8 +49,6 @@ def verify_access_token(token: str) -> str | None:
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    csrf_token = secrets.token_hex(16)
-    to_encode["csrf_token"] = csrf_token
     expire = datetime.utcnow() + (
         expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )

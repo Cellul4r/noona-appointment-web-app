@@ -149,7 +149,7 @@ class Settings(BaseSettings):
 
 class CsrfSettings(BaseSettings):
     secret_key: str = "my_csrf_secret"
-    cookie_samesite: str = "Lax"
+    cookie_samesite: str = "lax"
 
     class Config:
         env_file = ".env"
