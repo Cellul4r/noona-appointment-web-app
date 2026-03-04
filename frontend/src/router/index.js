@@ -69,6 +69,7 @@ const routes = [
     component: () => import('../views/AboutUs.vue'),
   },
   {
+    path: `/event/register/:event_uuid`,
 <<<<<<< HEAD
 <<<<<<< HEAD
     path: '/:patchMatch(.*)*',
