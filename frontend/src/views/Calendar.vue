@@ -14,7 +14,7 @@
                         </div>
                         <h2 class="inline items-center text-2xl font-bold ml-5">{{ currentViewTitle ||
                             'Calendar'
-                        }}
+                            }}
                         </h2>
                     </div>
 
@@ -74,7 +74,7 @@
             :timezone="calendarTimezone" @close="closeSessionDetailsModal" />
 
         <footer class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-200 px-4 md:px-6 py-2">
-            <p class="text-xs text-base-content/60 text-center md:text-right">Timezone: {{ calendarTimezone }}</p>
+            <p class="text-sm text-base-content/60 text-center md:text-right">Timezone: {{ calendarTimezone }}</p>
         </footer>
     </div>
 </template>

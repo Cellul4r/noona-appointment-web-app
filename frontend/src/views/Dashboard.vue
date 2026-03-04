@@ -1,21 +1,23 @@
 <template>
   <div class="bg-base-200 min-h-screen font-display pb-20">
     <main class="w-full p-4 lg:p-8 max-w-7xl mx-auto space-y-8">
-      
+
       <!-- ========================================== -->
       <!-- HEADER & TOP ACTIONS                       -->
       <!-- ========================================== -->
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-base-100 p-6 rounded-box shadow-sm">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-base-100 p-6 rounded-box shadow-sm">
         <div>
           <h1 class="text-3xl font-bold text-base-content tracking-tight">Dashboard</h1>
           <p class="text-base-content/60 mt-1">Welcome back, {{ user?.full_name || 'User' }}</p>
         </div>
-        
+
         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          
-          
+
+
           <!-- Create Event -->
-          <button @click="goToCreateEvent" class="btn btn-primary gap-2 shadow-sm hover:scale-105 transition-transform w-full sm:w-auto">
+          <button @click="goToCreateEvent"
+            class="btn btn-primary gap-2 shadow-sm hover:scale-105 transition-transform w-full sm:w-auto">
             Create Event
           </button>
         </div>
@@ -40,13 +42,15 @@
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div v-for="event in recentEvents" :key="event.id" class="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow">
+          <div v-for="event in recentEvents" :key="event.id"
+            class="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow">
             <div class="card-body p-5 flex flex-col h-full">
-              
-              <h3 class="card-title text-xl font-bold leading-7 h-[3.5rem] overflow-hidden break-words m-0 p-0" :title="event.title">
+
+              <h3 class="card-title text-xl font-bold leading-7 h-[3.5rem] overflow-hidden break-words m-0 p-0"
+                :title="event.title">
                 {{ event.title }}
               </h3>
-              
+
               <div class="flex items-center gap-1.5 text-sm text-base-content/70 mt-2">
                 <span class="truncate">{{ event.location || 'Online / TBD' }}</span>
               </div>
@@ -60,15 +64,17 @@
                 </div>
                 <div class="flex flex-col gap-1 text-right">
                   <span class="uppercase tracking-wider font-bold opacity-60">Status</span>
-                  <div class="badge badge-sm mt-1 border-none font-bold" :class="event.is_draft ? 'bg-warning/20 text-warning-content' : 'bg-success/20 text-success-content'">
+                  <div class="badge badge-sm mt-1 border-none font-bold"
+                    :class="event.is_draft ? 'bg-warning/20 text-warning-content' : 'bg-success/20 text-success-content'">
                     {{ event.is_draft ? 'Draft' : 'Active' }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div v-if="recentEvents.length === 0" class="col-span-3 text-center py-6 text-base-content/50 bg-base-100 rounded-box border border-base-200">
+
+          <div v-if="recentEvents.length === 0"
+            class="col-span-3 text-center py-6 text-base-content/50 bg-base-100 rounded-box border border-base-200">
             No recent events found.
           </div>
         </div>
@@ -81,7 +87,7 @@
         <div class="p-5 border-b border-base-200 bg-base-100 flex items-center gap-2">
           <h2 class="text-lg font-bold">Wait List Sessions</h2>
         </div>
-        
+
         <div class="overflow-x-auto">
           <table class="table table-zebra w-full">
             <thead class="bg-base-200/50">
@@ -105,9 +111,12 @@
                 <td>
                   <div class="flex items-center gap-2">
                     <span class="font-medium">{{ session.event_title }}</span>
-                    <button @click="goToOverview(session.event_uuid)" class="btn btn-xs btn-circle btn-ghost tooltip" data-tip="Go to Overview">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                    <button @click="goToOverview(session.event_uuid)" class="btn btn-xs btn-circle btn-ghost tooltip"
+                      data-tip="Go to Overview">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                       </svg>
                     </button>
                   </div>
@@ -131,13 +140,10 @@
                   </div>
                 </td>
                 <td class="text-right">
-                  <button 
-                    v-if="!session.is_filled" 
-                    @click="handleAcceptWaitlist(session.session_uuid)"
-                    :disabled="processingAccept === session.session_uuid"
-                    class="btn btn-sm btn-success text-white"
-                  >
-                    <span v-if="processingAccept === session.session_uuid" class="loading loading-spinner loading-xs"></span>
+                  <button v-if="!session.is_filled" @click="handleAcceptWaitlist(session.session_uuid)"
+                    :disabled="processingAccept === session.session_uuid" class="btn btn-sm btn-success text-white">
+                    <span v-if="processingAccept === session.session_uuid"
+                      class="loading loading-spinner loading-xs"></span>
                     Accept
                   </button>
                 </td>
@@ -145,7 +151,8 @@
             </tbody>
           </table>
         </div>
-        <div v-if="waitlistSessions.length > waitVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+        <div v-if="waitlistSessions.length > waitVisible"
+          class="p-3 border-t border-base-200 flex justify-center bg-base-100">
           <button @click="loadMoreSection('waitlist')" class="btn btn-sm btn-wide">Load More</button>
         </div>
       </section>
@@ -154,7 +161,8 @@
       <!-- SECTION 3: CURRENT OR UPCOMING SESSIONS    -->
       <!-- ========================================== -->
       <section class="bg-base-100 rounded-box shadow-sm border border-base-200 overflow-hidden">
-        <div class="p-5 border-b border-base-200 bg-base-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div
+          class="p-5 border-b border-base-200 bg-base-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div class="flex items-center gap-2">
             <h2 class="text-lg font-bold">Current & Upcoming Sessions</h2>
           </div>
@@ -207,7 +215,8 @@
             </tbody>
           </table>
         </div>
-        <div v-if="filteredUpcoming.length > upcomingVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+        <div v-if="filteredUpcoming.length > upcomingVisible"
+          class="p-3 border-t border-base-200 flex justify-center bg-base-100">
           <button @click="loadMoreSection('upcoming')" class="btn btn-sm btn-wide">Load More</button>
         </div>
       </section>
@@ -240,7 +249,8 @@
               <template v-for="session in paginatedPast" :key="session.id">
                 <!-- Main Row -->
                 <tr class="hover:bg-base-200/30 transition-colors">
-                  <td class="whitespace-pre text-base-content/80">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
+                  <td class="whitespace-pre text-base-content/80">{{ formatDateTimeRange(session.start_time,
+                    session.end_time) }}</td>
                   <td class="font-medium">{{ session.event_title }}</td>
                   <td>
                     <div class="flex items-center gap-2">
@@ -255,45 +265,61 @@
                     </div>
                   </td>
                   <td class="text-right">
-                    <button @click="toggleRow(session.id)" class="btn btn-sm btn-circle btn-ghost tooltip tooltip-left" data-tip="View Details">
+                    <button @click="toggleRow(session.id)" class="btn btn-sm btn-circle btn-ghost tooltip tooltip-left"
+                      data-tip="View Details">
                       <span>
-                        <svg v-if="expandedRows.includes(session.id)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        <svg v-if="expandedRows.includes(session.id)" xmlns="http://www.w3.org/2000/svg" fill="none"
+                          viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
                         </svg>
 
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                          stroke-width="1.5" stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                         </svg>
                       </span>
                     </button>
                   </td>
                 </tr>
-                
+
                 <!-- Expanded Child Row -->
                 <tr v-if="expandedRows.includes(session.id)" class="bg-base-200/30 border-b border-base-200">
                   <td colspan="4" class="p-0">
                     <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                       <div>
                         <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Location</p>
-                        <p class="flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                        </svg>
-                        </span> {{ session.location || 'N/A' }}</p>
+                        <p class="flex items-center gap-1 font-medium"><span
+                            class="material-symbols-outlined text-[16px]">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                              stroke="currentColor" class="size-6">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                            </svg>
+                          </span> {{ session.location || 'N/A' }}</p>
                       </div>
                       <div class="md:col-span-2">
-                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Description</p>
-                        <p class="italic text-base-content/80">{{ session.description || 'No description provided.' }}</p>
+                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Description
+                        </p>
+                        <p class="italic text-base-content/80">{{ session.description || 'No description provided.' }}
+                        </p>
                       </div>
                       <div class="md:col-span-3 pt-2">
-                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Details Link</p>
+                        <p class="font-bold text-base-content/60 uppercase tracking-wider text-[10px] mb-1">Details Link
+                        </p>
                         <div class="flex items-center gap-2">
-                          <a @click="goToOverview(session.event_uuid)" class="link link-primary truncate cursor-pointer">{{ `${session.event_title}` }}</a>
+                          <a @click="goToOverview(session.event_uuid)"
+                            class="link link-primary truncate cursor-pointer">{{ `${session.event_title}` }}</a>
                           <button @click="copyLink(session.event_uuid)" class="btn btn-xs btn-ghost btn-square">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                              stroke="currentColor" class="size-6">
+                              <path stroke-linecap="round" stroke-linejoin="round"
+                                d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
                             </svg>
                           </button>
                         </div>
@@ -305,12 +331,16 @@
             </tbody>
           </table>
         </div>
-        <div v-if="pastSessions.length > pastVisible" class="p-3 border-t border-base-200 flex justify-center bg-base-100">
+        <div v-if="pastSessions.length > pastVisible"
+          class="p-3 border-t border-base-200 flex justify-center bg-base-100">
           <button @click="loadMoreSection('past')" class="btn btn-sm btn-wide">Load More</button>
         </div>
       </section>
 
     </main>
+    <footer class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-200 px-4 md:px-6 py-2">
+      <p class="text-sm text-base-content/60 text-center md:text-right">Timezone: {{ timezone }}</p>
+    </footer>
   </div>
 </template>
 
@@ -321,14 +351,17 @@ import { useRouter } from 'vue-router';
 import { getUserSessions, confirmSession } from '@/services/session.js';
 import { fetchUserSettings } from '@/services/user.js';
 import { getAllEvents } from '../services/event';
+import { TZDate } from '@date-fns/tz';
+import { format } from 'date-fns';
 
 // --- STATE & SETUP ---
 const authStore = useAuthStore();
 const router = useRouter();
 const user = computed(() => authStore.user);
+const timezone = computed(() => user.value?.timezone || "Europe/London");
 
 const loadingDashboard = ref(true);
-const processingAccept = ref(null); 
+const processingAccept = ref(null);
 
 // Data Arrays
 const recentEvents = ref([]);
@@ -395,8 +428,8 @@ const fetchDashboardData = async () => {
       is_draft: e.is_draft,
       updated_at: e.updated_at,
       location: e.location,
-      filled_sessions: 0, 
-      total_sessions: e.sessions ? e.sessions.length : 0 
+      filled_sessions: 0,
+      total_sessions: e.sessions ? e.sessions.length : 0
     }));
 
     // 2. Fetch Sessions using backend `get_user_sessions` per requested scopes
@@ -497,7 +530,7 @@ const getHostAvatar = (session) => {
 const getUpcomingStatusLabel = (session) => {
   const isHost = user.value?.id == session.host_id;
   const isRegistered = session.registration_status?.toUpperCase() === 'CONFIRMED';
-  
+
   // Left this as it is for now because I don't know how to word Unregistered Host without it looking like ----.
   if (isHost) {
     return isRegistered ? 'Confirmed' : 'Host';
@@ -508,7 +541,7 @@ const getUpcomingStatusLabel = (session) => {
 const getUpcomingStatusClass = (session) => {
   const isHost = user.value?.id == session.host_id;
   const isRegistered = session.registration_status?.toUpperCase() === 'CONFIRMED';
-  
+
   if (isHost) {
     return isRegistered ? 'badge-success' : 'badge-primary';
   }
@@ -548,7 +581,7 @@ watch([upcomingSearch, upcomingTimeRange], () => {
   upcomingVisible.value = sessionsPageSize;
 });
 
-const goToCreateEvent = () => router.push({name: 'CreateEvents'});
+const goToCreateEvent = () => router.push({ name: 'CreateEvents' });
 const goToOverview = (uuid) => router.push({ name: 'EventOverview', params: { event_uuid: uuid } });
 
 const copyLink = (uuid) => {
@@ -563,7 +596,7 @@ const timeAgo = (dateInput) => {
   if (!dateInput) return 'Unknown';
   const date = new Date(dateInput);
   const seconds = Math.floor((new Date() - date) / 1000);
-  
+
   let interval = seconds / 31536000;
   if (interval > 1) return Math.floor(interval) + " years ago";
   interval = seconds / 2592000;
@@ -577,21 +610,27 @@ const timeAgo = (dateInput) => {
   return "Just now";
 };
 
+const isSameDay = (startDate, endDate) => {
+  if (!startDate || !endDate) return false;
+  return startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate();
+}
+
 const formatDateTimeRange = (startStr, endStr) => {
   if (!startStr || !endStr) return 'TBA';
-  const startDate = new Date(startStr);
-  const endDate = new Date(endStr);
-  
+  const startDate = new TZDate(startStr, timezone);
+  const endDate = new TZDate(endStr, timezone);
+
   // Format: "15 Feb 2026"
-  const startDateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(startDate);
-  const endDateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(endDate);
-  
+  const dateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(startDate);
+
   // Format: "10:00 AM"
   const timeOpts = { hour: 'numeric', minute: '2-digit', hour12: true };
   const startTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(startDate);
   const endTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(endDate);
-  
-  return `${startDateFmt}  ${startTimeFmt}   |   ${endDateFmt}  ${endTimeFmt}`;
+
+  return `${dateFmt}, ${startTimeFmt} - ${endTimeFmt}`;
 };
 
 const handleAcceptWaitlist = async (sessionUuid) => {
@@ -599,10 +638,10 @@ const handleAcceptWaitlist = async (sessionUuid) => {
   try {
     // 1. Tell backend to confirm the available seat
     await confirmSession(sessionUuid);
-    
+
     // 2. Alert success
     alert("Successfully registered for the session!");
-    
+
     // 3. Refresh dashboard data so it vanishes from Wait List and appears in Upcoming
     await fetchDashboardData();
   } catch (error) {

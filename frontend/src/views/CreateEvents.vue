@@ -138,13 +138,15 @@
               <!-- Start -->
               <div class="flex flex-col">
                 <label class="text-sm ">Start</label>
-                <input type="datetime-local" v-model="newSession.start" :min="minStartDateTime" class="input input-bordered w-full" />
+                <input type="datetime-local" v-model="newSession.start" :min="minStartDateTime"
+                  class="input input-bordered w-full" />
               </div>
 
               <!-- End -->
               <div class="flex flex-col">
                 <label class="text-sm">End</label>
-                <input type="datetime-local" v-model="newSession.end" :min="newSession.start" class="input input-bordered w-full" />
+                <input type="datetime-local" v-model="newSession.end" :min="newSession.start"
+                  class="input input-bordered w-full" />
               </div>
 
 
@@ -668,7 +670,7 @@ function addSession() {
   // Parse the local datetime strings strictly into TZDate objects
   const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
   const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
-  
+
   // Safe validation using exact object comparison
   const now = parseDatetimeLocal(format(new Date(), "yyyy-MM-dd'T'HH:mm"), eventTimezone.value)
   if (startDate < now) {
@@ -728,13 +730,13 @@ function addSession() {
         const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", eventTimezone.value)
         if (currentStart >= limitDate) break
       }
-      if (i > 100) break 
-      
+      if (i > 100) break
+
       currentStartStr = addByType(currentStartStr)
       currentEndStr = addByType(currentEndStr)
     }
   }
-  
+
   resetForm()
 }
 
@@ -755,21 +757,21 @@ function formatForDateTimeLocalInput(value) {
 
 
 // Format pieces for display from absolute Date objects directly!
-function formatDay(dateObj) { 
-  if(!dateObj) return '';
+function formatDay(dateObj) {
+  if (!dateObj) return '';
   return format(dateObj, 'd');
 }
-function formatMonth(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'MMM').toUpperCase(); 
+function formatMonth(dateObj) {
+  if (!dateObj) return '';
+  return format(dateObj, 'MMM').toUpperCase();
 }
 function formatDate(dateObj) {
   if (!dateObj) return '';
   return format(dateObj, 'MMM d, yyyy');
 }
-function formatTime(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'hh:mm a'); 
+function formatTime(dateObj) {
+  if (!dateObj) return '';
+  return format(dateObj, 'hh:mm a');
 }
 
 const saveDraftAndLeave = async () => {
