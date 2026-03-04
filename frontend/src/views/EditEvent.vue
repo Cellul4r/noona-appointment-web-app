@@ -189,9 +189,12 @@ onMounted(async () => {
     event.value.description = data.description || "";
     event.value.is_draft = data.is_draft || false;
 
-    if (data.max_sessions_per_user) {
+    if (data.max_sessions_per_user !== null && data.max_sessions_per_user !== undefined) {
       limitEnabled.value = true;
-      limit.value = data.max_sessions_per_user;
+      limit.value = Number(data.max_sessions_per_user);
+    } else {
+      limitEnabled.value = false;
+      limit.value = 1;
     }
 
     // Load sessions via component
@@ -207,8 +210,14 @@ onMounted(async () => {
 
 // --- WATCHERS ---
 watch(limitEnabled, (val) => {
-  if (!val) limit.value = 1
-  else limit.value = null
+  if (!val) {
+    limit.value = 1
+    return
+  }
+
+  if (limit.value == null || Number(limit.value) < 1) {
+    limit.value = 1
+  }
 })
 
 // --- SUBMIT ACTIONS ---
