@@ -80,12 +80,20 @@
           <div 
             v-for="event in paginatedEvents" 
             :key="event.share_uuid"
-            class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border border-base-200 group"
+            class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border group border-base-200"
           >
             <div class="card-body p-6">
-              <h2 class="card-title text-xl font-bold line-clamp-3 break-words" :title="event.title">
-                {{ event.title }}
-              </h2>
+              <div class="flex items-start justify-between gap-2">
+                <h2 class="card-title text-xl font-bold line-clamp-3 break-words flex-1" :title="event.title">
+                  {{ event.title }}
+                </h2>
+                <div v-if="event.is_draft" class="badge gap-1 shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                  </svg>
+                  Draft
+                </div>
+              </div>
               
               <div class="flex items-center gap-1.5 text-sm text-base-content/70 mt-1">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 shrink-0">
@@ -96,7 +104,7 @@
                 <span class="material-symbols-outlined text-lg">{{ event.location || 'Online / TBD' }}</span>
               </div>
 
-              <p class="text-sm text-base-content/60 line-clamp-4 italic">
+              <p class="text-sm text-base-content/60 line-clamp-4">
                 {{ event.description || 'No description provided.' }}
               </p>
               
