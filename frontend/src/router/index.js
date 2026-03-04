@@ -70,6 +70,7 @@ const routes = [
   },
   {
 <<<<<<< HEAD
+<<<<<<< HEAD
     path: '/:patchMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
@@ -78,6 +79,9 @@ const routes = [
   },
 =======
     path: "/session/register",
+=======
+    path: `/session/register/:event_uuid`,
+>>>>>>> 75781f4 (feat(frontend): implement load more pagination and improve session registration)
     name: "SessionRegistration",
     component: SessionRegistration,
     meta: { requiresAuth: true }

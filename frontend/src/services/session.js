@@ -75,4 +75,12 @@ export async function getRegisteredUsers(sessionUuid, status = "confirmed", curs
 export async function getSessionByUuid(sessionUuid) {
   const res = await axios.get(`${API_URL}/sessions/${sessionUuid}`);
   return res.data;
+  
 }
+export async function cancelSession(sessionUuid) {
+  const res = await axios.delete(
+    `${API_URL}/sessions/${sessionUuid}/registration`
+  )
+  return res.data
+}
+

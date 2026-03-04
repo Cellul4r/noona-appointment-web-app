@@ -155,8 +155,10 @@
 
                     <!-- Pagination -->
                     <div v-if="nextCursor" class="flex justify-center mt-6">
-                        <button class="btn btn-outline btn-neutral" :disabled="isLoadingMore" @click="loadMore">
-                            {{ isLoadingMore ? "Loading..." : "Load More" }}
+                        <button class="btn btn-outline btn-neutral flex items-center gap-2" :disabled="isLoadingMore"
+                            @click="loadMore">
+                            <span v-if="!isLoadingMore">Load More</span>
+                            <span v-else class="loading loading-dots loading-md"></span>
                         </button>
                     </div>
                 </div>
@@ -198,7 +200,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SessionCard from '../components/session/SessionCard.vue'
 import RegisteredUsersModal from '../components/session/RegisteredUsersModal.vue'
@@ -372,6 +374,12 @@ async function fetchSessions(uuid, cursor = null, size = 6) {
 async function loadMore() {
     if (!nextCursor.value) return
     await fetchSessions(route.params.event_uuid, nextCursor.value)
+    await nextTick()
+
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+    })
 }
 
 /* ---------------- ROUTE WATCH ---------------- */

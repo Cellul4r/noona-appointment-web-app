@@ -67,15 +67,3 @@ export async function updateEvent(uuid, payload, notify = false) {
 export async function deleteEvent(uuid) {
     await axios.delete(`${API_URL}/events/${uuid}`);
 }
-
-export async function registerSessions(event_uuid, session_uuids) {
-  const res = await axios.post(
-    `${API_URL}/events/${event_uuid}/register`,
-    {
-      session_uuids
-    },
-    { withCredentials: true }
-  )
-
-  return res.data
-}
