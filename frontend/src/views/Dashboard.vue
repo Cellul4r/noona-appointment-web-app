@@ -101,7 +101,7 @@
                 <td colspan="5" class="text-center py-8 text-base-content/50">No waitlisted sessions at this time.</td>
               </tr>
               <tr v-for="session in paginatedWaitlist" :key="session.id">
-                <td class="whitespace-nowrap">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
+                <td class="whitespace-pre">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
                 <td>
                   <div class="flex items-center gap-2">
                     <span class="font-medium">{{ session.event_title }}</span>
@@ -179,7 +179,7 @@
                 <td colspan="5" class="text-center py-8 text-base-content/50">No upcoming sessions found.</td>
               </tr>
               <tr v-for="session in paginatedUpcoming" :key="session.id">
-                <td class="whitespace-nowrap">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
+                <td class="whitespace-pre">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
                 <td class="font-medium">{{ session.event_title }}</td>
                 <td>
                   <div class="flex items-center gap-2">
@@ -240,7 +240,7 @@
               <template v-for="session in paginatedPast" :key="session.id">
                 <!-- Main Row -->
                 <tr class="hover:bg-base-200/30 transition-colors">
-                  <td class="whitespace-nowrap text-base-content/80">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
+                  <td class="whitespace-pre text-base-content/80">{{ formatDateTimeRange(session.start_time, session.end_time) }}</td>
                   <td class="font-medium">{{ session.event_title }}</td>
                   <td>
                     <div class="flex items-center gap-2">
@@ -583,14 +583,15 @@ const formatDateTimeRange = (startStr, endStr) => {
   const endDate = new Date(endStr);
   
   // Format: "15 Feb 2026"
-  const dateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(startDate);
+  const startDateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(startDate);
+  const endDateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(endDate);
   
   // Format: "10:00 AM"
   const timeOpts = { hour: 'numeric', minute: '2-digit', hour12: true };
   const startTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(startDate);
   const endTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(endDate);
   
-  return `${dateFmt}, ${startTimeFmt} - ${endTimeFmt}`;
+  return `${startDateFmt}  ${startTimeFmt}   |   ${endDateFmt}  ${endTimeFmt}`;
 };
 
 const handleAcceptWaitlist = async (sessionUuid) => {
