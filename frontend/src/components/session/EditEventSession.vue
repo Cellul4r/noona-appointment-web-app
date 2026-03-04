@@ -390,8 +390,8 @@ const prevCursor = ref(null)
 const hasUnsavedSessionChanges = ref(false)
 
 // Computed to separate new from existing sessions
-const newlyAddedSessions = computed(() => props.sessions.filter(s => !s.uuid))
-const existingSessions = computed(() => props.sessions.filter(s => s.uuid))
+const newlyAddedSessions = computed(() => props.sessions.filter(s => !s.uuid && s.action !== "delete"))
+const existingSessions = computed(() => props.sessions.filter(s => s.uuid && s.action !== "delete"))
 
 const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
 
@@ -498,6 +498,7 @@ const loadSessions = async (cursor, isNavigation = false) => {
       end: endObj,
       capacity: s.seat_capacity,
       taken: s.seat_taken,
+      action: null,
       location: s.location || "",
       description: s.description || ""
     }
@@ -675,6 +676,7 @@ function addSession() {
       ...newSession.value,
       start: startDate,
       end: endDate,
+      action: "create"
     })
   } else {
     let currentStartStr = newSession.value.start
@@ -689,7 +691,8 @@ function addSession() {
         ...newSession.value,
         start: currentStart,
         end: currentEnd,
-        recurring: type
+        recurring: type,
+        action: "create"
       })
       i++
 
@@ -726,6 +729,9 @@ function saveEdit() {
     end: parseDatetimeLocal(newSession.value.end, props.userTimezone)
   })
   
+  // Mark as modified if it's an existing session
+  markSessionAsModified(editingIndex.value)
+  
   emit('sessionsChange', [...props.sessions])
   hasUnsavedSessionChanges.value = true;
   localPageIndexExisting.value = 0;
@@ -746,7 +752,14 @@ function parseDatetimeLocal(dateStr, timezone) {
 
 function removeSession(index) {
   if(confirm("Remove this session?")) {
-    props.sessions.splice(index, 1)
+    const session = props.sessions[index]
+    if (session.uuid) {
+      // Mark existing session as deleted
+      session.action = "delete"
+    } else {
+      // Remove newly added session from array
+      props.sessions.splice(index, 1)
+    }
     emit('sessionsChange', [...props.sessions])
     hasUnsavedSessionChanges.value = true;
     if (newlyAddedSessions.value.length === 0) {
@@ -769,6 +782,13 @@ function resetForm() {
   isEditing.value = false
   editingIndex.value = null
   backupSession.value = null
+}
+
+function markSessionAsModified(index) {
+  const session = props.sessions[index]
+  if (session.uuid && session.action !== "update") {
+    session.action = "update"
+  }
 }
 
 const closeDuplicateModal = () => {

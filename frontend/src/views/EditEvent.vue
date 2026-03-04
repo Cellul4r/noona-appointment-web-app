@@ -292,7 +292,14 @@ const submit = async () => {
 const submitPayload = async () => {
   const eventId = route.params.event_uuid;
   
+  // Track if any sessions have been modified
+  const sessionsWithActions = sessions.value.filter(s => s.action === "create" || s.action === "update" || s.action === "delete");
+  const hasSessionChanges = sessionsWithActions.length > 0;
+  
   const sessionsPayload = sessions.value.map(s => {
+    // Only include sessions with explicit actions
+    if (!s.action) return null;
+    
     // s.start & s.end are actual Date objects, .toISOString() returns UTC
     const data = {
       start_datetime: s.start ? s.start.toISOString() : null,
@@ -303,19 +310,24 @@ const submitPayload = async () => {
     if (s.location) data.location = s.location;
     if (s.description) data.description = s.description;
 
-    if (s.uuid) {
+    if (s.action === "delete") {
+      return {
+        action: "delete",
+        session_uuid: s.uuid
+      };
+    } else if (s.action === "update") {
       return {
         action: "update",
         session_uuid: s.uuid,
         data: data
       };
-    } else {
+    } else if (s.action === "create") {
       return {
         action: "create",
         data: data
       };
     }
-  });
+  }).filter(Boolean); // Remove null entries
 
   const payload = {
     title: event.value.title,
@@ -323,7 +335,7 @@ const submitPayload = async () => {
     description: event.value.description || "",
     max_sessions_per_user: limitEnabled.value && limit.value ? Number(limit.value) : null,
     is_draft: event.value.is_draft,
-    sessions: sessionsPayload
+    sessions: hasSessionChanges ? sessionsPayload : null
   }
 
   try {
