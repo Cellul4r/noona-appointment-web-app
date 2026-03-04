@@ -623,14 +623,16 @@ const formatDateTimeRange = (startStr, endStr) => {
   const endDate = new TZDate(endStr, timezone);
 
   // Format: "15 Feb 2026"
-  const dateFmt = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(startDate);
-
-  // Format: "10:00 AM"
-  const timeOpts = { hour: 'numeric', minute: '2-digit', hour12: true };
-  const startTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(startDate);
-  const endTimeFmt = new Intl.DateTimeFormat('en-US', timeOpts).format(endDate);
-
-  return `${dateFmt}, ${startTimeFmt} - ${endTimeFmt}`;
+  if (isSameDay(startDate, endDate)) {
+    const dateFmt = format(startDate, 'd MMM yyyy');
+    const startTimeFmt = format(startDate, 'h:mm a');
+    const endTimeFmt = format(endDate, 'h:mm a');
+    return `${dateFmt}, ${startTimeFmt} - ${endTimeFmt}`;
+  } else {
+    const startDateFmt = format(startDate, 'd MMM yyyy, h:mm a');
+    const endDateFmt = format(endDate, 'd MMM yyyy, h:mm a');
+    return `${startDateFmt} - ${endDateFmt}`;
+  }
 };
 
 const handleAcceptWaitlist = async (sessionUuid) => {
