@@ -11,6 +11,7 @@ import Calendar from '../views/Calendar.vue';
 import NotFound from '../views/NotFound.vue';
 import { useAuthStore } from '../store/authStore';
 import LoginSuccess from '../views/LoginSuccess.vue';
+import SessionRegistration from '../views/SessionRegistration.vue';
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
@@ -68,12 +69,22 @@ const routes = [
     component: () => import('../views/AboutUs.vue'),
   },
   {
+<<<<<<< HEAD
     path: '/:patchMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
     meta: { hideNavbar: true }
     // catch-all route, should be last in the list
   },
+=======
+    path: "/session/register",
+    name: "SessionRegistration",
+    component: SessionRegistration,
+    meta: { requiresAuth: true }
+  }
+
+
+>>>>>>> ff3a6af (fix config code)
 ];
 
 const router = createRouter({

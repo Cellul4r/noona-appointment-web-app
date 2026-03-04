@@ -43,8 +43,12 @@ import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+<<<<<<< HEAD
 import { useAuthStore } from '../../store/authStore';
 import { storeToRefs } from 'pinia';
+=======
+// import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+>>>>>>> 8e8d640 (not finished)
 
 const props = defineProps({
     isOpen: {
