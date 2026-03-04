@@ -147,6 +147,14 @@ class Settings(BaseSettings):
         )
 
 
+class CsrfSettings(BaseSettings):
+    secret_key: str = "my_csrf_secret"
+    cookie_samesite: str = "Lax"
+
+    class Config:
+        env_file = ".env"
+
+
 try:
     settings = Settings()
     logging.info(f"Settings loaded successfully")
