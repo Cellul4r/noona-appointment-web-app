@@ -539,7 +539,10 @@ const displayedExistingSessions = computed(() => {
 
 const existingSessionsPageSize = computed(() => Math.max(1, Math.ceil(existingSessions.value.length / pageSize)))
 const shouldShowExistingPagination = computed(() => {
-  if (isUsingLocalPagination.value) return existingSessions.value.length > pageSize
+  if (isUsingLocalPagination.value) {
+    // Show pagination if local pages exist OR if cursors indicate more data exists on server
+    return existingSessions.value.length > pageSize || !!prevCursor.value || !!nextCursor.value
+  }
   return !!prevCursor.value || !!nextCursor.value
 })
 
@@ -548,12 +551,18 @@ const isNewNextDisabled = computed(() => localPageIndexNew.value >= newSessionsP
 const displayedNewPageNumber = computed(() => localPageIndexNew.value + 1)
 
 const isExistingPrevDisabled = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndexExisting.value === 0
+  if (isUsingLocalPagination.value) {
+    // Allow prev if on local page > 0 OR if server has previous pages
+    return localPageIndexExisting.value === 0 && !prevCursor.value
+  }
   return !prevCursor.value
 })
 
 const isExistingNextDisabled = computed(() => {
-  if (isUsingLocalPagination.value) return localPageIndexExisting.value >= existingSessionsPageSize.value - 1
+  if (isUsingLocalPagination.value) {
+    // Allow next if not on last local page OR if server has more pages
+    return localPageIndexExisting.value >= existingSessionsPageSize.value - 1 && !nextCursor.value
+  }
   return !nextCursor.value
 })
 
@@ -664,13 +673,14 @@ const loadSessions = async (cursor) => {
 
 const goNext = async () => {
   if (isUsingLocalPagination.value) {
-    if (localPageIndexNew.value < newSessionsPageSize.value - 1) {
-      localPageIndexNew.value++;
-      return;
-    }
     if (localPageIndexExisting.value < existingSessionsPageSize.value - 1) {
       localPageIndexExisting.value++;
       return;
+    }
+    // If at last local page but server has more, fetch from server
+    if (nextCursor.value) {
+      currentCursorIndex.value++;
+      await loadSessions(nextCursor.value);
     }
     return;
   }
@@ -686,9 +696,10 @@ const goPrev = async () => {
       localPageIndexExisting.value--;
       return;
     }
-    if (localPageIndexNew.value > 0) {
-      localPageIndexNew.value--;
-      return;
+    // If at first local page but server has previous, fetch from server
+    if (prevCursor.value) {
+      currentCursorIndex.value--;
+      await loadSessions(prevCursor.value);
     }
     return;
   }
@@ -761,6 +772,7 @@ const confirmDuplicateInline = () => {
   
   hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
+  localPageIndexExisting.value = 0;
   activeCopyIndex.value = null
 }
 
@@ -775,6 +787,7 @@ const confirmDuplicate = () => {
   
   hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
+  localPageIndexExisting.value = 0;
   closeDuplicateModal()
 }
 
@@ -861,6 +874,7 @@ function addSession() {
   
   hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
+  localPageIndexExisting.value = 0;
   sessionModalRef.value.close()
   resetForm()
 }
@@ -878,6 +892,7 @@ function saveEdit() {
   })
   
   hasUnsavedSessionChanges.value = true;
+  localPageIndexExisting.value = 0;
   if (localPageIndexNew.value >= newSessionsPageSize.value) {
     localPageIndexNew.value = newSessionsPageSize.value - 1
   }
