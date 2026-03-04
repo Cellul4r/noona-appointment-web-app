@@ -96,103 +96,91 @@
           <!-- Session List -->
           <div class="space-y-3">
             <div v-if="sessions.length === 0" class="text-center py-10 bg-base-200/50 rounded-xl border border-dashed border-base-300">
-              <span class="material-symbols-outlined text-4xl text-base-content/30 mb-2">event_busy</span>
               <p class="text-base-content/60 font-medium">No sessions added yet.</p>
               <p class="text-xs text-base-content/40 mt-1">Add at least one session so users can register.</p>
             </div>
 
-            <!-- Server Paginated Sessions View -->
-            <div 
-              v-for="(s, index) in displayedSessions" 
-              :key="s.uuid || index"
-              class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border rounded-xl p-4 transition-all group"
-              :class="isSessionEnded(s.end) ? 'bg-base-200/50 opacity-60 grayscale border-base-300' : 'bg-base-100 border-base-200 hover:shadow-md'"
-            >
-              <!-- LEFT INFO -->
-              <div class="flex items-center gap-4 w-full sm:w-auto">
-                <!-- Date Box -->
-                <div class="bg-primary/10 rounded-xl px-3 py-2 text-center min-w-[4.5rem] border border-primary/20">
-                  <p class="text-[11px] text-primary font-bold uppercase tracking-widest leading-none mb-1">
-                    {{ formatMonth(s.start) }}
-                  </p>
-                  <p class="text-xl font-black text-primary leading-none">
-                    {{ formatDay(s.start) }}
-                  </p>
-                </div>
+            <!-- Sessions List -->
+            <div class="flex flex-col gap-4">
+              <div v-for="(s, index) in displayedSessions" :key="s.uuid || index"
+                class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border border-base-300 bg-base-200 hover:border-primary/50 transition-colors"
+                :class="isSessionEnded(s.end) ? 'opacity-60 grayscale' : ''">
 
-                <!-- Text Info -->
-                <div class="space-y-1">
-                  <!-- Time & Location -->
-                  <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
-                    <span class="flex items-center gap-1 text-base-content/80">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                <!-- LEFT -->
+                <div class="flex-1 min-w-0 w-full">
+                  <div class="flex flex-col gap-2">
+
+                    <!-- TIME -->
+                    <div class="flex items-center gap-2 text-base font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="size-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                       </svg>
-                      {{ formatTime(s.start) }} - {{ formatTime(s.end) }}
-                    </span>
-                    <span class="hidden sm:inline text-base-content/30">|</span>
-                    <span v-if="s.location || event.location" class="flex items-center gap-1 text-base-content/80">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                      </svg>
+                      <span>{{ formatDate(s.start) }}, {{ formatTime(s.start) }} – {{ formatDate(s.end) }}, {{ formatTime(s.end) }}</span>
+                    </div>
 
-                      {{ s.location || event.location }}
-                    </span>
-                  </div>
+                    <!-- LOCATION -->
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm opacity-60">
+                      <span v-if="s.location || event.location" class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                        </svg>
 
-                  <!-- Seats & Recurring Badge -->
-                  <div class="flex items-center gap-3 text-xs text-base-content/60">
-                    <span class="flex items-center gap-1 font-semibold">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                      </svg>
+                        {{ s.location || event.location }}
+                      </span>
+                      <span v-if="(s.location || event.location) && s.capacity != null" class="opacity-40">|</span>
 
-                      {{ s.capacity || 'Unlimited' }} seats
-                    </span>
+                      <!-- SEATS -->
+                      <span v-if="s.capacity != null" class="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                          stroke="currentColor" class="size-6">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                        {{ s.capacity }} seats
+                      </span>
+
+                    </div>
+
                   </div>
                 </div>
-              </div>
 
-              <!-- RIGHT ACTIONS -->
-              <div class="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity self-end sm:self-auto mt-2 sm:mt-0">
-                
-                <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Duplicate disabled (Session ended)' : 'Duplicate'">
-                  <button 
-                    @click="!isSessionEnded(s.end) && openDuplicateModal(s)" 
-                    class="btn btn-sm btn-circle btn-ghost" 
-                    :class="{ 'opacity-50 cursor-not-allowed': isSessionEnded(s.end) }"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                <!-- RIGHT -->
+                <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                  <div class="flex items-center gap-2">
+                    <template v-if="activeCopyIndex === getAbsoluteIndex(index)">
+                      <input v-if="activeCopyIndex === getAbsoluteIndex(index)" ref="copyInput" type="number" v-model.number="duplicateCount"
+                        min="1" class="input input-bordered w-20" />
+                      <button v-if="activeCopyIndex === getAbsoluteIndex(index)" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
+                    </template>
+                    <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
+                      @click="handleCopyClick(s, getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
                     </svg>
-                  </button>
-                </div>
+                  </div>
 
-                <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Edit disabled (Session ended)' : 'Edit'">
-                  <button 
-                    @click="!isSessionEnded(s.end) && openEditModal(s, getAbsoluteIndex(index))" 
-                    class="btn btn-sm btn-circle btn-ghost" 
-                    :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-info'"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                    </svg>
-                  </button>
-                </div>
+                  <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
+                    @click="openEditModal(s, getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                  </svg>
 
-                <div class="tooltip" :data-tip="isSessionEnded(s.end) ? 'Remove disabled (Session ended)' : 'Remove'">
-                  <button 
-                    @click="!isSessionEnded(s.end) && removeSession(getAbsoluteIndex(index))" 
-                    class="btn btn-sm btn-circle btn-ghost" 
-                    :class="isSessionEnded(s.end) ? 'opacity-50 cursor-not-allowed' : 'text-error'"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
-                  </button>
-                </div>
+                  <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-red-500"
+                    @click="removeSession(getAbsoluteIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                  </svg>
 
+                </div>
               </div>
             </div>
             
@@ -455,6 +443,8 @@ const getAbsoluteIndex = (visibleIndex) => {
 const duplicateModalRef = ref(null)
 const sessionToDuplicate = ref(null)
 const duplicateCount = ref(1)
+const activeCopyIndex = ref(null)
+const copyInput = ref(null)
 
 // Form state for modal
 const isEditing = ref(false)
@@ -607,6 +597,29 @@ const openDuplicateModal = (s) => {
 const closeDuplicateModal = () => {
   duplicateModalRef.value.close()
   sessionToDuplicate.value = null
+}
+
+const handleCopyClick = (session, index) => {
+  if (activeCopyIndex.value === index) {
+    activeCopyIndex.value = null
+    return
+  }
+  activeCopyIndex.value = index
+  duplicateCount.value = 1
+}
+
+const confirmDuplicateInline = () => {
+  if (duplicateCount.value < 1) return
+  
+  for (let i = 0; i < duplicateCount.value; i++) {
+    // Strip id and uuid so the backend sees them as new creations (s.start/s.end are already Date objects!)
+    const clone = { ...sessions.value[sessions.value.length - 1], id: undefined, uuid: undefined }
+    sessions.value.push(clone)
+  }
+  
+  hasUnsavedSessionChanges.value = true;
+  localPageIndex.value = localTotalPages.value - 1;
+  activeCopyIndex.value = null
 }
 
 const confirmDuplicate = () => {
@@ -862,5 +875,9 @@ function formatMonth(dateObj) {
 function formatTime(dateObj) { 
   if(!dateObj) return '';
   return format(dateObj, 'hh:mm a'); 
+}
+function formatDate(dateObj) {
+  if(!dateObj) return '';
+  return format(dateObj, 'MMM d, yyyy');
 }
 </script>
