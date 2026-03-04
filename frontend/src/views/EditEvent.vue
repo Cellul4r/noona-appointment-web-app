@@ -262,7 +262,7 @@ const submit = async () => {
 
   try {
     await updateEvent(eventId, payload);
-    router.push('/events')
+    router.push('/event/overview/' + eventId);
   } catch (err) {
     console.error("Update event failed:", err)
     if (err.response && err.response.status === 400) {
