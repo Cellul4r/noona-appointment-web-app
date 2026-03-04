@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 import os
 import secrets
 
-from fastapi import Response
 from fastapi.security import OAuth2PasswordBearer
+from fastapi_csrf_protect import CsrfProtect
 from jose import JWTError, jwt
 
-from app.config import settings
+from app.config import CsrfSettings, CsrfSettings, settings
 
 import bcrypt
 
@@ -56,3 +56,8 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     )
     to_encode.update({"exp": expire, "iat": datetime.utcnow()})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()
