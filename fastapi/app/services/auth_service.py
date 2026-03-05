@@ -74,3 +74,28 @@ class AuthService:
             recipient_email=email,
             confirmation_link=confirmation_link
         )
+
+    async def send_password_reset_email(self, email: str, db: Session):
+        # Generate a unique token and save it to the database with an expiration time
+        token = secrets.token_urlsafe(128)
+        expires_at = datetime.utcnow() + timedelta(minutes=30)  # Token valid for 30 minutes
+
+        auth_token = AuthToken(
+            email=email,
+            type=AuthType.PASSWORD_RESET,
+            hashed_token=hash_password(token),
+            expires_at=expires_at,
+        )
+
+        db.add(auth_token)
+        db.commit()
+
+        # Send the email with the password reset link containing the token
+        reset_link = f"{settings.frontend_base_url}/reset-password?token={token}"
+
+        email_service = EmailService()
+
+        await email_service.send_password_reset_email(
+            recipient_email=email,
+            reset_link=reset_link
+        )
