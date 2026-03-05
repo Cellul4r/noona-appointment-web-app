@@ -9,11 +9,14 @@
       <!-- Date / Time + Status Badge -->
       <div class="flex justify-between items-start">
         <div>
-          <span class="text-xs text-indigo-500 font-semibold">
-            {{ formatDate(session.start_datetime) }}
-          </span>
           <h3 class="font-semibold text-gray-800">
-            {{ formatTime(session.start_datetime) }} – {{ formatTime(session.end_datetime) }}
+            <template v-if="isDifferentDate">
+              {{ formatDate(session.start_datetime) }}, {{ formatTime(session.start_datetime) }} – {{ formatDate(session.end_datetime) }}, {{ formatTime(session.end_datetime) }}
+            </template>
+            <template v-else>
+              {{ formatDate(session.start_datetime) }}<br>
+              {{ formatTime(session.start_datetime) }} – {{ formatTime(session.end_datetime) }}
+            </template>
           </h3>
         </div>
         <span :class="statusBadge.class" class="text-xs px-3 py-1 rounded-full font-medium">
@@ -122,7 +125,12 @@ const isFull = computed(() =>
   props.session.seat_taken >= props.session.seat_capacity
 )
 
-// 🔥 FIX: จัดลำดับ state ใหม่
+const isDifferentDate = computed(() => {
+  const startDate = new Date(props.session.start_datetime).toDateString()
+  const endDate = new Date(props.session.end_datetime).toDateString()
+  return startDate !== endDate
+})
+
 const buttonState = computed(() => {
   if (props.isLoading) return "loading"
   if (props.isSelected) return "deselect"

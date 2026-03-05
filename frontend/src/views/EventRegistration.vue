@@ -283,6 +283,13 @@ const closeReminderModal = () => {
   showReminderModal.value = false
 }
 
+const getReminderPayload = () => {
+  return {
+    first_alert_minutes: firstAlertMinutes.value,
+    second_alert_minutes: secondAlertMinutes.value
+  }
+}
+
 const saveReminderSettings = () => {
   if (secondAlertMinutes.value && secondAlertMinutes.value <= firstAlertMinutes.value) {
     alert("Second Alert must be greater than Alert")
@@ -347,7 +354,7 @@ const toggleSelect = async (session) => {
   try {
     const res = isRemoving
       ? await cancelSession(session.uuid)
-      : await registerForSession(session.uuid)
+      : await registerForSession(session.uuid, getReminderPayload())
 
     Object.assign(session, res)
   } catch (err) {
@@ -399,7 +406,7 @@ const toggleAccept = async (session) => {
   loadingSessions.value = new Set([...loadingSessions.value, session.uuid])
 
   try {
-    await confirmSession(session.uuid)
+    await confirmSession(session.uuid, getReminderPayload())
   } catch (err) {
     console.error(err)
     const status = err.response?.status
@@ -446,7 +453,7 @@ const toggleWaitlist = async (session) => {
   try {
     const res = wasWaitlisted
       ? await cancelSession(session.uuid)
-      : await registerForSession(session.uuid)
+      : await registerForSession(session.uuid, getReminderPayload())
 
     Object.assign(session, res)
     if (!wasWaitlisted) {
