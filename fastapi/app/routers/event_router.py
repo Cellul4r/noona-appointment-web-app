@@ -76,7 +76,7 @@ def list_events(
 def get_event(
     event_uuid: UUID = Path(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_optional_user),
+    current_user: User | None = Depends(get_optional_user),
 ):
     ev = event_service.get_event(event_uuid, db)
     if not ev:
@@ -84,8 +84,8 @@ def get_event(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
         )
 
-    # If it's a draft and and they does not own it. not authorized (forbidden)
-    if ev.is_draft and ev.owner_id != current_user.id:
+    # Draft events are only visible to the owner.
+    if ev.is_draft and (current_user is None or ev.owner_id != current_user.id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     return ev
 
