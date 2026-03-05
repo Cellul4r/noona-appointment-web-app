@@ -271,10 +271,6 @@ const publish = async () => {
   await submit();
 }
 
-const closeLimitChangeModal = () => {
-  document.getElementById("notify_participants_modal")?.close()
-}
-
 const closeNotifyModal = () => {
   document.getElementById("notify_participants_modal")?.close()
 }
