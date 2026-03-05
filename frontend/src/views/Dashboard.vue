@@ -616,8 +616,8 @@ const isSameDay = (startDate, endDate) => {
 
 const formatDateTimeRange = (startStr, endStr) => {
   if (!startStr || !endStr) return 'TBA';
-  const startDate = new TZDate(startStr, timezone);
-  const endDate = new TZDate(endStr, timezone);
+  const startDate = new TZDate(startStr, timezone.value);
+  const endDate = new TZDate(endStr, timezone.value);
 
   // Format: "15 Feb 2026"
   if (isSameDay(startDate, endDate)) {
