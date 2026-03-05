@@ -253,3 +253,16 @@ def render_email_confirmation_html(
         confirmation_link=confirmation_link,
         current_year=datetime.utcnow().year,
     )
+
+
+def render_reset_password_html(
+    *,
+    app_name: str,
+    reset_link: str,
+) -> str:
+    template = _template_env().get_template("email/reset_password.html")
+    return template.render(
+        app_name=app_name,
+        reset_link=reset_link,
+        current_year=datetime.utcnow().year,
+    )
