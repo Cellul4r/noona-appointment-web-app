@@ -18,6 +18,7 @@ from app.services.email_template_service import (
     build_event_overview_url,
     render_available_seat_html,
     render_email_confirmation_html,
+    render_reset_password_html,
     render_event_cancelled_summary_html,
     render_event_updated_summary_html,
     render_registration_removed_by_host_html,
@@ -485,6 +486,22 @@ class EmailService:
 
         await self.send_emails(
             "Please confirm your email address",
+            EmailSchema(email=[recipient_email]),
+            html_body,
+        )
+
+    async def send_password_reset_email(
+        self,
+        recipient_email: str,
+        reset_link: str,
+    ):
+        html_body = render_reset_password_html(
+            app_name=settings.mail_from_name,
+            reset_link=reset_link,
+        )
+
+        await self.send_emails(
+            "Password Reset Request",
             EmailSchema(email=[recipient_email]),
             html_body,
         )
