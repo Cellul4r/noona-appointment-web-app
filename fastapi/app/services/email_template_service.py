@@ -240,3 +240,16 @@ def render_event_cancelled_summary_html(
         timezone=timezone,
         current_year=datetime.utcnow().year,
     )
+
+
+def render_email_confirmation_html(
+    *,
+    app_name: str,
+    confirmation_link: str,
+) -> str:
+    template = _template_env().get_template("email/email_confirmation.html")
+    return template.render(
+        app_name=app_name,
+        confirmation_link=confirmation_link,
+        current_year=datetime.utcnow().year,
+    )
