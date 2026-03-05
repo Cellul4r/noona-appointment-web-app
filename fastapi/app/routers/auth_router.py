@@ -11,6 +11,7 @@ from fastapi_sso import GithubSSO, GoogleSSO
 from app.security import (
     create_access_token,
     verify_password,
+    verify_access_token,
 )
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -100,14 +101,21 @@ def verify_email(
 
 @router.post(
     "/signup",
-    response_model=UserPrivate,
     status_code=status.HTTP_201_CREATED,
 )
 def create_user(
+    request: Request,
     user: UserCreate,
     db: Annotated[Session, Depends(get_db)],
 ):
-
+    registration_token = request.cookies.get("registration_jwt")
+    if not registration_token:
+        logger.error("Missing registration JWT cookie in create_user")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing registration token. Please verify your email first.",
+        )
+    
     existing_user = user_service.get_user_by_email(user.email, db)
 
     if existing_user:
@@ -116,11 +124,20 @@ def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-
+    
+    email_in_token = verify_access_token(registration_token)
+    if email_in_token != user.email:
+        logger.error(f"Email in registration token does not match provided email. Token email: {email_in_token}, Provided email: {user.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid registration token for the provided email.",
+        )
+    
     new_user = user_service.create_user(user, db)
     logger.info(f"Created new user: {new_user.email}")
-
-    return new_user
+    response = JSONResponse(content={"message": "User created successfully."})
+    response.delete_cookie("registration_jwt")
+    return response
 
 
 @router.post("/token")
