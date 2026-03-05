@@ -30,21 +30,19 @@
           </div>
         </dialog>
 
-        <!-- Limit Change Warning Modal -->
-        <dialog id="limit_change_modal" class="modal">
+        <!-- Notify Participants Modal -->
+        <dialog id="notify_participants_modal" class="modal">
           <div class="modal-box">
-            <h3 class="text-lg font-bold text-warning">Reduce Max Sessions Per Participant?</h3>
+            <h3 class="text-lg font-bold">Save Changes</h3>
             <p class="py-4">
-              You are lowering the maximum sessions per participant from <strong>{{ maxSessionsPerUserOriginal }}</strong> to <strong>{{ limit }}</strong>.
-              Some participants may have already registered for more sessions than this new limit.
+              You have made changes to this event. Would you like to notify participants about these updates?
             </p>
-            <p class="py-2 text-sm opacity-70">What would you like to do?</p>
             <div class="flex flex-col gap-3">
-              <button type="button" class="btn btn-outline" @click="closeLimitChangeModal">
+              <button type="button" class="btn btn-outline" @click="closeNotifyModal">
                 Cancel
               </button>
               <button type="button" class="btn" @click="proceedWithoutNotify">
-                Save Without Notifying Participants
+                Save Without Notifying
               </button>
               <button type="button" class="btn btn-primary" @click="proceedWithNotify">
                 Save & Notify Participants
@@ -199,6 +197,14 @@ const limit = ref(1)
 const maxSessionsPerUserOriginal = ref(null)
 const pendingSubmitWithNotify = ref(false)
 
+// Store original values for change detection
+const originalEvent = ref({
+  title: "",
+  location: "",
+  description: "",
+  max_sessions_per_user: null
+})
+
 const sessions = ref([])
 
 // --- LIFECYCLE (DATA HYDRATION) ---
@@ -213,6 +219,12 @@ onMounted(async () => {
     event.value.location = data.location || "";
     event.value.description = data.description || "";
     event.value.is_draft = data.is_draft || false;
+
+    // Store original values for comparison
+    originalEvent.value.title = data.title || "";
+    originalEvent.value.location = data.location || "";
+    originalEvent.value.description = data.description || "";
+    originalEvent.value.max_sessions_per_user = data.max_sessions_per_user;
 
     if (data.max_sessions_per_user !== null && data.max_sessions_per_user !== undefined) {
       limitEnabled.value = true;
@@ -260,29 +272,42 @@ const publish = async () => {
 }
 
 const closeLimitChangeModal = () => {
-  document.getElementById("limit_change_modal")?.close()
+  document.getElementById("notify_participants_modal")?.close()
+}
+
+const closeNotifyModal = () => {
+  document.getElementById("notify_participants_modal")?.close()
 }
 
 const proceedWithoutNotify = () => {
   pendingSubmitWithNotify.value = false
-  closeLimitChangeModal()
+  closeNotifyModal()
   submitPayload()
 }
 
 const proceedWithNotify = () => {
   pendingSubmitWithNotify.value = true
-  closeLimitChangeModal()
+  closeNotifyModal()
   submitPayload()
 }
 
 const submit = async () => {
-  const eventId = route.params.event_uuid;
+  // Check if any changes have been made
+  const eventChanged = 
+    event.value.title !== originalEvent.value.title ||
+    event.value.location !== originalEvent.value.location ||
+    event.value.description !== originalEvent.value.description;
+  
   const newLimit = limitEnabled.value && limit.value ? Number(limit.value) : null
-  const oldLimit = maxSessionsPerUserOriginal.value
-
-  // Check if limit has changed in any direction
-  if (oldLimit !== newLimit) {
-    document.getElementById("limit_change_modal")?.showModal()
+  const limitChanged = originalEvent.value.max_sessions_per_user !== newLimit;
+  
+  const sessionsChanged = sessions.value.some(s => s.action === "create" || s.action === "update" || s.action === "delete");
+  
+  const hasAnyChanges = eventChanged || limitChanged || sessionsChanged;
+  
+  // Show notification modal if any changes were made
+  if (hasAnyChanges) {
+    document.getElementById("notify_participants_modal")?.showModal()
     return
   }
 
