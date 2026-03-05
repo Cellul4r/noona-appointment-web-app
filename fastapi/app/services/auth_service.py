@@ -33,15 +33,14 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
             )
 
         return user
 
     # save cookies on client with jwt token
-    def attach_token_cookie(self, response: Response, token: str):
+    def attach_token_cookie(self, response: Response, token: str, key: str = "jwt"):
         response.set_cookie(
-            key="jwt",
+            key=key,
             value=token,
             httponly=True,
             secure=True,
