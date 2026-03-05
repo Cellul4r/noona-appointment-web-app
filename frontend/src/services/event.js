@@ -49,7 +49,7 @@ export async function getAllEvents({ scope = 'all', size = 12, cursor = null, ti
 }
 
 export async function getEventOverview(uuid) {
-    const res = await axios.get(`${API_URL}/events/overview/${uuid}`);
+    const res = await axios.get(`${API_URL}/events/${uuid}`);
     return res.data;
 }
 
