@@ -1,7 +1,8 @@
 import axios from "axios";
 import VueCookies from "vue-cookies";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+const API_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
 
 // Ensure Axios sends cookies with every request
 axios.defaults.withCredentials = true;
@@ -9,7 +10,8 @@ axios.defaults.withCredentials = true;
 // Axios interceptor to include X-CSRF-Token header
 axios.interceptors.request.use(
     (config) => {
-        if (["POST", "PUT", "DELETE"].includes(config.method.toUpperCase())) {
+        const method = (config.method || "GET").toUpperCase();
+        if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
             const csrfToken = VueCookies.get("fastapi-csrf-token");
             config.headers["X-CSRF-Token"] = csrfToken; // Decode JWT for CSRF
         }
