@@ -10,6 +10,7 @@ from fastapi_csrf_protect import CsrfProtect
 from fastapi_sso import GithubSSO, GoogleSSO
 from app.security import (
     create_access_token,
+    verify_password,
 )
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ from datetime import datetime, timedelta
 from app.dependencies.auth import csrf_protect, get_current_user, get_optional_user
 from app.schemas.user import UserCreate, UserPrivate
 from app.models.user import User
+from app.models.auth_token import AuthToken, AuthType
 from app.dependencies.sso import get_github_sso, get_google_sso
 from app.services.auth_service import (
     AuthService,
@@ -57,6 +59,44 @@ async def request_sign_up(
     await auth_service.send_registration_confirmation_email(email, db)
     logger.info(f"Sent registration confirmation email to: {email}")
     return {"message": "Registration confirmation email sent."}
+
+@router.post("/verify-email")
+def verify_email(
+    token: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    logger.debug("Verifying email token")
+    candidate_tokens = db.query(AuthToken).filter(
+        AuthToken.type == AuthType.EMAIL_VERIFICATION,
+        AuthToken.used_at.is_(None),
+        AuthToken.expires_at > datetime.utcnow(),
+    ).all()
+
+    auth_token = next(
+        (
+            row
+            for row in candidate_tokens
+            if verify_password(token, row.hashed_token)
+        ),
+        None,
+    )
+
+    if not auth_token:
+        logger.warning("Invalid or expired email verification token used")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token",
+        )
+
+    auth_token.used_at = datetime.utcnow()
+    db.commit()
+
+    logger.info(f"Email verified for: {auth_token.email}")
+
+    registration_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
+    response = JSONResponse(content={"message": "Email verified successfully. You can now complete your registration."})
+    auth_service.attach_token_cookie(response, registration_jwt, "registration_jwt")
+    return response
 
 @router.post(
     "/signup",
