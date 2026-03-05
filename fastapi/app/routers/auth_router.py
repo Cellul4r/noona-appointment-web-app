@@ -22,7 +22,7 @@ from jose import jwt, JWTError
 from datetime import datetime, timedelta
 
 from app.dependencies.auth import csrf_protect, get_current_user, get_optional_user
-from app.schemas.user import UserCreate, UserPrivate
+from app.schemas.user import UserCreate, UserPrivate, UserUpdate
 from app.models.user import User
 from app.models.auth_token import AuthToken, AuthType
 from app.dependencies.sso import get_github_sso, get_google_sso
@@ -137,6 +137,100 @@ def create_user(
     logger.info(f"Created new user: {new_user.email}")
     response = JSONResponse(content={"message": "User created successfully."})
     response.delete_cookie("registration_jwt")
+    return response
+
+
+@router.post("/request/password-reset", status_code=status.HTTP_200_OK)
+async def request_password_reset(
+    email: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    existing_user = user_service.get_user_by_email(email, db)
+
+    if not existing_user:
+        logger.warning(f"Password reset requested for unregistered email: {email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email not found",
+        )
+
+    await auth_service.send_password_reset_email(email, db)
+    logger.info(f"Sent password reset email to: {email}")
+    return {"message": "Password reset email sent."}
+
+
+@router.post("/verify-password-reset-token")
+def verify_password_reset_token(
+    token: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    logger.debug("Verifying password reset token")
+    candidate_tokens = db.query(AuthToken).filter(
+        AuthToken.type == AuthType.PASSWORD_RESET,
+        AuthToken.used_at.is_(None),
+        AuthToken.expires_at > datetime.utcnow(),
+    ).all()
+
+    auth_token = next(
+        (
+            row
+            for row in candidate_tokens
+            if verify_password(token, row.hashed_token)
+        ),
+        None,
+    )
+
+    if not auth_token:
+        logger.warning("Invalid or expired password reset token used")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token",
+        )
+
+    auth_token.used_at = datetime.utcnow()
+    db.commit()
+
+    logger.info(f"Email verified for: {auth_token.email}")
+
+    password_reset_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
+    response = JSONResponse(content={"message": "Email verified successfully. You can now reset your password."})
+    auth_service.attach_token_cookie(response, password_reset_jwt, "password_reset_jwt")
+    return response
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(
+    request: Request,
+    new_password: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    password_reset_token = request.cookies.get("password_reset_jwt")
+    if not password_reset_token:
+        logger.error("Missing password reset JWT cookie in reset_password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing password reset token. Please verify your email first.",
+        )
+    
+    email_in_token = verify_access_token(password_reset_token)
+    if not email_in_token:
+        logger.error("Invalid password reset token in reset_password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid password reset token.",
+        )
+    
+    user = user_service.get_user_by_email(email_in_token, db)
+    if not user:
+        logger.error(f"User not found for email in password reset token: {email_in_token}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+    
+    user_service.update_user_settings(db, user.id, UserUpdate(password=new_password))
+    logger.info(f"Password updated for user: {user.email}")
+    response = JSONResponse(content={"message": "Password reset successfully."})
+    response.delete_cookie("password_reset_jwt")
     return response
 
 
