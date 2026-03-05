@@ -184,8 +184,8 @@
                     </svg>
                     {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
                 </button>
-                <button class="btn btn-sm btn-primary" :disabled="isDraftEvent" @click="goToRegister">
-                    Register
+                <button class="btn btn-sm btn-primary" :disabled="isDraftEvent || !user" @click="goToRegister">
+                    {{ !user ? 'Please login first to register' : 'Register' }}
                 </button>
             </div>
         </div>
@@ -200,7 +200,6 @@
 <script setup>
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
 import SessionCard from '../components/session/SessionCard.vue'
 import RegisteredUsersModal from '../components/session/RegisteredUsersModal.vue'
 import LoadingSpinner from '../components/LoadingSpinner.vue'
@@ -214,7 +213,7 @@ const router = useRouter()
 /* ---------------- STATE ---------------- */
 
 const authStore = useAuthStore()
-const { user } = storeToRefs(authStore) // user info
+const user = computed(() => authStore.user)
 const timezone = computed(() => user.value?.timezone || "Europe/London") // user's timezone preference
 
 const event = ref({}) // main event details and sessions list
@@ -286,6 +285,7 @@ async function onDeleteEvent() {
 
 function goToRegister() {
     if (isDraftEvent.value) return
+    if (!user.value) return
 
     router.push({ name: 'Calendar' })
 }
