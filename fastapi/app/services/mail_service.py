@@ -17,6 +17,7 @@ from app.services.session_service import SessionService
 from app.services.email_template_service import (
     build_event_overview_url,
     render_available_seat_html,
+    render_email_confirmation_html,
     render_event_cancelled_summary_html,
     render_event_updated_summary_html,
     render_registration_removed_by_host_html,
@@ -471,3 +472,19 @@ class EmailService:
             raise
         finally:
             db.close()
+
+    async def send_email_confirmation(
+        self,
+        recipient_email: str,
+        confirmation_link: str,
+    ):
+        html_body = render_email_confirmation_html(
+            app_name=settings.mail_from_name,
+            confirmation_link=confirmation_link,
+        )
+
+        await self.send_emails(
+            "Please confirm your email address",
+            EmailSchema(email=[recipient_email]),
+            html_body,
+        )
