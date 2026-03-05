@@ -67,3 +67,8 @@ export async function updateEvent(uuid, payload, notify = false) {
 export async function deleteEvent(uuid) {
     await axios.delete(`${API_URL}/events/${uuid}`);
 }
+
+export async function getEventRegistrationSummary(uuid) {
+    const res = await axios.post(`${API_URL}/events/${uuid}/registration-summary`);
+    return res.data;
+}

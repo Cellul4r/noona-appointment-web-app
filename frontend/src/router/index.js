@@ -11,7 +11,7 @@ import Calendar from '../views/Calendar.vue';
 import NotFound from '../views/NotFound.vue';
 import { useAuthStore } from '../store/authStore';
 import LoginSuccess from '../views/LoginSuccess.vue';
-import SessionRegistration from '../views/SessionRegistration.vue';
+import EventRegistration from '../views/EventRegistration.vue';
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
@@ -70,8 +70,8 @@ const routes = [
   },
   {
     path: `/event/register/:event_uuid`,
-    name: "SessionRegistration",
-    component: SessionRegistration,
+    name: "EventRegistration",
+    component: EventRegistration,
     meta: { requiresAuth: true }
   },
   {

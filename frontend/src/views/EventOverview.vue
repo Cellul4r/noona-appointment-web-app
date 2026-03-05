@@ -289,7 +289,7 @@ function goToRegister() {
     if (isDraftEvent.value) return
     if (!user.value) return
 
-    router.push({ name: 'Calendar' })
+    router.push({ name: 'EventRegistration' })
 }
 
 function openRegisteredUsersModal(sessionUuid, isPast) {

@@ -22,7 +22,7 @@
       </div>
 
       <!-- Location -->
-      <p class="text-sm text-gray-500 flex items-center gap-1">
+      <p v-if="session.location" class="text-sm text-gray-500 flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd"
             d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
@@ -30,35 +30,21 @@
         </svg>
         {{ session.location }}
       </p>
-
-      <!-- Description -->
-      <p class="text-sm text-gray-400 flex items-start gap-1">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-            clip-rule="evenodd" />
-        </svg>
-        {{ session.event?.description }}
-      </p>
-
-      <!-- Reserved label -->
-      <p class="text-xs text-indigo-500 font-medium min-h-[16px]">
-        <span v-if="isSelected" class="flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-            stroke="currentColor" class="size-4">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
-          </svg>
-          Reserved for you
-        </span>
-      </p>
     </div>
 
     <!-- Footer -->
     <div class="p-4 border-t flex justify-between items-center">
 
-      <!-- Seats left -->
-      <span :class="isFull ? 'text-red-500' : 'text-gray-500'" class="text-sm flex items-center gap-1">
+      <!-- Reserved or Seats left -->
+      <span v-if="isSelected" class="text-sm text-indigo-500 font-medium flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+          stroke="currentColor" class="size-5">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+        </svg>
+        Reserved for you
+      </span>
+      <span v-else :class="isFull ? 'text-red-500' : 'text-gray-500'" class="text-sm flex items-center gap-1">
         <svg v-if="isFull" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
           stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
