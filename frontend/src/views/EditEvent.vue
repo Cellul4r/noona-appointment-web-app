@@ -280,8 +280,8 @@ const submit = async () => {
   const newLimit = limitEnabled.value && limit.value ? Number(limit.value) : null
   const oldLimit = maxSessionsPerUserOriginal.value
 
-  // Check if lowering the limit
-  if (oldLimit !== null && oldLimit !== undefined && newLimit !== null && newLimit < oldLimit) {
+  // Check if limit has changed in any direction
+  if (oldLimit !== newLimit) {
     document.getElementById("limit_change_modal")?.showModal()
     return
   }
