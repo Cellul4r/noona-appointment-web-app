@@ -243,7 +243,7 @@
               <tr v-if="loadingDashboard">
                 <td colspan="4" class="text-center py-8"><span class="loading loading-spinner text-primary"></span></td>
               </tr>
-              <tr v-else-if="pastSessions.length === 0">
+              <tr v-else-if="dynamicPastSessions.length === 0">
                 <td colspan="4" class="text-center py-8 text-base-content/50">No past sessions available.</td>
               </tr>
               <template v-for="session in paginatedPast" :key="session.id">
@@ -331,7 +331,7 @@
             </tbody>
           </table>
         </div>
-        <div v-if="pastSessions.length > pastVisible"
+        <div v-if="dynamicPastSessions.length > pastVisible"
           class="p-3 border-t border-base-200 flex justify-center bg-base-100">
           <button @click="loadMoreSection('past')" class="btn btn-sm btn-wide">Load More</button>
         </div>
@@ -345,7 +345,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
 import { getUserSessions, confirmSession } from '@/services/session.js';
@@ -379,6 +379,10 @@ const pastVisible = ref(sessionsPageSize);
 const upcomingSearch = ref('');
 const upcomingTimeRange = ref('all');
 const expandedRows = ref([]); // Holds IDs of expanded past session rows
+
+// Reactive clock that ticks every 30 seconds for session time checks
+const now = ref(new Date())
+let nowTimer = null
 
 // --- API FETCH FUNCTIONS ---
 const fetchUserProfile = async () => {
@@ -486,9 +490,13 @@ const fetchDashboardData = async () => {
 
 // --- COMPUTED & LOGIC ---
 
-// Filters upcoming sessions based on Search Input 
+// Filters upcoming sessions based on Search Input and filters out ended sessions
 const filteredUpcoming = computed(() => {
-  let result = upcomingSessions.value.slice();
+  let result = upcomingSessions.value.filter(s => {
+    // Exclude sessions that have already ended
+    if (s.end_time && new Date(s.end_time) <= now.value) return false
+    return true
+  })
 
   // Apply time-range filter
   let rangeStart = null;
@@ -511,10 +519,27 @@ const filteredUpcoming = computed(() => {
   return result;
 });
 
+// Combine fetched past sessions with sessions that have ended since load
+const dynamicPastSessions = computed(() => {
+  const endedUpcoming = upcomingSessions.value.filter(s => {
+    return s.end_time && new Date(s.end_time) <= now.value
+  })
+  const combined = [...endedUpcoming, ...pastSessions.value]
+  // Sort by start_time descending (most recent first)
+  combined.sort((a, b) => new Date(b.start_time) - new Date(a.start_time))
+  // Remove duplicates by id
+  const seen = new Set()
+  return combined.filter(s => {
+    if (seen.has(s.id)) return false
+    seen.add(s.id)
+    return true
+  })
+})
+
 // --- Paginated views (slice by visible counts) ---
 const paginatedWaitlist = computed(() => waitlistSessions.value.slice(0, waitVisible.value));
 const paginatedUpcoming = computed(() => filteredUpcoming.value.slice(0, upcomingVisible.value));
-const paginatedPast = computed(() => pastSessions.value.slice(0, pastVisible.value));
+const paginatedPast = computed(() => dynamicPastSessions.value.slice(0, pastVisible.value));
 
 const getHostAvatar = (session) => {
   if (session.host_profile_image) {
@@ -566,7 +591,7 @@ const loadMoreSection = (section) => {
     }
   }
   if (section === 'past') {
-    if (pastSessions.value.length > pastVisible.value) {
+    if (dynamicPastSessions.value.length > pastVisible.value) {
       pastVisible.value += sessionsPageSize;
       return;
     }
@@ -656,5 +681,11 @@ const handleAcceptWaitlist = async (sessionUuid) => {
 onMounted(() => {
   fetchUserProfile();
   fetchDashboardData();
+  // Update reactive clock every 30 seconds so sessions move between sections
+  nowTimer = setInterval(() => { now.value = new Date() }, 30000)
 });
+
+onUnmounted(() => {
+  if (nowTimer) clearInterval(nowTimer)
+})
 </script>
