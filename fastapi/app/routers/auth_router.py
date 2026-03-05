@@ -40,6 +40,24 @@ auth_service = AuthService(user_service)
 FRONTEND_LOGIN_SUCCESS_URI = settings.frontend_login_success_uri
 
 
+@router.post("/request/sign-up", status_code=status.HTTP_200_OK)
+async def request_sign_up(
+    email: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    existing_user = user_service.get_user_by_email(email, db)
+
+    if existing_user:
+        logger.warning(f"Sign-up requested for already registered email: {email}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    await auth_service.send_registration_confirmation_email(email, db)
+    logger.info(f"Sent registration confirmation email to: {email}")
+    return {"message": "Registration confirmation email sent."}
+
 @router.post(
     "/signup",
     response_model=UserPrivate,
