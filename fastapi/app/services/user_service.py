@@ -112,7 +112,6 @@ class UserService:
         db.refresh(existing_user)
         return existing_user
 
-    
     def update_user_settings(self, db: Session, user_id: int, user_update: UserUpdate) -> UserPrivate:
         user = db.execute(select(User).where(User.id == user_id)).scalars().first()
         if not user:
