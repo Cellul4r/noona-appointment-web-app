@@ -1,5 +1,4 @@
 import axios from 'axios';
-import VueCookies from "vue-cookies";
 
 const API_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
@@ -49,13 +48,13 @@ export async function getUserSessions(params = {}) {
   return res.data;
 }
 
-export async function registerForSession(sessionUuid) {
-  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/registration`, {});
+export async function registerForSession(sessionUuid, reminder = []) {
+  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/registration`, reminder);
   return res.data;
 }
 
-export async function confirmSession(sessionUuid) {
-  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/confirm`, {});
+export async function confirmSession(sessionUuid, reminder = []) {
+  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/confirm`, reminder);
   return res.data;
 }
 

@@ -50,20 +50,37 @@
         </div>
 
         <!-- Row 2: Set Reminders and Summary -->
-        <div class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm justify-end">
-          <button class="group flex items-center gap-1 text-sm text-gray-700 hover:text-black transition-all duration-200 hover:scale-105 active:scale-95" @click="openReminderModal">
+        <div v-if="hasSavedReminderSettings" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm justify-end">
+          <button class="group flex items-center gap-1 text-sm text-gray-700 hover:text-indigo-600 transition-all duration-200 hover:scale-105 active:scale-95" @click="openReminderModal">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-              stroke="currentColor" class="size-5 transition-transform duration-300 group-hover:rotate-12">
+              stroke="currentColor" class="size-5 transition-all duration-300 group-hover:animate-bell-ring">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
             </svg>
             Set Reminders
           </button>
 
-          <div v-if="hasSavedReminderSettings" class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
-            {{ reminderSummaryText }}
+          <div class="flex items-center gap-2">
+            <div class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+              {{ reminderSummaryText }}
+            </div>
+            <button @click="clearReminderSettings" class="text-xs text-red-600 hover:text-red-800 transition-colors" title="Clear reminders">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        <!-- Set Reminders Button (when no reminders saved) -->
+        <button v-else class="group bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center gap-1 text-sm text-gray-700 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 shadow-sm" @click="openReminderModal">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-5 transition-all duration-300 group-hover:animate-bell-ring">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
+          </svg>
+          Set Reminders
+        </button>
       </div>
     </div>
 
@@ -130,31 +147,43 @@
 
       <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200 reminder-modal-pop">
         <h3 class="text-lg font-semibold text-gray-900 mb-1">Set Reminders</h3>
-        <p class="text-sm text-gray-600 mb-5">Choose reminder times (minutes/hours/days) before the session starts.</p>
+        <p class="text-sm text-gray-600 mb-5">Choose reminder times before the session starts. First alert is required.</p>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Alert</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">First Alert <span class="text-red-500">*</span></label>
             <select v-model.number="firstAlertMinutes" class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01]">
-              <option v-for="minute in reminderOptionsWithStart" :key="`first-${minute}`" :value="minute">
+              <option :value="-1">None</option>
+              <option :value="0">When event starts</option>
+              <option v-for="minute in reminderOptions" :key="`first-${minute}`" :value="minute">
                 {{ formatReminderOption(minute) }}
               </option>
             </select>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Second Alert</label>
-            <select v-model.number="secondAlertMinutes" class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01]">
-              <option v-for="minute in reminderOptionsWithStart" :key="`second-${minute}`" :value="minute">
+            <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+              <span>Second Alert (Optional)</span>
+              <span v-if="firstAlertMinutes === -1" class="text-xs text-gray-500">Select first alert first</span>
+            </label>
+            <select v-model.number="secondAlertMinutes" :disabled="firstAlertMinutes === -1" class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed">
+              <option :value="-1">None</option>
+              <option :value="0">When event starts</option>
+              <option v-for="minute in reminderOptions" :key="`second-${minute}`" :value="minute" :disabled="minute <= firstAlertMinutes">
                 {{ formatReminderOption(minute) }}
               </option>
             </select>
           </div>
         </div>
 
-        <div class="flex gap-3 justify-end mt-6">
-          <button type="button" class="btn btn-ghost transition-all duration-200 hover:bg-gray-100 hover:scale-105 active:scale-95" @click="closeReminderModal">Cancel</button>
-          <button type="button" class="btn btn-primary transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95" @click="saveReminderSettings">Save</button>
+        <div class="flex gap-3 justify-between mt-6">
+          <button v-if="hasSavedReminderSettings" type="button" class="btn btn-error btn-outline transition-all duration-200 hover:scale-105 active:scale-95" @click="clearReminderSettings">
+            Clear
+          </button>
+          <div class="flex gap-3 ml-auto">
+            <button type="button" class="btn btn-ghost transition-all duration-200 hover:bg-gray-100 hover:scale-105 active:scale-95" @click="closeReminderModal">Cancel</button>
+            <button type="button" class="btn btn-primary transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95" @click="saveReminderSettings">Save</button>
+          </div>
         </div>
       </div>
     </div>
@@ -163,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue"
+import { ref, computed, onMounted, nextTick, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
@@ -209,6 +238,7 @@ const hasSavedSession = computed(() =>
 )
 
 const formatReminderOption = (minute) => {
+  if (minute === -1) return "None"
   if (minute === 0) return "When event starts"
 
   const days = Math.floor(minute / 1440)
@@ -222,9 +252,11 @@ const formatReminderOption = (minute) => {
   return `${minutes} minute${minutes > 1 ? "s" : ""} before`
 }
 
-const reminderSummaryText = computed(() =>
-  `Reminder: ${formatReminderOption(firstAlertMinutes.value)} | Second: ${formatReminderOption(secondAlertMinutes.value)}`
-)
+const reminderSummaryText = computed(() => {
+  const firstText = formatReminderOption(firstAlertMinutes.value)
+  const secondText = secondAlertMinutes.value >= 0 ? formatReminderOption(secondAlertMinutes.value) : "None"
+  return `First: ${firstText} | Second: ${secondText}`
+})
 
 const filteredSessions = computed(() => {
   let list = sessions.value
@@ -284,15 +316,17 @@ const closeReminderModal = () => {
 }
 
 const getReminderPayload = () => {
-  return {
-    first_alert_minutes: firstAlertMinutes.value,
-    second_alert_minutes: secondAlertMinutes.value
-  }
+  if (!hasSavedReminderSettings.value || firstAlertMinutes.value === -1) return []
+  return [firstAlertMinutes.value, secondAlertMinutes.value]
 }
 
 const saveReminderSettings = () => {
-  if (secondAlertMinutes.value && secondAlertMinutes.value <= firstAlertMinutes.value) {
-    alert("Second Alert must be greater than Alert")
+  if (firstAlertMinutes.value === -1) {
+    alert("Please select at least the first alert")
+    return
+  }
+  if (secondAlertMinutes.value && secondAlertMinutes.value >= 0 && secondAlertMinutes.value <= firstAlertMinutes.value) {
+    alert("Second Alert must be greater than First Alert")
     return
   }
   const eventUuid = route.params.event_uuid
@@ -306,6 +340,23 @@ const saveReminderSettings = () => {
   closeReminderModal()
   alert("Reminder settings saved")
 }
+
+const clearReminderSettings = () => {
+  const eventUuid = route.params.event_uuid
+  localStorage.removeItem(`reminder_settings_${eventUuid}`)
+  firstAlertMinutes.value = -1
+  secondAlertMinutes.value = -1
+  hasSavedReminderSettings.value = false
+  closeReminderModal()
+  alert("Reminder settings cleared")
+}
+
+// Watch for first alert changes to reset second alert when None is selected
+watch(firstAlertMinutes, (newValue) => {
+  if (newValue === -1) {
+    secondAlertMinutes.value = -1
+  }
+})
 
 const loadReminderSettings = () => {
   const eventUuid = route.params.event_uuid
@@ -493,7 +544,7 @@ async function fetchSessions(uuid, cursor = null, size = 15) {
       sessions.value = []
       nextCursor.value = null
     }
-    const data = await getSessions(uuid, cursor, size);
+    const data = await getSessions(uuid, cursor, size, true);
 
     sessions.value.push(...data.items)
     nextCursor.value = data.next_page
@@ -593,5 +644,23 @@ onMounted(async () => {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+@keyframes bell-ring {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-12deg); }
+  30% { transform: rotate(15deg); }
+  40% { transform: rotate(-12deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(-8deg); }
+  70% { transform: rotate(6deg); }
+  80% { transform: rotate(-4deg); }
+  90% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.animate-bell-ring {
+  animation: bell-ring 0.8s ease-in-out;
 }
 </style>
