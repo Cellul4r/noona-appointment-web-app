@@ -69,19 +69,6 @@ export function loginWithGithub() {
   window.location.href = `${API_URL}/auth/github/login`;
 }
 
-// JWT Handling - Store & Retrieve Token in Cookies
-export function getToken() {
-  return VueCookies.get("jwt");
-}
-
-export function saveToken(token) {
-  VueCookies.set("jwt", token, "1d", "/", "", false, "Lax"); // Non-HttpOnly cookie
-}
-
-export function removeToken() {
-  VueCookies.remove("jwt");
-}
-
 // Verify Email with Token
 export async function verifyEmail(token) {
   const res = await axios.post(`${API_URL}/auth/verify-email`, null, {
