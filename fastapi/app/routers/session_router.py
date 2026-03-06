@@ -28,9 +28,6 @@ from app.services.notification_service import NotificationService
 import uuid
 
 from app.services.user_service import UserService
-from app.models import user
-
-from app.services import user_service
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
