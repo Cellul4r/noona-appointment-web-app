@@ -9,17 +9,17 @@ axios.defaults.withCredentials = true;
 
 // Axios interceptor to include X-CSRF-Token header
 axios.interceptors.request.use(
-    (config) => {
-        const method = (config.method || "GET").toUpperCase();
-        if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-            config.headers["X-CSRF-Token"] = csrfToken;
-        }
-        // No Authorization header needed since JWT is in cookie
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+  (config) => {
+    const method = (config.method || "GET").toUpperCase();
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      config.headers["X-CSRF-Token"] = csrfToken;
     }
+    // No Authorization header needed since JWT is in cookie
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 export async function getUser() {
@@ -86,7 +86,7 @@ export async function verifyEmail(token) {
 }
 
 // Logout & Clear JWT
-export function logout() {
+export async function logout() {
   setCsrfToken(null);
-  window.location.reload(); // Optional
+  await axios.post(`${API_URL}/auth/logout`, null);
 }

@@ -432,10 +432,11 @@ async def github_auth(
             return response
 
 
-@router.get("/logout")
-async def logout(response: Response):
+@router.post("/logout")
+async def logout():
     # To logout remove jwt token from cookies
 
+    response = JSONResponse(content={"message": "Logout successful"})
     response.delete_cookie(key="jwt")
     response.delete_cookie(key="fastapi-csrf-token")
     logger.info("User logged out")

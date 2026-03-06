@@ -18,8 +18,8 @@ const getAvatar = () => {
     return authStore.user?.profile_image
 }
 
-const handleLogout = () => {
-    authStore.logout()
+const handleLogout = async () => {
+    await authStore.logout()
     router.push("/login")
 }
 </script>
@@ -110,7 +110,7 @@ const handleLogout = () => {
                                 </router-link>
                             </li>
                             <li>
-                                <router-link to="/login" class="text-error" @click="handleLogout()">
+                                <router-link to="/login" class="text-error" @click.prevent="handleLogout()">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                         stroke-width="1.5" stroke="currentColor" class="size-6">
                                         <path stroke-linecap="round" stroke-linejoin="round"
