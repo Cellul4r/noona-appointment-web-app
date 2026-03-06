@@ -187,7 +187,7 @@
                     {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
                 </button>
                 <button class="btn btn-sm btn-primary" :disabled="isDraftEvent || !user" @click="goToRegister">
-                    {{ !user ? 'Please login first to register' : 'Register' }}
+                    {{ !user ? 'Login before register' : 'Register' }}
                 </button>
             </div>
         </div>
