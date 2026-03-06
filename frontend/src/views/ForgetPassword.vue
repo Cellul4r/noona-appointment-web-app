@@ -8,7 +8,7 @@
                 <!-- Logo -->
                 <div class="mb-10 flex flex-col items-center gap-2">
                     <img src="/src/assets/boy.png" class="h-13" />
-                    <img src="/src/assets/noona_pink.png" class="h-13" />
+                    <img src="/src/assets/noona_black.png" class="h-13" />
                 </div>
 
                 <!-- Card -->
