@@ -88,7 +88,7 @@
     <TransitionGroup name="session-grid" tag="div" class="grid grid-cols-2 xl:grid-cols-3 gap-6">
 
       <EventRegistrationCard v-for="session in filteredSessions" :key="session.uuid" :session="session"
-        :isSelected="isSelected(session)" :isWaitlisted="isWaitlisted(session)" :isAvailable="isAvailable(session)"
+        :event="event" :isSelected="isSelected(session)" :isWaitlisted="isWaitlisted(session)" :isAvailable="isAvailable(session)"
         :isAccepted="isAccepted(session)" :isLoading="loadingSessions.has(session.uuid)" :formatDate="formatDate"
         :formatTime="formatTime" @toggle-select="toggleSelect" @toggle-waitlist="toggleWaitlist"
         @toggle-accept="toggleAccept" />
@@ -207,6 +207,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const nextCursor = ref(null)
 const sessions = ref([])
+const event = ref(null)
 const sessionsLoading = ref(false)
 const filterType = ref("all")
 const showSelectedOnly = ref(false)
@@ -622,8 +623,9 @@ const minStartDateTime = computed(() => {
 onMounted(async () => {
   const event_uuid = route.params.event_uuid
   try {
-    const event = await getEvent(event_uuid)
-    maxSessionsPerUser.value = event.max_sessions_per_user || 0
+    const eventData = await getEvent(event_uuid)
+    event.value = eventData
+    maxSessionsPerUser.value = eventData.max_sessions_per_user || 0
   } catch (err) {
     console.error("Failed to fetch event details:", err)
   }
