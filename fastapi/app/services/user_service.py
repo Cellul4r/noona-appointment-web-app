@@ -14,6 +14,7 @@ from app.dependencies.supabase import get_supabase
 from supabase import Client
 from app.config import settings
 
+
 class UserService:
 
     def get_user_by_email(self, email: str, db: Session) -> User | None:
@@ -40,18 +41,18 @@ class UserService:
             full_name=user.full_name,
             password_hash=hash_password(user.password),
             profile_image=settings.default_profile_image_url,
-            timezone=user.timezone
+            timezone=user.timezone,
         )
 
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         return new_user
-    
+
     def gen_avatar_url(self, full_name: str) -> str:
-      
+
         bgcolor = secrets.token_hex(3)
-        color = hex(int('0xffffff', 0) - int('0x' + bgcolor, 0)).replace('0x', '')
+        color = hex(int("0xffffff", 0) - int("0x" + bgcolor, 0)).replace("0x", "")
         lname = ""
         temp = full_name.split()
         fname = temp[0][0] if temp else ""
@@ -78,7 +79,9 @@ class UserService:
             return existing_oauth_user.user
 
         if oauth_user.provider == "google":
-            full_name = oauth_user.first_name + " " + oauth_user.last_name
+            full_name = oauth_user.first_name + " " + (oauth_user.last_name or "")
+            if not full_name:
+                full_name = "Annonymous"
         elif oauth_user.provider == "github":
             full_name = oauth_user.display_name
         else:
@@ -115,7 +118,9 @@ class UserService:
         db.refresh(existing_user)
         return existing_user
 
-    def update_user_settings(self, db: Session, user_id: int, user_update: UserUpdate) -> UserPrivate:
+    def update_user_settings(
+        self, db: Session, user_id: int, user_update: UserUpdate
+    ) -> UserPrivate:
         user = db.execute(select(User).where(User.id == user_id)).scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -150,7 +155,6 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found")
         return user
 
-
     def unlink_oauth_account(self, db: Session, user_id: int, provider: str) -> None:
         user = db.execute(select(User).where(User.id == int(user_id))).scalars().first()
         if not user:
@@ -166,20 +170,28 @@ class UserService:
             .first()
         )
         if not oauth_account:
-            raise HTTPException(status_code=404, detail=f"No linked {provider} account found")
+            raise HTTPException(
+                status_code=404, detail=f"No linked {provider} account found"
+            )
 
         oauth_count = db.execute(
-            select(func.count()).select_from(OAuthUser).where(OAuthUser.user_id == int(user_id))
+            select(func.count())
+            .select_from(OAuthUser)
+            .where(OAuthUser.user_id == int(user_id))
         ).scalar()
 
         if not user.password_hash and oauth_count <= 1:
-            raise HTTPException(status_code=400, detail="You cannot unlink Google because it is your only way to sign in. Please set a password or link another account first.")
+            raise HTTPException(
+                status_code=400,
+                detail="You cannot unlink Google because it is your only way to sign in. Please set a password or link another account first.",
+            )
 
         db.delete(oauth_account)
         db.commit()
 
     def set_verified(self, user: User, db: Session):
         pass
+
 
 class OAuthProvider(str, Enum):
     google = "google"
