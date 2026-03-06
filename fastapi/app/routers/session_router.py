@@ -28,6 +28,9 @@ from app.services.notification_service import NotificationService
 import uuid
 
 from app.services.user_service import UserService
+from fastapi.app.models import user
+
+from fastapi.app.services import user_service
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
@@ -233,11 +236,14 @@ def unregister_user_from_session(
     )
     if removed_registration_status == RegistrationStatus.CONFIRMED:
         notification_service.dequeue_session_reminder_jobs(user_id, session.id)
-    notification_service.enqueue_registered_removed_by_host_job(
-        user_id=user_id,
-        session_id=session.id,
-        registration_status=removed_registration_status,
-    )
+    user_service = UserService()
+    user = user_service.get_user_settings(db, user_id)
+    if user.email_notifications:
+        notification_service.enqueue_registered_removed_by_host_job(
+            user_id=user_id,
+            session_id=session.id,
+            registration_status=removed_registration_status,
+        )
 
 
 @router.patch(

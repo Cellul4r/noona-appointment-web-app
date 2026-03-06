@@ -257,7 +257,9 @@ class EventService:
                     SessionModel,
                     SessionModel.id == SessionRegistration.session_id,
                 )
+                .join(User, User.id == SessionRegistration.user_id)
                 .where(SessionModel.event_id == old_ev.id)
+                .where(User.email_notifications.is_(True))
                 .distinct()
             )
             .scalars()
