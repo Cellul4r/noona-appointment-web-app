@@ -606,7 +606,7 @@ const eventTimezone = computed(() => timezoneLabel.value)
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 const formatTime = (date) => {
-  return format(new TZDate(date, eventTimezone.value), "HH:mm")
+  return format(new TZDate(date, eventTimezone.value), "h:mm a")
 }
 
 const formatDate = (date) => {
