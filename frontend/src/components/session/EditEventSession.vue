@@ -721,7 +721,7 @@ function addSession() {
 function saveEdit() {
   if (!newSession.value.start || !newSession.value.end) return alert("Please provide both start and end times.")
   if (newSession.value.start >= newSession.value.end) return alert("End time must be after start time.")
-  if (newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
+  if (newSession.value.capacity != null && newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
   
   props.sessions.splice(editingIndex.value, 0, { 
     ...newSession.value,
