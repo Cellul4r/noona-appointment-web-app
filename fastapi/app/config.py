@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app.db"  # Default; overridden by .env
     use_supabase: bool = False
     supabase_db_url: Optional[str] = None
+    supabase_url: Optional[str] = None
+    supabase_key: Optional[str] = None
 
     @validator("database_url", pre=True, always=True)
     def check_supabase_url(cls, v, values):
