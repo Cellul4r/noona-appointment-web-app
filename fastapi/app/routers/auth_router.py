@@ -95,6 +95,7 @@ def verify_email(
 
     logger.info(f"Email verified for: {auth_token.email}")
 
+<<<<<<< HEAD
     registration_jwt = create_access_token(
         data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30)
     )
@@ -103,6 +104,13 @@ def verify_email(
             "message": "Email verified successfully. You can now complete your registration."
         }
     )
+=======
+    registration_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
+    response = JSONResponse(content={
+        "message": "Email verified successfully. You can now complete your registration.",
+        "email": auth_token.email,
+    })
+>>>>>>> 8826bdc (fix; add email)
     auth_service.attach_token_cookie(response, registration_jwt, "registration_jwt")
     return response
 
@@ -202,6 +210,7 @@ def verify_password_reset_token(
 
     logger.info(f"Email verified for: {auth_token.email}")
 
+<<<<<<< HEAD
     password_reset_jwt = create_access_token(
         data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30)
     )
@@ -210,6 +219,13 @@ def verify_password_reset_token(
             "message": "Email verified successfully. You can now reset your password."
         }
     )
+=======
+    password_reset_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
+    response = JSONResponse(content={
+        "message": "Email verified successfully. You can now reset your password.",
+        "email": auth_token.email
+    })
+>>>>>>> 8826bdc (fix; add email)
     auth_service.attach_token_cookie(response, password_reset_jwt, "password_reset_jwt")
     return response
 
