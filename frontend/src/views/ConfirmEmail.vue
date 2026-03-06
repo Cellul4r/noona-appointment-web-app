@@ -71,16 +71,13 @@
             </div>
 
             <!-- Title -->
-            <h1 class="text-xl md:text-4xl font-bold mb-3 transition-all duration-300"
-              :class="isVerified ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'">
-              {{ isVerified ? '✓ Email Verified!' : 'Verify Your Email' }}
+            <h1 class="text-xl text-black md:text-4xl font-bold mb-3 transition-all duration-300">
+              Verify Your Email
             </h1>
 
             <!-- Subtitle -->
             <p class="text-slate-600 dark:text-slate-400 text-base md:text-lg leading-relaxed mb-8 px-2">
-              {{ isVerified
-                ? 'Your account is now fully active. Welcome to the family! 🎉'
-                : 'We sent a verification link to your email. Click the button below to activate your account.' }}
+              We sent a verification link to your email. Click the button below to activate your account.
             </p>
 
             <!-- Error Message -->
@@ -93,68 +90,25 @@
                 </p>
               </div>
             </transition>
-
-            <!-- Success Message -->
-            <transition name="slide-fade">
-              <div v-if="isVerified"
-                class="mb-6 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-lg">
-                <p class="text-emerald-700 dark:text-emerald-400 text-sm font-medium flex items-start gap-2">
-                  <span class="material-symbols-outlined text-base flex-shrink-0 mt-0.5">task_alt</span>
-                  <span>Your email has been successfully verified. You're all set!</span>
-                </p>
-              </div>
-            </transition>
-
-            <!-- Verify Button (if not verified) -->
-            <template v-if="!isVerified">
-              <button @click="handleVerify" :disabled="loading || !token"
-                class="w-full h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-lg font-bold shadow-lg shadow-indigo-400/40 hover:shadow-xl hover:shadow-indigo-400/50 hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mb-4 group">
-                <span class="transition-transform group-hover:scale-110">
-                  <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                  <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                    </path>
-                  </svg>
-                </span>
-                <span>{{ loading ? 'Verifying...' : 'Verify Email' }}</span>
-              </button>
-            </template>
-
-            <!-- Continue Button (if verified) -->
-            <template v-else>
-              <button @click="goCreateAccount"
-                class="w-full h-14 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-lg font-bold shadow-lg shadow-emerald-400/40 hover:shadow-xl hover:shadow-emerald-400/50 hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 flex items-center justify-center gap-2 group">
-                <span class="transition-transform group-hover:translate-x-1">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6">
-                    </path>
-                  </svg>
-                </span>
-                Continue to Create Account
-              </button>
-            </template>
-
+            
+            <button @click="handleVerify" :disabled="loading || !token"
+              class="w-full h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-lg font-bold shadow-lg shadow-indigo-400/40 hover:shadow-xl hover:shadow-indigo-400/50 hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mb-4 group">
+              <span class="transition-transform group-hover:scale-110">
+                <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+              </span>
+              <span>{{ loading ? 'Verifying...' : 'Verify Email' }}</span>
+            </button>
           </div>
 
         </div>
-
-        <!-- Help Text -->
-        <!-- <div class="mt-8 text-center">
-          <p class="text-slate-600 dark:text-slate-400 text-sm">
-            Didn't receive the email?
-            <button
-              @click="resendEmail"
-              :disabled="resendLoading"
-              class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors disabled:opacity-50">
-              {{ resendLoading ? 'Sending...' : 'Resend verification' }}
-            </button>
-          </p>
-        </div> -->
-
       </div>
 
     </main>
@@ -174,20 +128,13 @@
 <script setup>
 import { ref, onMounted } from "vue"
 import { useRouter } from "vue-router"
-import { verifyEmail, saveToken } from "@/services/auth"
-import { useAuthStore } from "@/store/authStore"
+import { verifyEmail } from "@/services/auth"
 
 const router = useRouter()
-const auth = useAuthStore()
 const token = ref("")
 const loading = ref(false)
-const resendLoading = ref(false)
 const isVerified = ref(false)
 const errorMsg = ref("")
-
-const goCreateAccount = () => {
-  router.push("/create-account")
-}
 
 async function handleVerify() {
   if (!token.value) {
@@ -198,39 +145,17 @@ async function handleVerify() {
   try {
     loading.value = true
     errorMsg.value = ""
-    const response = await verifyEmail(token.value)
+    await verifyEmail(token.value)
+    router.push("/create-account")
 
-    if (response && response.access_token) {
-      saveToken(response.access_token)
-      await auth.login()
-      isVerified.value = true
-      // Auto-redirect to create account page after 2 seconds
-      setTimeout(() => {
-        goCreateAccount()
-      }, 2000)
-    }
+
   } catch (error) {
     errorMsg.value =
       error?.response?.data?.detail ||
       "Verification failed. Invalid or expired token."
-    token.value = ""
+
   } finally {
     loading.value = false
-  }
-}
-
-async function resendEmail() {
-  try {
-    resendLoading.value = true
-    // Call your resend email endpoint here
-    // await resendVerificationEmail()
-    errorMsg.value = ""
-    // Show success message
-    alert("Verification email has been resent! Check your inbox.")
-  } catch (error) {
-    errorMsg.value = "Failed to resend email. Please try again later."
-  } finally {
-    resendLoading.value = false
   }
 }
 
