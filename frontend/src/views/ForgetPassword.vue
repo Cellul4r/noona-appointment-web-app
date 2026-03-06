@@ -1,5 +1,16 @@
 <template>
-    <div class="min-h-screen flex flex-col bg-white text-slate-900">
+    <div class="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 text-slate-900 relative overflow-hidden">
+
+        <!-- Decorative background elements -->
+        <div
+            class="absolute top-0 left-0 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob">
+        </div>
+        <div
+            class="absolute top-0 right-0 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000">
+        </div>
+        <div
+            class="absolute bottom-0 left-1/2 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000">
+        </div>
 
         <!-- Center -->
         <div class="flex-grow flex items-center justify-center px-6 py-12">
@@ -84,13 +95,6 @@
             </div>
         </div>
 
-        <!-- Background Blur -->
-        <div class="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-            <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
-            <div class="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full">
-            </div>
-        </div>
-
     </div>
 </template>
 
@@ -135,5 +139,35 @@ async function handlePasswordResetToken() {
 
 .text-primary {
     color: var(--primary);
+}
+
+@keyframes blob {
+    0% {
+        transform: translate(0px, 0px) scale(1);
+    }
+
+    33% {
+        transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
+    }
+
+    100% {
+        transform: translate(0px, 0px) scale(1);
+    }
+}
+
+.animate-blob {
+    animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+    animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+    animation-delay: 4s;
 }
 </style>
