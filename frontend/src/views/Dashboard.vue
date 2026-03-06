@@ -46,8 +46,9 @@
 
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div v-for="event in recentEvents" :key="event.id"
+            @click="event.event_uuid && goToOverview(event.event_uuid)"
             :class="[
-              'card shadow-sm border hover:shadow-md transition-shadow',
+              'card shadow-sm border hover:shadow-md transition-shadow cursor-pointer',
               event.is_draft ? 'bg-base-300 border-base-content/10' : 'bg-base-100 border-base-200'
             ]">
             <div class="card-body p-5 flex flex-col h-full">
@@ -442,6 +443,7 @@ const fetchDashboardData = async () => {
     const eventsRes = await getAllEvents({ size: 3, sort: 'updated_at_desc' });
     recentEvents.value = (eventsRes.items || []).map(e => ({
       id: e.id,
+      event_uuid: e.share_uuid,
       title: e.title,
       is_draft: e.is_draft,
       updated_at: e.updated_at,
