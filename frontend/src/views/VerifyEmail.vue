@@ -80,7 +80,9 @@
               v-model="email" 
               type="email" 
               placeholder="hello@example.com"
+              :readonly="isEmailLocked"
               class="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-300 text-gray-700 placeholder-gray-400"
+              :class="isEmailLocked ? 'bg-gray-50 cursor-not-allowed' : ''"
             />
           </div>
 
@@ -161,16 +163,16 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useAuthStore } from "@/store/authStore";
 import { loginWithGoogle, loginWithGithub, requestSignUp, verifyEmail } from "@/services/auth";
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
-const auth = useAuthStore();
 const email = ref("");
 const token = ref("");
 const hasToken = ref(false);
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
+const isEmailLocked = ref(false);
 
 function checkTokenFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -187,19 +189,15 @@ async function handleVerifyToken() {
 
   try {
     loading.value = true;
-    // POST the token to the backend to verify email
     const response = await verifyEmail(token.value);
-    
-    // Extract JWT from response and store it
-    if (response && response.access_token) {
-      auth.login(response.access_token);
+
+    const verifiedEmail = typeof response?.email === "string" ? response.email : "";
+
+    if (verifiedEmail) {
+      router.push({ path: "/create-account", query: { email: verifiedEmail } });
+    } else {
+      router.push("/create-account");
     }
-    
-    // Clear token from URL
-    window.history.replaceState({}, document.title, "/events");
-    
-    // Redirect to events or dashboard
-    router.push("/events");
   } catch (error) {
     const errMsg = 
       error?.response?.data?.detail || 
@@ -222,7 +220,10 @@ async function handleContinue() {
   try {
     loading.value = true;
     await requestSignUp(email.value);
-    router.push("/email-sent");
+    router.push({
+      path: "/email-sent",
+      query: { email: email.value }
+    });
   } catch (error) {
     const detail =
       typeof error?.response?.data?.detail === "string"
@@ -236,6 +237,12 @@ async function handleContinue() {
 
 onMounted(() => {
   checkTokenFromUrl();
+
+  const queryEmail = route.query.email;
+  if (typeof queryEmail === "string" && queryEmail.trim()) {
+    email.value = queryEmail;
+    isEmailLocked.value = true;
+  }
 });
 </script>
 

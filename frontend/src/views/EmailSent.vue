@@ -67,11 +67,17 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router"
+import { useRouter, useRoute } from "vue-router"
 
 const router = useRouter()
+const route = useRoute()
 
 const goBack = () => {
+    const emailQuery = route.query.email
+    if (typeof emailQuery === "string" && emailQuery.trim()) {
+        router.push({ path: "/verify-email", query: { email: emailQuery } })
+        return
+    }
     router.push("/verify-email")
 }
 

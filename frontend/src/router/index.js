@@ -15,7 +15,9 @@ import EventRegistration from '../views/EventRegistration.vue';
 import CreateAccount from '../views/CreateAccount.vue';
 import VerifyEmail from '../views/VerifyEmail.vue';
 import EmailSent from '../views/EmailSent.vue';
-
+import ForgetPassword from '../views/ForgetPassword.vue';
+import EventSentResetPassword from '../views/EventSentResetPassword.vue';
+import CreateNewPassword from '../views/CreateNewPassword.vue';
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
   { path: "/login-success", name: 'LoginSuccess', component: LoginSuccess, meta: { hideNavbar: true } }, // Handles token parsing
@@ -93,6 +95,24 @@ const routes = [
     path: '/email-sent',
     name: 'EmailSent',
     component: EmailSent,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgetPassword',
+    component: ForgetPassword,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/event-sent-reset-password',
+    name: 'EventSentResetPassword',
+    component: EventSentResetPassword,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/reset-password',
+    name: 'CreateNewPassword',
+    component: CreateNewPassword,
     meta: { hideNavbar: true }
   },
   {

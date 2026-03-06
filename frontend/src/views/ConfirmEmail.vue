@@ -71,8 +71,8 @@
             </div>
 
             <!-- Title -->
-            <h1 class="text-xl text-black md:text-4xl font-bold mb-3 transition-all duration-300">
-              Verify Your Email
+            <h1 class="text-xl text-black md:text-3xl font-bold mb-3 transition-all duration-300">
+              Confirm Verify Your Email
             </h1>
 
             <!-- Subtitle -->
@@ -90,7 +90,7 @@
                 </p>
               </div>
             </transition>
-            
+
             <button @click="handleVerify" :disabled="loading || !token"
               class="w-full h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-lg font-bold shadow-lg shadow-indigo-400/40 hover:shadow-xl hover:shadow-indigo-400/50 hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mb-4 group">
               <span class="transition-transform group-hover:scale-110">
@@ -145,8 +145,14 @@ async function handleVerify() {
   try {
     loading.value = true
     errorMsg.value = ""
-    await verifyEmail(token.value)
-    router.push("/create-account")
+    const response = await verifyEmail(token.value)
+    const verifiedEmail = typeof response?.email === "string" ? response.email : ""
+
+    if (verifiedEmail) {
+      router.push({ path: "/create-account", query: { email: verifiedEmail } })
+    } else {
+      router.push("/create-account")
+    }
 
 
   } catch (error) {

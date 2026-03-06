@@ -33,6 +33,8 @@
               v-model="email"
               placeholder="Janny_games@example.com"
               class="w-full input validator"
+              :readonly="isEmailLocked"
+              :class="isEmailLocked ? 'bg-gray-100 cursor-not-allowed' : ''"
               required 
             />
             </div>
@@ -101,21 +103,31 @@
 
 
 <script>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
 import { loginWithGoogle, loginWithGithub } from "@/services/auth";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 export default {
   setup() {
     const auth = useAuthStore();
     const router = useRouter();
+    const route = useRoute();
     
     const fullname = ref("");
     const email = ref("");
     const password = ref("");
     const confirmPassword = ref("");
     const loading = ref(false);
+    const isEmailLocked = ref(false);
+
+    onMounted(() => {
+      const queryEmail = route.query.email;
+      if (typeof queryEmail === "string" && queryEmail.trim()) {
+        email.value = queryEmail;
+        isEmailLocked.value = true;
+      }
+    });
 
     async function goToLogin() {
       router.push("/login");
@@ -166,6 +178,7 @@ export default {
       auth,
       fullname,
       email,
+      isEmailLocked,
       password,
       confirmPassword,
       loading,

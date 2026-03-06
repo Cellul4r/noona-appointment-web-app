@@ -104,7 +104,7 @@ export default {
       }
     }
     async function goToSignup() {
-      router.push("/signup");
+      router.push("/verify-email");
     }
 
     async function handleLogin() {

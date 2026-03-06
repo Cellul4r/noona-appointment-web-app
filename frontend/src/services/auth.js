@@ -85,6 +85,26 @@ export async function verifyEmail(token) {
   return res.data;
 }
 
+export async function forgotPassword(email) {
+  const res = await axios.post(`${API_URL}/auth/request/password-reset`, null, {
+    params: { email },
+  });
+  return res.data;
+}
+
+export async function createNewPassword(token) {
+  const res = await axios.post(`${API_URL}/auth/verify-password-reset-token`, null, {
+    params: { token },
+  });
+  return res.data;
+}
+
+export async function resetPassword(new_password) {
+  const res = await axios.post(`${API_URL}/auth/reset-password`, null, {
+    params: { new_password },
+  });
+  return res.data;
+}
 // Logout & Clear JWT
 export async function logout() {
   setCsrfToken(null);
