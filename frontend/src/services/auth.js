@@ -1,5 +1,4 @@
 import axios from "axios";
-import VueCookies from "vue-cookies";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
 let csrfToken = null;
