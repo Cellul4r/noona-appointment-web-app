@@ -19,15 +19,15 @@
                     </div>
 
                     <div v-else
-                        class="card bg-base-100 border border-gray-200 shadow-lg rounded-2xl wrap-break-word lg:sticky lg:top-24">
+                        class="card bg-base-100 border border-gray-200 shadow-lg rounded-2xl wrap-anywhere lg:sticky lg:top-24">
                         <div class="card-body gap-5">
 
-                            <h2 class="card-title text-xl wrap-break-word leading-tight">
+                            <h2 class="card-title text-xl wrap-anywhere leading-tight">
                                 {{ event.title }}
                             </h2>
 
                             <div class="space-y-3 text-base">
-                                <p v-if="event.location" class="flex items-start gap-2">
+                                <p v-if="event.location" class="flex items-start gap-2 min-w-0">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                         stroke-width="1.5" stroke="currentColor"
                                         class="size-5 shrink-0 mt-0.5 text-primary">
@@ -36,7 +36,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round"
                                             d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                                     </svg>
-                                    <span>{{ event.location }}</span>
+                                    <span class="wrap-anywhere">{{ event.location }}</span>
                                 </p>
 
                                 <div class="flex items-center gap-2">
@@ -50,7 +50,7 @@
 
                             <div v-if="event.description" class="divider my-0"></div>
 
-                            <div v-if="event.description" class="text-base wrap-break-word">
+                            <div v-if="event.description" class="text-base wrap-anywhere">
                                 <h3 class="font-semibold mb-2 text-base-content">Event Description</h3>
                                 <p class="opacity-80 leading-relaxed">
                                     {{ event.description }}
