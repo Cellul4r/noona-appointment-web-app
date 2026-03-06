@@ -46,7 +46,10 @@
 
         <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div v-for="event in recentEvents" :key="event.id"
-            class="card bg-base-100 shadow-sm border border-base-200 hover:shadow-md transition-shadow">
+            :class="[
+              'card shadow-sm border hover:shadow-md transition-shadow',
+              event.is_draft ? 'bg-base-300 border-base-content/10' : 'bg-base-100 border-base-200'
+            ]">
             <div class="card-body p-5 flex flex-col h-full">
 
               <h3 class="card-title text-xl font-bold leading-7 h-[3.5rem] overflow-hidden break-words m-0 p-0"
@@ -55,6 +58,9 @@
               </h3>
 
               <div class="flex items-center gap-1.5 text-sm text-base-content/70 mt-2">
+                <svg v-if="event.location" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4 shrink-0" aria-hidden="true">
+                  <path d="M12,.042a9.992,9.992,0,0,0-9.981,9.98c0,2.57,1.99,6.592,5.915,11.954a5.034,5.034,0,0,0,8.132,0c3.925-5.362,5.915-9.384,5.915-11.954A9.992,9.992,0,0,0,12,.042ZM12,14a4,4,0,1,1,4-4A4,4,0,0,1,12,14Z" fill="#b8b8b8"/>
+                </svg>
                 <span class="truncate">{{ event.location || 'Online / TBD' }}</span>
               </div>
 
@@ -67,7 +73,7 @@
                 </div>
                 <div class="flex flex-col gap-1 text-right items-end">
                   <span class="uppercase tracking-wider font-bold opacity-60">Status</span>
-                  <div v-if="event.is_draft" class="badge badge-warning gap-1 shrink-0 mt-1">
+                  <div v-if="event.is_draft" class="badge badge-ghost gap-1 shrink-0 mt-1 opacity-80">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
                       <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                     </svg>
@@ -75,7 +81,7 @@
                   </div>
                   <div v-else class="badge badge-success gap-1 shrink-0 mt-1">
                     <span class="w-1.5 h-1.5 rounded-full bg-green-50 inline-block animate-pulse"></span>
-                    Live
+                    Active
                   </div>
                 </div>
               </div>
@@ -90,11 +96,11 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- SECTION 2: WAIT LIST SESSIONS              -->
+      <!-- SECTION 2: WAITLIST SESSIONS              -->
       <!-- ========================================== -->
       <section class="bg-base-100 rounded-box shadow-sm border border-base-200 overflow-hidden">
         <div class="p-5 border-b border-base-200 bg-base-100 flex items-center gap-2">
-          <h2 class="text-lg font-bold">Wait List Sessions</h2>
+          <h2 class="text-lg font-bold">Waitlist Sessions</h2>
         </div>
 
         <div class="overflow-x-auto">
