@@ -1,6 +1,6 @@
 import secrets
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from fastapi_sso import OpenID
 from sqlalchemy import func, select, Enum
 
@@ -12,6 +12,7 @@ from app.models.oauth_user import OAuthUser
 from app.services.storage_service import upload_user_profile_image
 from app.dependencies.supabase import get_supabase
 from supabase import Client
+from app.config import settings
 
 class UserService:
 
@@ -34,12 +35,11 @@ class UserService:
         )
 
     def create_user(self, user: UserCreate, db: Session) -> User:
-        default_avatar = self.gen_avatar_url(user.full_name)
         new_user = User(
             email=user.email,
             full_name=user.full_name,
             password_hash=hash_password(user.password),
-            profile_image=default_avatar,
+            profile_image=settings.default_profile_image_url,
             timezone=user.timezone
         )
 
@@ -94,7 +94,7 @@ class UserService:
 
         # user never linked with this OAuth Account
         if not existing_user:
-            avatar = oauth_user.picture or self.gen_avatar_url(oauth_user.email or "", full_name)
+            avatar = oauth_user.picture or settings.default_profile_image_url
             existing_user = User(
                 email=oauth_user.email,
                 full_name=full_name,
