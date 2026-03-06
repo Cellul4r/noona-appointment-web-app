@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
     bucket_name: Optional[str] = None
+    default_profile_image_url: str = "https://cdn-icons-png.flaticon.com/512/149/149071.png"
 
     @validator("database_url", pre=True, always=True)
     def check_supabase_url(cls, v, values):
