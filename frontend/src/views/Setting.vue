@@ -21,7 +21,7 @@
       <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
         <div class="flex flex-col gap-1 border-b border-base-300 pb-4">
           <h3 class="text-base-content text-lg font-bold">
-            Profile Image
+            Profile Picture
           </h3>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-6">
@@ -49,7 +49,6 @@
             </div>
           </div>
           <div class="form-control gap-1 w-full sm:max-w-xs">
-            <label class="label py-0"><span class="label-text font-semibold">Profile Image</span></label>
             <input
               ref="profileImageInput"
               type="file"
@@ -65,7 +64,7 @@
             >
               Remove
             </button>
-            <p class="text-xs text-base-content/60">Allowed file types: JPG, JPEG, PNG</p>
+            <p class="text-xs mt-2 text-base-content/60">Allowed file types: JPG, JPEG, PNG</p>
           </div>
         </div>
       </section>
@@ -373,6 +372,9 @@ export default {
         "dim",
         "nord",
         "sunset",
+        "silk",
+        "caramellatte",
+        "winter"
       ],
 
       isSuccess: false,
