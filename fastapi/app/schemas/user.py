@@ -1,4 +1,5 @@
 import email
+from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from pydantic_extra_types.timezone_name import TimeZoneName
 

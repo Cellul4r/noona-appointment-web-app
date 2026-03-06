@@ -9,6 +9,9 @@ from app.schemas.user import UserCreate, UserPrivate, UserUpdate
 from app.models import User
 from app.security import hash_password
 from app.models.oauth_user import OAuthUser
+from app.services.storage_service import upload_user_profile_image
+from app.dependencies.supabase import get_supabase
+from supabase import Client
 
 class UserService:
 

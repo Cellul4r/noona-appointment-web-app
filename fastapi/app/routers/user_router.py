@@ -117,13 +117,21 @@ def unlink_account(
     user_service.unlink_oauth_account(db, current_user.id, provider)
     return {"success": True, "message": f"{provider} account unlinked successfully"}
 
-@router.post("/profile-image")
-def upload_profile_image(
+@router.patch("/profile-image", response_model=UserPrivate, dependencies=[Depends(csrf_protect)])
+def update_profile_image(
     supabase: Annotated[Client, Depends(get_supabase)],
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     file: UploadFile = File(...)
 ):
     public_url = upload_user_profile_image(current_user.id, file, supabase)
+    
+    try:
+        current_user.profile_image = public_url
+        db.commit()
+        db.refresh(current_user)
+    except Exception as e:
+        logger.error(f"Error updating user profile image URL in database: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update profile image URL in database")
 
-    return {"message": "Success", "url": public_url}
+    return current_user
