@@ -27,6 +27,8 @@ from app.services.notification_service import NotificationService
 
 import uuid
 
+from app.services.user_service import UserService
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # Set this logger to DEBUG
 
@@ -139,7 +141,9 @@ def register_session(
     )
 
     # Queue notification job for reminder the user
-    if len(reminder_minutes_before) > 0:
+    user_service = UserService()
+    user = user_service.get_user_settings(db, current_user.id)
+    if user.email_notifications and len(reminder_minutes_before) > 0:
         notification_service.enqueue_session_reminder_job(
             current_user.id, session.id, session.start_datetime, reminder_minutes_before
         )
@@ -164,7 +168,9 @@ def confirm_session(
     )
 
     # Queue notification job for reminder the user
-    if len(reminder_minutes_before) > 0:
+    user_service = UserService()
+    user = user_service.get_user_settings(db, current_user.id)
+    if user.email_notifications and len(reminder_minutes_before) > 0:
         notification_service.enqueue_session_reminder_job(
             current_user.id, session.id, session.start_datetime, reminder_minutes_before
         )
