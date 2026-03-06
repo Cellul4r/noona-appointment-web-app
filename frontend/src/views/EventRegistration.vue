@@ -197,13 +197,10 @@ import { useRoute, useRouter } from "vue-router"
 import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
-import { useAuthStore } from "@/store/authStore"
-import { TZDate } from '@date-fns/tz'
 import EventRegistrationCard from "@/components/session/EventRegistrationCard.vue"
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
 const nextCursor = ref(null)
 const sessions = ref([])
 const sessionsLoading = ref(false)
@@ -254,19 +251,6 @@ const formatReminderOption = (minute) => {
   if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} before`
   return `${minutes} minute${minutes > 1 ? "s" : ""} before`
 }
-
-const timezoneLabel = computed(() =>
-  authStore.user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
-)
-const eventTimezone = computed(() => timezoneLabel.value)
-
-const minStartDateTime = computed(() => {
-  const nowTz = new TZDate(new Date(), eventTimezone.value)
-
-  const pad = (n) => String(n).padStart(2, "0")
-
-  return `${nowTz.getFullYear()}-${pad(nowTz.getMonth() + 1)}-${pad(nowTz.getDate())}T${pad(nowTz.getHours())}:${pad(nowTz.getMinutes())}`
-})
 
 const reminderSummaryText = computed(() => {
   const firstText = formatReminderOption(firstAlertMinutes.value)
@@ -607,15 +591,11 @@ async function loadMore() {
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
-const formatDate = (date) => {
-  const tzDate = new TZDate(new Date(date), eventTimezone.value)
-  return tzDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-}
+const formatDate = (date) =>
+  new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 
-const formatTime = (date) => {
-  const tzDate = new TZDate(new Date(date), eventTimezone.value)
-  return tzDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
-}
+const formatTime = (date) =>
+  new Date(date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
 
 onMounted(async () => {
   const event_uuid = route.params.event_uuid

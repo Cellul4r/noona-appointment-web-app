@@ -12,6 +12,7 @@ import NotFound from '../views/NotFound.vue';
 import { useAuthStore } from '../store/authStore';
 import LoginSuccess from '../views/LoginSuccess.vue';
 import EventRegistration from '../views/EventRegistration.vue';
+import VarifyEmail from '../views/VarifyEmail.vue';
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
@@ -80,6 +81,12 @@ const routes = [
     component: NotFound,
     meta: { hideNavbar: true }
     // catch-all route, should be last in the list
+  },
+  {
+    path: '/varify-email',
+    name: 'VarifyEmail',
+    component: VarifyEmail,
+    meta: { requiresAuth: true, hideNavbar: true }
   }
 ];
 
