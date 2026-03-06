@@ -132,6 +132,6 @@ def update_profile_image(
         db.refresh(current_user)
     except Exception as e:
         logger.error(f"Error updating user profile image URL in database: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update profile image URL in database")
+        raise HTTPException(status_code=500, detail="Failed to update profile image")
 
     return current_user
