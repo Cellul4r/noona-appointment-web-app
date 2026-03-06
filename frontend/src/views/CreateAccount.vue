@@ -105,7 +105,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle, loginWithGithub } from "@/services/auth";
+import { loginWithGoogle, loginWithGithub, signup } from "@/services/auth";
 import { useRouter, useRoute } from "vue-router";
 
 export default {
@@ -142,30 +142,23 @@ export default {
       try {
         loading.value = true;
 
-        const signupRes = await fetch("http://localhost:56733/auth/signup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            full_name: fullname.value,
-            email: email.value,
-            password: password.value,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-          })
+        await signup({
+          full_name: fullname.value,
+          email: email.value,
+          password: password.value,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
 
-        const signupData = await signupRes.json();
-      
-        if (!signupRes.ok) {
-          throw new Error(signupData.detail || "Signup failed");
-        }
         alert("Account created successfully!");
         router.push("/login");
 
       } catch (error) {
         console.error("Signup error:", error);
-        alert(error.message);
+        const detail =
+          typeof error?.response?.data?.detail === "string"
+            ? error.response.data.detail
+            : error?.message || "Signup failed";
+        alert(detail);
       } finally {
         loading.value = false;
       }
