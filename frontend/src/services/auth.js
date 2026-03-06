@@ -34,6 +34,11 @@ export async function requestSignUp(email) {
   return res.data;
 }
 
+export async function signup(payload) {
+  const res = await axios.post(`${API_URL}/auth/signup`, payload);
+  return res.data;
+}
+
 export function getCsrfToken() {
   return csrfToken;
 }
