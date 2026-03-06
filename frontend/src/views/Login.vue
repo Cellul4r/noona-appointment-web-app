@@ -35,6 +35,10 @@
             <br/>At least one uppercase letter
           </p>
 
+          <p v-if="errorMessage" class="text-error text-sm">
+            {{ errorMessage }}
+          </p>
+
             <!-- <label class="flex items-center gap-2 text-sm">
               <input type="checkbox" class="checkbox checkbox-success" v-model="remember" />
               Remember me
@@ -88,6 +92,7 @@ export default {
     const password = ref("");
     const router = useRouter();
     const loading = ref(false);
+    const errorMessage = ref("");
 
     function saveTokenFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -105,6 +110,7 @@ export default {
     async function handleLogin() {
       try {
         loading.value = true;
+        errorMessage.value = "";
 
         const formData = new URLSearchParams();
         formData.append("username", email.value);
@@ -120,7 +126,21 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error("Login failed");
+          const payload = await response.json().catch(() => null);
+          const detail = typeof payload?.detail === "string"
+            ? payload.detail
+            : Array.isArray(payload?.detail)
+              ? payload.detail.map((item) => item?.msg).filter(Boolean).join(", ")
+              : "";
+
+          if (response.status === 401) {
+            throw new Error(detail || "Invalid email or password.");
+          }
+          if (response.status === 422) {
+            throw new Error(detail || "Please check your email and password format.");
+          }
+
+          throw new Error(detail || "Unable to log in right now. Please try again.");
         }
 
         // หลัง login สำเร็จ → ดึง user
@@ -134,8 +154,7 @@ export default {
         router.replace("/events");
 
       } catch (error) {
-        alert("Don'i have an account, login first.");
-        router.push("/signup");
+        errorMessage.value = error?.message || "Unable to log in right now. Please try again.";
       } finally {
         loading.value = false;
       }
@@ -151,6 +170,7 @@ export default {
       auth,
       email,
       password,
+      errorMessage,
       loading,
       handleLogin,
       goToSignup,
