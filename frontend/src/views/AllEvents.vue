@@ -301,8 +301,7 @@ const loadMore = () => {
 };
 
 const createEvent = () => {
-  router.push('/event/create');
-  // console.log("Create event clicked");
+  router.push({ name: 'CreateEvents' });
 };
 
 const editEvent = (evt) => {
