@@ -90,8 +90,8 @@ class AuthService:
         db.add(auth_token)
         db.commit()
 
-        # Send the email with the password reset link containing the token
-        reset_link = f"{settings.frontend_base_url}/reset-password?token={token}"
+        # Send the email with the password reset link containing the token and email
+        reset_link = f"{settings.frontend_base_url}/reset-password?token={token}&email={email}"
 
         email_service = EmailService()
 
