@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # fastapi/app/routers/user_router.py
 import logging
-from fastapi import APIRouter, Request, Depends, HTTPException, Body
+from typing import Annotated
+from fastapi import APIRouter, File, Request, Depends, HTTPException, Body, UploadFile
 from fastapi_sso import GithubSSO, GoogleSSO
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from supabase import Client
 
 from app.config import settings
 from app.db import get_db
@@ -12,9 +14,11 @@ from app.dependencies.auth import csrf_protect, get_current_user
 from app.dependencies.sso import get_google_sso, get_github_sso
 from app.models.user import User
 from app.services.user_service import UserService
+from app.services.storage_service import upload_user_profile_image
 from app.schemas.user import UserPrivate, UserUpdate
 from datetime import timedelta
 from app.security import create_access_token, verify_password
+from app.dependencies.supabase import get_supabase
 
 
 logger = logging.getLogger(__name__)
@@ -112,3 +116,14 @@ def unlink_account(
 ):
     user_service.unlink_oauth_account(db, current_user.id, provider)
     return {"success": True, "message": f"{provider} account unlinked successfully"}
+
+@router.post("/profile-image")
+def upload_profile_image(
+    supabase: Annotated[Client, Depends(get_supabase)],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    file: UploadFile = File(...)
+):
+    public_url = upload_user_profile_image(current_user.id, file, supabase)
+
+    return {"message": "Success", "url": public_url}
