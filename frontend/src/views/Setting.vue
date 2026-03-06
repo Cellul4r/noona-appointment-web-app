@@ -1,18 +1,9 @@
 <template>
   <main class="flex-1 overflow-y-auto bg-base-200 p-4 md:p-12 scroll-smooth">
     <div v-if="isSuccess" role="alert" class="alert alert-success mb-4">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0 stroke-current"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <span>Changes saved successfully!</span>
     </div>
@@ -27,239 +18,156 @@
       </div>
 
       <!-- Personal Info -->
-      <section
-        class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6"
-      >
+      <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
         <div class="flex flex-col gap-1 border-b border-base-300 pb-4">
           <!-- <h3 class="text-base-content text-lg font-bold">Profile Picture</h3> -->
-           <h3
-          class="text-base-content text-lg font-bold"
-        >
-          Personal Information
-        </h3>
+          <h3 class="text-base-content text-lg font-bold">
+            Personal Information
+          </h3>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-6">
-          <div
-            class="avatar cursor-pointer group"
-            @click="viewAvatar()"
-          >
+          <div class="avatar cursor-pointer group" @click="viewAvatar()">
             <dialog id="avatar_modal" class="modal">
-              <div
-                class="modal-box w-auto max-w-3xl p-0 overflow-hidden bg-transparent shadow-none"
-              >
+              <div class="modal-box w-auto max-w-3xl p-0 overflow-hidden bg-transparent shadow-none">
                 <form method="dialog">
-                  <button
-                    class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                  >
+                  <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
                     ✕
                   </button>
                 </form>
-                <img
-                  :src="getAvatar()"
-                  alt="Profile picture"
-                  class="w-full h-full object-contain max-h-[90vh] rounded-xl"
-                />
+                <img :src="getAvatar()" alt="Profile picture"
+                  class="w-100 h-100 object-contain max-h-[90vh] rounded-xl" />
               </div>
+              <form method="dialog" class="modal-backdrop">
+                <button>close</button>
+              </form>
             </dialog>
-            <div
-              class="w-24 rounded-full ring-4 ring-base-200 shadow-md relative"
-            >
+            <div class="w-24 rounded-full ring-4 ring-base-200 shadow-md relative">
               <img :src="getAvatar()" alt="Profile picture" />
               <div
-                class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
+                class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <span class="material-symbols-outlined text-white">View</span>
               </div>
             </div>
           </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="form-control gap-1 md:col-span-2">
-            <label class="label py-0"
-              ><span class="label-text font-semibold">Email</span></label
-            >
-            <input
-              class="input input-bordered w-full opacity-50 cursor-not-allowed"
-              disabled
-              type="email"
-              :value="formData.email"
-            />
-          </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-control gap-1 md:col-span-2">
-              <label class="label py-0"
-                ><span class="label-text font-semibold">Full Name</span></label
-              >
-              <input
-                class="input input-bordered w-full"
-                v-model="formData.full_name"
-                type="text"
-              />
+              <label class="label py-0"><span class="label-text font-semibold">Email</span></label>
+              <input class="input input-bordered w-full opacity-50 cursor-not-allowed" disabled type="email"
+                :value="formData.email" />
             </div>
-          </div>
-
-          <div
-            class="grid grid-cols-1 md:grid-cols-2 gap-6"
-            v-if="formData.has_password"
-          >
-            <div class="form-control gap-1 md:col-span-2">
-              <div class="flex justify-between items-end">
-                <label class="label py-0">
-                  <span class="label-text font-semibold">
-                    {{ passwordVerified ? "New Password" : "Password" }}
-                  </span>
-                </label>
-                <button
-                  v-if="!passwordVerified"
-                  type="button"
-                  @click="$refs.passwordModal.showModal()"
-                  class="text-sm font-semibold text-primary hover:underline mb-1"
-                >
-                  Change password
-                </button>
-                <dialog id="my_modal_3" ref="passwordModal" class="modal">
-                  <div class="modal-box flex flex-col gap-6">
-                    <form method="dialog">
-                      <button
-                        class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                      >
-                        ✕
-                      </button>
-                    </form>
-
-                    <div class="flex flex-col items-center gap-4 text-center">
-                      <div class="flex flex-col gap-1">
-                        <h3 class="text-xl font-bold">Verify Identity</h3>
-                        <p class="text-sm text-base-content/60">
-                          For your security, please enter your current password
-                          to continue.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                      <label class="text-sm font-semibold"
-                        >Current Password</label
-                      >
-                      <div class="relative group">
-                        <input
-                          v-model="current_password"
-                          type="password"
-                          class="w-full input"
-                          placeholder="Enter your current password"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      class="btn btn-primary"
-                      @click="verifyPassword"
-                    >
-                      Verify
-                    </button>
-                  </div>
-                </dialog>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="form-control gap-1 md:col-span-2">
+                <label class="label py-0"><span class="label-text font-semibold">Full Name</span></label>
+                <input class="input input-bordered w-full" v-model="formData.full_name" type="text" />
               </div>
+            </div>
 
-              <!-- Locked state -->
-              <input
-                v-if="!passwordVerified"
-                type="password"
-                placeholder="••••••••"
-                class="input input-bordered w-full opacity-50 cursor-not-allowed"
-                disabled
-              />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" v-if="formData.has_password">
+              <div class="form-control gap-1 md:col-span-2">
+                <div class="flex justify-between items-end">
+                  <label class="label py-0">
+                    <span class="label-text font-semibold">
+                      {{ passwordVerified ? "New Password" : "Password" }}
+                    </span>
+                  </label>
+                  <button v-if="!passwordVerified" type="button" @click="$refs.passwordModal.showModal()"
+                    class="text-sm font-semibold text-primary hover:underline mb-1">
+                    Change password
+                  </button>
+                  <dialog id="my_modal_3" ref="passwordModal" class="modal">
+                    <div class="modal-box flex flex-col gap-6">
+                      <form method="dialog">
+                        <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                          ✕
+                        </button>
+                      </form>
 
-              <!-- Unlocked: new password fields -->
-              <template v-else>
-                <input v-model="new_password" type="password" class="w-full input validator" required 
-                  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
-                  title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
+                      <div class="flex flex-col items-center gap-4 text-center">
+                        <div class="flex flex-col gap-1">
+                          <h3 class="text-xl font-bold">Verify Identity</h3>
+                          <p class="text-sm text-base-content/60">
+                            For your security, please enter your current password
+                            to continue.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold">Current Password</label>
+                        <div class="relative group">
+                          <input v-model="current_password" type="password" class="w-full input"
+                            placeholder="Enter your current password" required />
+                        </div>
+                      </div>
+
+                      <button type="button" class="btn btn-primary" @click="verifyPassword">
+                        Verify
+                      </button>
+                    </div>
+                  </dialog>
+                </div>
+
+                <!-- Locked state -->
+                <input v-if="!passwordVerified" type="password" placeholder="••••••••"
+                  class="input input-bordered w-full opacity-50 cursor-not-allowed" disabled />
+
+                <!-- Unlocked: new password fields -->
+                <template v-else>
+                  <input v-model="new_password" type="password" class="w-full input validator" required
+                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                    title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                   <p class="validator-hint hidden">
                     Must be more than 8 characters, including
-                    <br/>At least one number
-                    <br/>At least one lowercase letter
-                    <br/>At least one uppercase letter
+                    <br />At least one number
+                    <br />At least one lowercase letter
+                    <br />At least one uppercase letter
                   </p>
-                <div class="form-control gap-1 mt-3">
-                  <label class="label py-0"
-                    ><span class="label-text font-semibold"
-                      >Confirm New Password</span
-                    ></label
-                  >
-                  <input v-model = "confirm_password" type="password" class="w-full input validator" required 
-                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
-                    title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
+                  <div class="form-control gap-1 mt-3">
+                    <label class="label py-0"><span class="label-text font-semibold">Confirm New Password</span></label>
+                    <input v-model="confirm_password" type="password" class="w-full input validator" required
+                      pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                      title="Must be more than 8 characters, including number, lowercase letter, uppercase letter" />
                     <p class="validator-hint hidden">
                       Must be more than 8 characters, including
-                      <br/>At least one number
-                      <br/>At least one lowercase letter
-                      <br/>At least one uppercase letter
+                      <br />At least one number
+                      <br />At least one lowercase letter
+                      <br />At least one uppercase letter
                     </p>
-                        </div>
-                        <p class="text-xs text-base-content/50 mt-1">
-                          New password will be saved when you click Save Changes.
-                        </p>
-              </template>
+                  </div>
+                  <p class="text-xs text-base-content/50 mt-1">
+                    New password will be saved when you click Save Changes.
+                  </p>
+                </template>
+              </div>
             </div>
           </div>
-        </div>
 
         </div>
       </section>
 
       <!-- Preferences -->
-      <section
-        class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6"
-      >
-        <h3
-          class="text-base-content text-lg font-bold border-b border-base-300 pb-4"
-        >
+      <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
+        <h3 class="text-base-content text-lg font-bold border-b border-base-300 pb-4">
           Preferences
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Timezone -->
           <div class="form-control w-full gap-1">
-            <label class="label py-0"
-              ><span class="label-text font-semibold">Timezone</span></label
-            >
-            <label
-              class="input input-bordered relative w-full flex items-center"
-            >
-              <input
-                type="text"
-                v-model="formData.timezone"
-                list="timezones"
-                required
-                class="w-full bg-transparent outline-none"
-                placeholder="Select timezone..."
-              />
+            <label class="label py-0"><span class="label-text font-semibold">Timezone</span></label>
+            <label class="input input-bordered relative w-full flex items-center">
+              <input type="text" v-model="formData.timezone" list="timezones" required
+                class="w-full bg-transparent outline-none" placeholder="Select timezone..." />
               <datalist id="timezones">
-                <option
-                  v-for="tz in timeZones"
-                  :key="tz"
-                  :value="tz"
-                />
+                <option v-for="tz in timeZones" :key="tz" :value="tz" />
               </datalist>
             </label>
           </div>
 
           <div class="form-control gap-1">
-            <label class="label py-0"
-              ><span class="label-text font-semibold">Theme</span></label
-            >
-            <label
-              class="input input-bordered relative w-full items-center gap-2"
-            >
-              <input
-                type="text"
-                v-model="theme"
-                list="theme-options"
-                @input="updateTheme"
-                placeholder="Select theme..."
-                class="grow bg-transparent outline-none"
-              />
+            <label class="label py-0"><span class="label-text font-semibold">Theme</span></label>
+            <label class="input input-bordered relative w-full items-center gap-2">
+              <input type="text" v-model="theme" list="theme-options" @input="updateTheme" placeholder="Select theme..."
+                class="grow bg-transparent outline-none" />
 
               <datalist id="theme-options">
                 <option v-for="t in themes" :key="t" :value="t"></option>
@@ -272,50 +180,31 @@
             <label class="label py-1">
               <span class="label-text font-semibold">Notification</span>
             </label>
-            <div
-              class="flex items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4"
-            >
+            <div class="flex items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4">
               <div class="flex flex-col gap-0.5">
-                <span class="text-sm font-semibold text-base-content"
-                  >Email Notifications</span
-                >
-                <span class="text-xs text-base-content/60"
-                  >Enable to receive updates about your scheduled sessions and
-                  reminders.</span
-                >
+                <span class="text-sm font-semibold text-base-content">Email Notifications</span>
+                <span class="text-xs text-base-content/60">Enable to receive updates about your scheduled sessions and
+                  reminders.</span>
               </div>
-              <input
-                type="checkbox"
-                class="toggle toggle-primary"
-                v-model="formData.email_notifications"
-              />
+              <input type="checkbox" class="toggle toggle-primary" v-model="formData.email_notifications" />
             </div>
           </div>
         </div>
       </section>
 
-      <section
-        class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6"
-      >
-        <h3
-          class="text-base-content text-lg font-bold border-b border-base-300 pb-4"
-        >
+      <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
+        <h3 class="text-base-content text-lg font-bold border-b border-base-300 pb-4">
           Linked Accounts
         </h3>
         <div class="flex flex-col gap-4">
           <!-- Google -->
           <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4"
-          >
+            class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4">
             <div class="flex items-center gap-4">
               <div class="avatar">
-                <div
-                  class="w-10 rounded-full bg-base-100 border border-base-300"
-                >
-                  <img
-                    class="w-5 h-5 mx-auto mt-2"
-                    src="https://img.icons8.com/?size=100&id=17949&format=png&color=000000"
-                  />
+                <div class="w-10 rounded-full bg-base-100 border border-base-300">
+                  <img class="w-5 h-5 mx-auto mt-2"
+                    src="https://img.icons8.com/?size=100&id=17949&format=png&color=000000" />
                 </div>
               </div>
 
@@ -332,39 +221,23 @@
               </div>
             </div>
 
-            <button
-              v-if="isLinked('google')"
-              class="btn btn-sm btn-outline btn-error"
-              @click="unlinkAccount('google')"
-            >
+            <button v-if="isLinked('google')" class="btn btn-sm btn-outline btn-error" @click="unlinkAccount('google')">
               Disconnect
             </button>
-            <button
-              v-else
-              class="btn btn-sm btn-primary"
-              @click="linkAccount('google')"
-            >
+            <button v-else class="btn btn-sm btn-primary" @click="linkAccount('google')">
               Connect
             </button>
           </div>
 
           <!-- GitHub -->
           <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4"
-          >
+            class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-base-300 bg-base-200 gap-4">
             <div class="flex items-center gap-4">
               <div class="avatar">
-                <div
-                  class="w-10 rounded-full bg-base-100 border border-base-300 flex items-center justify-center"
-                >
-                  <svg
-                    class="w-5 h-5 text-base-content"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
+                <div class="w-10 rounded-full bg-base-100 border border-base-300 flex items-center justify-center">
+                  <svg class="w-5 h-5 text-base-content" viewBox="0 0 24 24" fill="currentColor">
                     <path
-                      d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 008 10.94c.59.11.8-.26.8-.58v-2.02c-3.26.7-3.95-1.57-3.95-1.57-.53-1.35-1.3-1.71-1.3-1.71-1.06-.72.08-.71.08-.71 1.18.08 1.8 1.22 1.8 1.22 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.75-1.56-2.6-.3-5.34-1.3-5.34-5.78 0-1.28.46-2.33 1.21-3.15-.12-.3-.52-1.52.11-3.18 0 0 .99-.32 3.25 1.2a11.2 11.2 0 015.92 0c2.26-1.52 3.25-1.2 3.25-1.2.63 1.66.23 2.88.11 3.18.75.82 1.21 1.87 1.21 3.15 0 4.49-2.74 5.47-5.35 5.77.42.36.8 1.09.8 2.2v3.26c0 .32.21.7.81.58A11.5 11.5 0 0023.5 12C23.5 5.73 18.27.5 12 .5z"
-                    />
+                      d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 008 10.94c.59.11.8-.26.8-.58v-2.02c-3.26.7-3.95-1.57-3.95-1.57-.53-1.35-1.3-1.71-1.3-1.71-1.06-.72.08-.71.08-.71 1.18.08 1.8 1.22 1.8 1.22 1.04 1.79 2.73 1.27 3.4.97.1-.76.41-1.27.75-1.56-2.6-.3-5.34-1.3-5.34-5.78 0-1.28.46-2.33 1.21-3.15-.12-.3-.52-1.52.11-3.18 0 0 .99-.32 3.25 1.2a11.2 11.2 0 015.92 0c2.26-1.52 3.25-1.2 3.25-1.2.63 1.66.23 2.88.11 3.18.75.82 1.21 1.87 1.21 3.15 0 4.49-2.74 5.47-5.35 5.77.42.36.8 1.09.8 2.2v3.26c0 .32.21.7.81.58A11.5 11.5 0 0023.5 12C23.5 5.73 18.27.5 12 .5z" />
                   </svg>
                 </div>
               </div>
@@ -382,19 +255,11 @@
               </div>
             </div>
 
-            <button
-              v-if="isLinked('github')"
-              class="btn btn-sm btn-outline btn-error"
-              @click="unlinkAccount('github')"
-            >
+            <button v-if="isLinked('github')" class="btn btn-sm btn-outline btn-error" @click="unlinkAccount('github')">
               Disconnect
             </button>
 
-            <button
-              v-else
-              class="btn btn-sm btn-primary"
-              @click="linkAccount('github')"
-            >
+            <button v-else class="btn btn-sm btn-primary" @click="linkAccount('github')">
               Connect
             </button>
           </div>
@@ -403,8 +268,7 @@
       <!-- Footer Actions -->
       <div class="fixed bottom-0 left-0 w-full z-20 pointer-events-none">
         <div
-          class="bg-base-100 border-t border-base-300 p-4 pointer-events-auto flex justify-end gap-3 px-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
-        >
+          class="bg-base-100 border-t border-base-300 p-4 pointer-events-auto flex justify-end gap-3 px-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
           <button class="btn" @click="fetchUserData">Discard</button>
           <button class="btn btn-primary" @click="submitForm" :disabled="submitting || isSuccess">
             Save Changes
@@ -634,7 +498,7 @@ export default {
       } catch (error) {
         console.error("Error updating profile:", error);
         console.error("Full error response:", error.response);
-        
+
         let message = "Failed to update profile";
         if (error.response) {
           console.error("Status:", error.response.status);
