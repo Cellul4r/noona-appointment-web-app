@@ -17,12 +17,11 @@
         </p>
       </div>
 
-      <!-- Personal Info -->
+      <!-- Profile Image -->
       <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
         <div class="flex flex-col gap-1 border-b border-base-300 pb-4">
-          <!-- <h3 class="text-base-content text-lg font-bold">Profile Picture</h3> -->
           <h3 class="text-base-content text-lg font-bold">
-            Personal Information
+            Profile Image
           </h3>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-6">
@@ -49,7 +48,34 @@
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="form-control gap-1 w-full sm:max-w-xs">
+            <label class="label py-0"><span class="label-text font-semibold">Profile Image</span></label>
+            <input
+              ref="profileImageInput"
+              type="file"
+              class="file-input file-input-bordered w-full"
+              accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+              @change="onProfileImageSelected"
+            />
+            <button
+              type="button"
+              class="btn btn-sm btn-outline btn-error mt-2"
+              @click="removeSelectedProfileImage"
+              :disabled="!selectedProfileImage && !avatarPreview"
+            >
+              Remove
+            </button>
+            <p class="text-xs text-base-content/60">Allowed file types: JPG, JPEG, PNG</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Personal Information -->
+      <section class="bg-base-100 rounded-xl border border-base-300 p-6 shadow-sm flex flex-col gap-6">
+        <div class="flex flex-col gap-1">
+
+        <h3 class="text-base-content text-lg font-bold border-b border-base-300 pb-4">Personal Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-control gap-1 md:col-span-2">
               <label class="label py-0"><span class="label-text font-semibold">Email</span></label>
               <input class="input input-bordered w-full opacity-50 cursor-not-allowed" disabled type="email"
@@ -141,7 +167,6 @@
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
@@ -286,6 +311,7 @@ import { useRouter } from "vue-router";
 import {
   fetchUserSettings,
   updateUserProfile,
+  updateProfileImage,
   verifyUserPassword,
   unlinkOAuthAccount,
   getLinkAccountUrl,
@@ -305,6 +331,7 @@ export default {
   data() {
     return {
       avatarPreview: null,
+      selectedProfileImage: null,
       current_password: "", // In password verification modal
       new_password: "", // For new password input
       confirm_password: "", // For confirming new password
@@ -406,6 +433,8 @@ export default {
         this.formData.timezone = data.timezone;
         this.formData.email_notifications = data.email_notifications;
         this.formData.has_password = data.has_password;
+        this.avatarPreview = null;
+        this.selectedProfileImage = null;
 
         this.authStore.setUser({
           id: data.id,
@@ -440,7 +469,6 @@ export default {
 
         const data = {
           full_name: this.formData.full_name,
-          profile_image: this.formData.profile_image,
           timezone: this.formData.timezone,
           email_notifications: this.formData.email_notifications,
         };
@@ -463,7 +491,12 @@ export default {
         }
 
         console.log("Submitting form data:", data);
-        const updatedUser = await updateUserProfile(data);
+        let updatedUser = await updateUserProfile(data);
+
+        if (this.selectedProfileImage) {
+          updatedUser = await updateProfileImage(this.selectedProfileImage);
+        }
+
         console.log("Update successful:", updatedUser);
 
         // refresh fields from server in case backend modified anything
@@ -473,6 +506,8 @@ export default {
           this.formData.profile_image = updatedUser.profile_image;
           this.formData.timezone = updatedUser.timezone;
           this.formData.email_notifications = updatedUser.email_notifications;
+          this.avatarPreview = null;
+          this.selectedProfileImage = null;
 
           this.authStore.setUser({
             id: updatedUser.id,
@@ -560,9 +595,37 @@ export default {
       localStorage.setItem("app-theme", this.theme);
     },
 
+    onProfileImageSelected(event) {
+      const file = event.target.files?.[0];
+      if (!file) {
+        this.selectedProfileImage = null;
+        this.avatarPreview = null;
+        return;
+      }
+
+      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Invalid file type. Only JPG, JPEG, and PNG are allowed.");
+        event.target.value = "";
+        this.selectedProfileImage = null;
+        this.avatarPreview = null;
+        return;
+      }
+
+      this.selectedProfileImage = file;
+      this.avatarPreview = URL.createObjectURL(file);
+    },
+
+    removeSelectedProfileImage() {
+      this.selectedProfileImage = null;
+      this.avatarPreview = null;
+      if (this.$refs.profileImageInput) {
+        this.$refs.profileImageInput.value = "";
+      }
+    },
+
     getAvatar() {
-      // return this.avatarPreview || this.formData.profile_image || DefaultAvatar;
-      return this.formData.profile_image;
+      return this.avatarPreview || this.formData.profile_image;
     },
     viewAvatar() {
       document.getElementById("avatar_modal").showModal();
