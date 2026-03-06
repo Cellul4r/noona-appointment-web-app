@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
-import Signup from "../views/Signup.vue";
+import ConfirmEmail from "../views/ConfirmEmail.vue";
 import AllEvents from "../views/AllEvents.vue";
 import Dashboard from '../views/Dashboard.vue';
 import CreateEvents from "../views/CreateEvents.vue";
@@ -20,9 +20,9 @@ const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
   { path: "/login-success", name: 'LoginSuccess', component: LoginSuccess, meta: { hideNavbar: true } }, // Handles token parsing
   {
-    path: "/signup",
-    name: "Signup",
-    component: Signup,
+    path: "/confirm-email",
+    name: "ConfirmEmail",
+    component: ConfirmEmail,
     meta: { hideNavbar: true }
   },
   {
