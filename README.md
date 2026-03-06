@@ -1,7 +1,7 @@
 ## Team: (24cs212g05) เชื่ออุ๋นดิวะ
 ### Project: 5 ระบบจองนัดหมาย
 **Group ID:** 24cs212g05  
-**Mentor:** Naphaphol Sawatvong (พี่ก้าหาร)  
+**Mentor:** นภพล สวัสดิ์วงค์ (พี่ก้าหาร)  
 
 ### Tech Stack:
 - **Frontend:** Vue 3, Vite, Tailwind CSS, DaisyUI, HTML5, JavaScript, Pinia, date-fns, date-fns/tz, Axios
