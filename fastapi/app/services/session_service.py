@@ -16,7 +16,6 @@ from app.models.session import Session as SessionModel
 from app.models.event import Event
 from app.models.user import User
 from app.models.session_registration import RegistrationStatus, SessionRegistration
-from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -726,6 +725,7 @@ class SessionService:
 
         if demoted_user_ids:
             try:
+                from app.services.notification_service import NotificationService
 
                 notification_service = NotificationService()
                 notification_service.dequeue_waitlist_available_jobs(
