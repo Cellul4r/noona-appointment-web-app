@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "my_jwt_secret"
     jwt_token_location: List[str] = ["cookies"]
     jwt_access_cookie_name: str = "jwt"
-    jwt_cookie_secure: bool = False
+    jwt_cookie_secure: bool = True
     jwt_cookie_samesite: str = "Lax"
     jwt_cookie_csrf_protect: bool = False
     secret_key: str = "df0331cefc6c2b9a5d0208a726a5d1c0fd37324feba25506"

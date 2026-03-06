@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi_csrf_protect.flexible import CsrfProtect
+from fastapi_csrf_protect import CsrfProtect
 from jose import JWTError, jwt
 
 from app.config import settings
@@ -21,8 +21,8 @@ ALGORITHM = settings.algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 
-def csrf_protect(request: Request, csrf: CsrfProtect = Depends()):
-    csrf.validate_csrf(request)
+async def csrf_protect(request: Request, csrf: CsrfProtect = Depends()):
+    await csrf.validate_csrf(request)
 
 
 async def get_current_user(request: Request, db: Session = Depends(get_db)):

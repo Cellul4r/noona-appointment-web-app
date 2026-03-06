@@ -82,7 +82,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle, loginWithGithub } from "@/services/auth";
+import { loginWithGoogle, loginWithGithub, setCsrfToken } from "@/services/auth";
 import { useRouter } from 'vue-router'
 export default {
 
@@ -142,6 +142,9 @@ export default {
 
           throw new Error(detail || "Unable to log in right now. Please try again.");
         }
+
+        const loginPayload = await response.json().catch(() => null);
+        setCsrfToken(loginPayload?.csrf_token);
 
         // หลัง login สำเร็จ → ดึง user
         const me = await fetch("http://localhost:56733/auth/me", {

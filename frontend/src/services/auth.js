@@ -2,6 +2,7 @@ import axios from "axios";
 import VueCookies from "vue-cookies";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
+let csrfToken = null;
 
 // Ensure Axios sends cookies with every request
 axios.defaults.withCredentials = true;
@@ -11,8 +12,7 @@ axios.interceptors.request.use(
     (config) => {
         const method = (config.method || "GET").toUpperCase();
         if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-            const csrfToken = VueCookies.get("fastapi-csrf-token");
-            config.headers["X-CSRF-Token"] = csrfToken; // Decode JWT for CSRF
+            config.headers["X-CSRF-Token"] = csrfToken;
         }
         // No Authorization header needed since JWT is in cookie
         return config;
@@ -32,6 +32,27 @@ export async function requestSignUp(email) {
     params: { email },
   });
   return res.data;
+}
+
+export function getCsrfToken() {
+  return csrfToken;
+}
+
+export function setCsrfToken(token) {
+  csrfToken = token || null;
+}
+
+export async function refreshCsrfToken() {
+  const res = await axios.get(`${API_URL}/auth/csrf`);
+  setCsrfToken(res.data?.csrf_token);
+  return csrfToken;
+}
+
+export async function ensureCsrfToken() {
+  if (csrfToken) {
+    return csrfToken;
+  }
+  return refreshCsrfToken();
 }
 
 // Login with Google OAuth
@@ -66,5 +87,6 @@ export async function verifyEmail(token) {
 
 // Logout & Clear JWT
 export function logout() {
+  setCsrfToken(null);
   window.location.reload(); // Optional
 }

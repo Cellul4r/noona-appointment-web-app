@@ -61,24 +61,25 @@ async def request_sign_up(
     logger.info(f"Sent registration confirmation email to: {email}")
     return {"message": "Registration confirmation email sent."}
 
+
 @router.post("/verify-email")
 def verify_email(
     token: str,
     db: Annotated[Session, Depends(get_db)],
 ):
     logger.debug("Verifying email token")
-    candidate_tokens = db.query(AuthToken).filter(
-        AuthToken.type == AuthType.EMAIL_VERIFICATION,
-        AuthToken.used_at.is_(None),
-        AuthToken.expires_at > datetime.utcnow(),
-    ).all()
+    candidate_tokens = (
+        db.query(AuthToken)
+        .filter(
+            AuthToken.type == AuthType.EMAIL_VERIFICATION,
+            AuthToken.used_at.is_(None),
+            AuthToken.expires_at > datetime.utcnow(),
+        )
+        .all()
+    )
 
     auth_token = next(
-        (
-            row
-            for row in candidate_tokens
-            if verify_password(token, row.hashed_token)
-        ),
+        (row for row in candidate_tokens if verify_password(token, row.hashed_token)),
         None,
     )
 
@@ -94,10 +95,17 @@ def verify_email(
 
     logger.info(f"Email verified for: {auth_token.email}")
 
-    registration_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
-    response = JSONResponse(content={"message": "Email verified successfully. You can now complete your registration."})
+    registration_jwt = create_access_token(
+        data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30)
+    )
+    response = JSONResponse(
+        content={
+            "message": "Email verified successfully. You can now complete your registration."
+        }
+    )
     auth_service.attach_token_cookie(response, registration_jwt, "registration_jwt")
     return response
+
 
 @router.post(
     "/signup",
@@ -115,7 +123,7 @@ def create_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing registration token. Please verify your email first.",
         )
-    
+
     existing_user = user_service.get_user_by_email(user.email, db)
 
     if existing_user:
@@ -124,15 +132,17 @@ def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    
+
     email_in_token = verify_access_token(registration_token)
     if email_in_token != user.email:
-        logger.error(f"Email in registration token does not match provided email. Token email: {email_in_token}, Provided email: {user.email}")
+        logger.error(
+            f"Email in registration token does not match provided email. Token email: {email_in_token}, Provided email: {user.email}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid registration token for the provided email.",
         )
-    
+
     new_user = user_service.create_user(user, db)
     logger.info(f"Created new user: {new_user.email}")
     response = JSONResponse(content={"message": "User created successfully."})
@@ -165,18 +175,18 @@ def verify_password_reset_token(
     db: Annotated[Session, Depends(get_db)],
 ):
     logger.debug("Verifying password reset token")
-    candidate_tokens = db.query(AuthToken).filter(
-        AuthToken.type == AuthType.PASSWORD_RESET,
-        AuthToken.used_at.is_(None),
-        AuthToken.expires_at > datetime.utcnow(),
-    ).all()
+    candidate_tokens = (
+        db.query(AuthToken)
+        .filter(
+            AuthToken.type == AuthType.PASSWORD_RESET,
+            AuthToken.used_at.is_(None),
+            AuthToken.expires_at > datetime.utcnow(),
+        )
+        .all()
+    )
 
     auth_token = next(
-        (
-            row
-            for row in candidate_tokens
-            if verify_password(token, row.hashed_token)
-        ),
+        (row for row in candidate_tokens if verify_password(token, row.hashed_token)),
         None,
     )
 
@@ -192,10 +202,17 @@ def verify_password_reset_token(
 
     logger.info(f"Email verified for: {auth_token.email}")
 
-    password_reset_jwt = create_access_token(data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30))
-    response = JSONResponse(content={"message": "Email verified successfully. You can now reset your password."})
+    password_reset_jwt = create_access_token(
+        data={"sub": auth_token.email}, expires_delta=timedelta(minutes=30)
+    )
+    response = JSONResponse(
+        content={
+            "message": "Email verified successfully. You can now reset your password."
+        }
+    )
     auth_service.attach_token_cookie(response, password_reset_jwt, "password_reset_jwt")
     return response
+
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 def reset_password(
@@ -210,7 +227,7 @@ def reset_password(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing password reset token. Please verify your email first.",
         )
-    
+
     email_in_token = verify_access_token(password_reset_token)
     if not email_in_token:
         logger.error("Invalid password reset token in reset_password")
@@ -218,15 +235,17 @@ def reset_password(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid password reset token.",
         )
-    
+
     user = user_service.get_user_by_email(email_in_token, db)
     if not user:
-        logger.error(f"User not found for email in password reset token: {email_in_token}")
+        logger.error(
+            f"User not found for email in password reset token: {email_in_token}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",
         )
-    
+
     user_service.update_user_settings(db, user.id, UserUpdate(password=new_password))
     logger.info(f"Password updated for user: {user.email}")
     response = JSONResponse(content={"message": "Password reset successfully."})
@@ -251,12 +270,29 @@ def login_for_access_token(
     response = JSONResponse(
         content={
             "message": "Login successful",
+            "csrf_token": csrf_token,
         }
     )
 
     auth_service.attach_token_cookie(response, access_token)
     csrf_protect.set_csrf_cookie(signed_token, response)
+    # response.set_cookie(
+    #     key="fastapi-csrf_token",
+    #     value=signed_token,
+    #     httponly=False,
+    #     secure=settings.jwt_cookie_secure,
+    #     samesite=settings.jwt_cookie_samesite,
+    #     path="/",
+    # )
     logger.info(f"User logged in: {user.email}")
+    return response
+
+
+@router.get("/csrf")
+def issue_csrf_token(csrf_protect: CsrfProtect = Depends()):
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = JSONResponse(content={"csrf_token": csrf_token})
+    csrf_protect.set_csrf_cookie(signed_token, response)
     return response
 
 
@@ -321,6 +357,15 @@ async def google_auth(
 
             auth_service.attach_token_cookie(response, access_token)
             csrf_protect.set_csrf_cookie(signed_token, response)
+
+            # response.set_cookie(
+            #     key="fastapi-csrf_token",
+            #     value=signed_token,
+            #     httponly=False,
+            #     secure=settings.jwt_cookie_secure,
+            #     samesite=settings.jwt_cookie_samesite,
+            #     path="/",
+            # )
             return response
 
 
@@ -394,7 +439,7 @@ async def logout(response: Response):
     response.delete_cookie(key="jwt")
     response.delete_cookie(key="fastapi-csrf-token")
     logger.info("User logged out")
-    return {"message": "Logout successful. JWT cookies removed."}
+    return response
 
 
 @router.get("/me")
