@@ -198,7 +198,8 @@ import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
 import EventRegistrationCard from "@/components/session/EventRegistrationCard.vue"
-import { formatInTimeZone } from "@date-fns/tz"
+import { TZDate } from "@date-fns/tz"
+import { format } from "date-fns"
 import { useAuthStore } from "@/store/authStore"
 
 const route = useRoute()
@@ -220,7 +221,7 @@ const firstAlertMinutes = ref(15)
 const secondAlertMinutes = ref(0)
 const hasSavedReminderSettings = ref(false)
 const reminderOptions = [5, 10, 15, 30, 60, 120, 1440, 2880, 10080]
-const reminderOptionsWithStart = [0, ...reminderOptions]
+// const reminderOptionsWithStart = [0, ...reminderOptions]
 const selectedSessionsCount = computed(() =>
   sessions.value.filter(s => s.registration_status === "confirmed").length
 )
@@ -604,17 +605,18 @@ const eventTimezone = computed(() => timezoneLabel.value)
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 const formatTime = (date) => {
-  return formatInTimeZone(new Date(date), eventTimezone.value, "HH:mm")
+  return format(new TZDate(date, eventTimezone.value), "HH:mm")
 }
 
 const formatDate = (date) => {
-  return formatInTimeZone(new Date(date), eventTimezone.value, "MMM d")
+  return format(new TZDate(date, eventTimezone.value), "MMM d")
 }
 
 const minStartDateTime = computed(() => {
   const now = new Date()
-  const tzString = formatInTimeZone(now, eventTimezone.value, "yyyy-MM-dd'T'HH:mm")
-  return tzString
+  const tzDate = new TZDate(now, eventTimezone.value)
+  const pad = (n) => String(n).padStart(2, "0")
+  return `${tzDate.getFullYear()}-${pad(tzDate.getMonth() + 1)}-${pad(tzDate.getDate())}T${pad(tzDate.getHours())}:${pad(tzDate.getMinutes())}`
 })
 
 onMounted(async () => {
