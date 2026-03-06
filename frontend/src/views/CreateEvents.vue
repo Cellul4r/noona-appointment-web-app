@@ -239,10 +239,10 @@
                     <input v-if="repeatEnd.type === 'date'" type="date" v-model="repeatEnd.date"
                       class="input input-bordered w-full" />
 
-                    <input v-if="repeatEnd.type === 'count'" type="number" min="1" max="100" v-model="repeatEnd.count"
+                    <input v-if="repeatEnd.type === 'count'" type="number" min="1" max="100" v-model.number="repeatEnd.count"
                       placeholder="Number of times" pattern="[0-9]*" class="input input-bordered w-full validator" />
-                    <p v-if="repeatEnd.type === 'count' && Number(repeatEnd.count) > 100" class="text-error text-xs mt-1">
-                      You can only repeat up to 100 sessions at a time.
+                    <p v-if="repeatCountError" class="text-error text-xs mt-1">
+                      {{ repeatCountError }}
                     </p>
                   </div>
                 </div>
@@ -626,6 +626,25 @@ const repeatEnd = ref({
   count: null
 })
 
+const repeatCountError = computed(() => {
+  if (!repeatEndEnabled.value || repeatEnd.value.type !== "count") return ""
+
+  const rawCount = repeatEnd.value.count
+  const parsedCount = Number(rawCount)
+
+  if (rawCount === null || rawCount === "" || Number.isNaN(parsedCount)) {
+    return "Please enter number of times."
+  }
+  if (!Number.isInteger(parsedCount) || parsedCount < 1) {
+    return "Number of times must be at least 1."
+  }
+  if (parsedCount > 100) {
+    return "You can only repeat up to 100 sessions at a time."
+  }
+
+  return ""
+})
+
 const repeatsChoose = ref({
   type: "Does not repeat",
   interval: "",
@@ -735,6 +754,18 @@ function addSession() {
   const type = repeatsChoose.value.type
   const interval = Number(repeatsChoose.value.interval) || 1
 
+  if (type !== "Does not repeat" && repeatEndEnabled.value) {
+    if (repeatEnd.value.type === "count" && repeatCountError.value) {
+      alert(repeatCountError.value)
+      return
+    }
+
+    if (repeatEnd.value.type === "date" && !repeatEnd.value.date) {
+      alert("Please select an until date for repeat session.")
+      return
+    }
+  }
+
   const addByType = (dateStr) => {
     const [datePart, timePart] = dateStr.split("T")
     const [year, month, day] = datePart.split("-").map(Number)
@@ -760,6 +791,9 @@ function addSession() {
       end: endDate,
     })
   } else {
+    const effectiveRepeatEndType = repeatEndEnabled.value ? repeatEnd.value.type : "never"
+    const repeatCount = Number(repeatEnd.value.count)
+
     let currentStartStr = newSession.value.start
     let currentEndStr = newSession.value.end
     let i = 0
@@ -776,15 +810,15 @@ function addSession() {
       })
       i++
 
-      if (repeatEnd.value.type === "count") {
-        if (repeatEnd.value.count && i >= repeatEnd.value.count) break
+      if (effectiveRepeatEndType === "count") {
+        if (i >= repeatCount) break
       }
-      if (repeatEnd.value.type === "date" && repeatEnd.value.date) {
+      if (effectiveRepeatEndType === "date" && repeatEnd.value.date) {
         // Evaluate limit cleanly by adding end-of-day time to the repeat limit
         const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", eventTimezone.value)
         if (currentStart >= limitDate) break
       }
-      if (i > 100) break
+      if (i >= 100) break
 
       currentStartStr = addByType(currentStartStr)
       currentEndStr = addByType(currentEndStr)
@@ -810,15 +844,6 @@ function formatForDateTimeLocalInput(value) {
 }
 
 
-// Format pieces for display from absolute Date objects directly!
-function formatDay(dateObj) {
-  if (!dateObj) return '';
-  return format(dateObj, 'd');
-}
-function formatMonth(dateObj) {
-  if (!dateObj) return '';
-  return format(dateObj, 'MMM').toUpperCase();
-}
 function formatDate(dateObj) {
   if (!dateObj) return '';
   return format(dateObj, 'MMM d, yyyy');
