@@ -4,8 +4,8 @@
 **Mentor:** นภพล สวัสดิ์วงค์ (พี่ก้าหาร)  
 
 ### Tech Stack:
-- **Frontend:** Vue 3, Vite, Tailwind CSS, DaisyUI, HTML5, JavaScript, Pinia, date-fns, date-fns/tz, Axios
-- **Backend:** FastAPI, JWT, CSRF, Python, Pydantic, PostgreSQL, Docker, Gunicorn, Alembic  
+- **Frontend:** Vue 3, Vite, Tailwind CSS, DaisyUI, HTML5, JavaScript
+- **Backend:** FastAPI, Python, Pydantic, PostgreSQL, Docker, Gunicorn  
 ### Members:
 
 #### 1. ธีรดา ศิริ
