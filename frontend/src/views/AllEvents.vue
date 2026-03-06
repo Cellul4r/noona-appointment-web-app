@@ -10,10 +10,16 @@
         <!-- HEADER -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
-            <h1 class="text-3xl font-bold text-base-content">My Events</h1>
+            <h1 class="text-3xl font-bold text-base-content">
+              My Events
+              <span v-if="events.length > 0" class="text-lg font-normal text-base-content/50 ml-2">({{ filteredEvents.length }})</span>
+            </h1>
             <p class="text-base-content/60 mt-1">Manage and track your scheduled sessions</p>
           </div>
-          <button @click.prevent="createEvent" class="btn btn-primary gap-2 shadow-lg hover:scale-105 transition-transform duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95">
+          <button @click.prevent="createEvent" class="btn btn-primary gap-2 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             Create New Event
           </button>
         </div>
@@ -67,31 +73,75 @@
         </div>
 
         <!-- EVENTS GRID -->
-        <div v-if="loading && events.length === 0" class="flex justify-center py-20">
-          <span class="loading loading-spinner loading-lg text-primary"></span>
+        <div v-if="loading && events.length === 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div v-for="n in 6" :key="n" class="card bg-base-100 shadow-md border border-base-200 border-t-4 ">
+            <div class="card-body p-6 gap-4">
+              <div class="flex justify-between items-start">
+                <div class="skeleton h-6 w-3/4"></div>
+                <div class="skeleton h-5 w-16 rounded-full"></div>
+              </div>
+              <div class="skeleton h-4 w-1/2"></div>
+              <div class="space-y-2">
+                <div class="skeleton h-3 w-full"></div>
+                <div class="skeleton h-3 w-5/6"></div>
+              </div>
+              <div class="divider my-1"></div>
+              <div class="flex justify-between">
+                <div class="skeleton h-4 w-24"></div>
+                <div class="skeleton h-4 w-24"></div>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <div class="skeleton h-8 flex-1 rounded-btn"></div>
+                <div class="skeleton h-8 w-8 rounded-btn"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div v-else-if="filteredEvents.length === 0" class="text-center py-20 opacity-60">
-          <!--<span class="material-symbols-outlined text-6xl mb-4">ไม่เจออีเว้นท์</span>-->
-          <p class="text-lg">No events found matching your criteria.</p>
+        <div v-else-if="filteredEvents.length === 0" class="flex flex-col items-center justify-center py-20 px-4">
+          <div class="bg-base-100 rounded-full p-6 mb-6 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-16 h-16 text-base-content/25">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-base-content mb-2">No events found</h3>
+          <p class="text-base-content/50 text-center max-w-md mb-6">
+            {{ searchQuery || statusFilter !== 'all' ? 'Try adjusting your search or filters.' : "You haven't created any events yet. Get started!" }}
+          </p>
+          <button v-if="!searchQuery && statusFilter === 'all'" @click="createEvent" class="btn btn-primary gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Create Your First Event
+          </button>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="scroll-container">
           <div 
             v-for="event in paginatedEvents" 
             :key="event.share_uuid"
-            class="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 border group border-base-200"
+            class="card bg-base-100 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-base-200 border-t-4 group"
           >
             <div class="card-body p-6">
               <div class="flex items-start justify-between gap-2">
                 <h2 class="card-title text-xl font-bold line-clamp-3 break-words flex-1" :title="event.title">
                   {{ event.title }}
                 </h2>
-                <div v-if="event.is_draft" class="badge gap-1 shrink-0">
+                <div v-if="event.is_draft" class="badge badge-warning gap-1 shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                   </svg>
                   Draft
+                </div>
+                <div v-else-if="endedEvents[event.share_uuid]" class="badge badge-ghost gap-1 shrink-0 opacity-70">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  Ended
+                </div>
+                <div v-else class="badge badge-success gap-1 shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-50 inline-block animate-pulse"></span>
+                  Live
                 </div>
               </div>
               
@@ -169,6 +219,18 @@
           </button>
         </div>
 
+        <!-- TOAST NOTIFICATION -->
+        <Transition name="toast-slide">
+          <div v-if="toastMsg" class="fixed bottom-6 right-6 z-50">
+            <div class="alert alert-success shadow-lg gap-2 pr-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 shrink-0">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              <span class="text-sm font-medium">{{ toastMsg }}</span>
+            </div>
+          </div>
+        </Transition>
+
       </main>
     </div>
   </div>
@@ -179,7 +241,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'vue-router';
 import { fetchUserSettings } from '@/services/user.js';
-import { getAllEvents, getEventOverview } from '@/services/event.js';
+import { getAllEvents, getEventOverview, getSessions } from '@/services/event.js';
 
 // --- STATE ---
 const authStore = useAuthStore();
@@ -190,6 +252,8 @@ const loading = ref(false);
 const searchQuery = ref('');
 const nextCursor = ref(null);
 const errorMsg = ref(null);
+const toastMsg = ref(null);
+const endedEvents = ref({}); // { [share_uuid]: true } for events where all sessions have ended
 
 // Filters
 const currentScope = ref('all'); 
@@ -225,6 +289,7 @@ const fetchEvents = async (reset = false) => {
 
     if (reset) {
       events.value = response.items;
+      endedEvents.value = {};
       // reset visible count when we reset the list
       visibleCount.value = eventsPerPage;
     } else {
@@ -232,6 +297,9 @@ const fetchEvents = async (reset = false) => {
     }
     
     nextCursor.value = response.next_page;
+
+    // Check ended status in the background (non-blocking)
+    checkEndedStatus(response.items);
   } catch (error) {
     console.error("Failed to fetch events:", error);
     if (error.code === 'ERR_NETWORK') {
@@ -244,6 +312,25 @@ const fetchEvents = async (reset = false) => {
   } finally {
     loading.value = false;
   }
+};
+
+// Check which published events have all sessions ended (no upcoming sessions)
+const checkEndedStatus = async (eventList) => {
+  const publishedEvents = eventList.filter(e => !e.is_draft);
+  const checks = publishedEvents.map(async (event) => {
+    try {
+      // Fetch with upcoming_only=true and size=1: if 0 items, all sessions ended
+      const res = await getSessions(event.share_uuid, null, 1, true);
+      if (res.items.length === 0) {
+        endedEvents.value[event.share_uuid] = true;
+      }
+    } catch {
+      // silently ignore — badge will default to "Live"
+    }
+  });
+  await Promise.all(checks);
+  // Trigger reactivity
+  endedEvents.value = { ...endedEvents.value };
 };
 
 const loadUserSettings = async () => {
@@ -311,7 +398,8 @@ const editEvent = (evt) => {
 const copyLink = (uuid) => {
   const link = `${window.location.origin}/event/overview/${uuid}`;
   navigator.clipboard.writeText(link);
-  alert(`Link copied: ${link}`);
+  toastMsg.value = 'Event link copied to clipboard!';
+  setTimeout(() => { toastMsg.value = null; }, 2500);
 };
 
 // when user clicks the 'View Details' button, fetch overview then navigate
@@ -338,3 +426,21 @@ onMounted(() => {
   loadUserSettings();
 });
 </script>
+
+<style scoped>
+/* Toast slide-in animation */
+.toast-slide-enter-active {
+  transition: all 0.3s ease-out;
+}
+.toast-slide-leave-active {
+  transition: all 0.3s ease-in;
+}
+.toast-slide-enter-from {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateX(40px);
+}
+</style>
