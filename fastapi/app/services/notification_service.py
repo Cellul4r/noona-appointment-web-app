@@ -175,6 +175,36 @@ class NotificationService:
         finally:
             db.close()
 
+    def dequeue_waitlist_available_jobs(self, user_ids: list[int], session_id: int):
+        if not user_ids:
+            return
+
+        db = SessionLocal()
+        try:
+            jobs = (
+                db.execute(
+                    select(NotificationJob).where(
+                        NotificationJob.type == NotificationType.WAITLIST_AVAILABLE,
+                        NotificationJob.user_id.in_(user_ids),
+                        NotificationJob.session_id == session_id,
+                        NotificationJob.status == NotificationJobStatus.PENDING,
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            for job in jobs:
+                job.status = NotificationJobStatus.CANCELLED
+                job.dedupe_key = None
+                job.next_retry_at = None
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception("Failed to dequeue waitlist available jobs")
+            raise
+        finally:
+            db.close()
+
     def enqueue_registered_removed_by_host_job(
         self, user_id: int, session_id: int, registration_status: RegistrationStatus
     ):
@@ -333,6 +363,39 @@ class NotificationService:
                         job.type == NotificationType.WAITLIST_AVAILABLE
                         and job.session_id is not None
                     ):
+                        registration = db.execute(
+                            select(SessionRegistration).where(
+                                SessionRegistration.session_id == job.session_id,
+                                SessionRegistration.user_id == job.user_id,
+                            )
+                        ).scalar_one_or_none()
+                        if (
+                            registration is None
+                            or registration.status != RegistrationStatus.AVAILABLE
+                        ):
+                            job.status = NotificationJobStatus.CANCELLED
+                            job.next_retry_at = None
+                            result["skipped"] += 1
+                            continue
+
+                        session = db.execute(
+                            select(SessionModel).where(SessionModel.id == job.session_id)
+                        ).scalar_one_or_none()
+                        if session is None:
+                            job.status = NotificationJobStatus.CANCELLED
+                            job.next_retry_at = None
+                            result["skipped"] += 1
+                            continue
+
+                        if (
+                            session.seat_capacity is not None
+                            and session.seat_taken >= session.seat_capacity
+                        ):
+                            job.status = NotificationJobStatus.CANCELLED
+                            job.next_retry_at = None
+                            result["skipped"] += 1
+                            continue
+
                         user = db.execute(
                             select(User).where(User.id == job.user_id)
                         ).scalar_one_or_none()

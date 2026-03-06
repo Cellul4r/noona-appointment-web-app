@@ -16,6 +16,7 @@ from app.models.session import Session as SessionModel
 from app.models.event import Event
 from app.models.user import User
 from app.models.session_registration import RegistrationStatus, SessionRegistration
+from app.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -717,6 +718,22 @@ class SessionService:
             .scalars()
             .all()
         )
+        demoted_user_ids: list[int] = []
         for r in registrations:
             # transaction set to waitlist status
             r.status = RegistrationStatus.WAITLIST
+            demoted_user_ids.append(r.user_id)
+
+        if demoted_user_ids:
+            try:
+
+                notification_service = NotificationService()
+                notification_service.dequeue_waitlist_available_jobs(
+                    user_ids=demoted_user_ids,
+                    session_id=session_id,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to cancel waitlist-available jobs for session_id=%s",
+                    session_id,
+                )
