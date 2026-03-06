@@ -16,7 +16,7 @@ import CreateAccount from '../views/CreateAccount.vue';
 import VerifyEmail from '../views/VerifyEmail.vue';
 import EmailSent from '../views/EmailSent.vue';
 import ForgetPassword from '../views/ForgetPassword.vue';
-import EventSentResetPassword from '../views/EventSentResetPassword.vue';
+import EmailSentResetPassword from '../views/EmailSentResetPassword.vue';
 import CreateNewPassword from '../views/CreateNewPassword.vue';
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
@@ -104,9 +104,9 @@ const routes = [
     meta: { hideNavbar: true }
   },
   {
-    path: '/event-sent-reset-password',
-    name: 'EventSentResetPassword',
-    component: EventSentResetPassword,
+    path: '/email-sent-reset-password',
+    name: 'EmailSentResetPassword',
+    component: EmailSentResetPassword,
     meta: { hideNavbar: true }
   },
   {

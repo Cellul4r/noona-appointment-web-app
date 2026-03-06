@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-[#f8f6f6] via-slate-50 to-indigo-50/30 dark:from-[#221610] dark:via-slate-950 dark:to-indigo-950/20 text-slate-900 dark:text-slate-100 flex flex-col relative overflow-hidden">
+    class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex flex-col relative overflow-hidden">
 
     <!-- Animated background elements -->
     <div
@@ -17,11 +17,12 @@
 
         <!-- Card Container -->
         <div
-          class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-2xl border border-white/50 dark:border-slate-700/50 overflow-hidden transition-all duration-500"
+          class="bg-white/80 backdrop-blur-lg rounded-2xl md:rounded-3xl shadow-2xl border border-white/50 overflow-hidden transition-all duration-500"
           :class="isVerified ? 'ring-2 ring-emerald-400/50' : ''">
 
           <!-- Header Gradient -->
           <div class="h-2 bg-gradient-to-r from-indigo-400 via-[#ec5b13] to-indigo-400"></div>
+          <div class="h-2 bg-blue-600"></div>
 
           <div class="p-8 md:p-12 text-center flex flex-col">
 
@@ -30,26 +31,26 @@
               <div class="relative">
                 <!-- Outer circle -->
                 <div :class="[
-                  'relative w-56 h-56 md:w-64 md:h-64 rounded-full flex items-center justify-center border-4 border-white dark:border-slate-800 shadow-2xl overflow-hidden transition-all duration-500',
+                  'relative w-56 h-56 md:w-64 md:h-64 rounded-full flex items-center justify-center border-4 border-white shadow-2xl overflow-hidden transition-all duration-500',
                   isVerified
-                    ? 'bg-gradient-to-tr from-emerald-400/20 via-emerald-300/20 to-transparent'
-                    : 'bg-gradient-to-tr from-indigo-400/20 via-[#ec5b13]/20 to-transparent'
+                    ? 'bg-gradient-to-tr from-cyan-400/20 via-blue-300/20 to-transparent'
+                    : 'bg-gradient-to-tr from-blue-400/20 via-cyan-200/20 to-transparent'
                 ]">
 
                   <!-- gradient background -->
                   <div :class="[
                     'absolute inset-0 transition-all duration-500',
                     isVerified
-                      ? 'bg-gradient-to-tr from-emerald-400/30 via-emerald-300/20 to-transparent'
-                      : 'bg-gradient-to-tr from-[#ec5b13]/20 via-indigo-400/20 to-transparent'
+                      ? 'bg-gradient-to-tr from-cyan-400/30 via-blue-300/20 to-transparent'
+                      : 'bg-gradient-to-tr from-blue-200/20 via-cyan-100/20 to-transparent'
                   ]"></div>
 
                   <!-- center icon -->
                   <div :class="[
                     'z-10 bg-white dark:bg-slate-700 p-8 rounded-full shadow-2xl border transition-all duration-500 transform',
                     isVerified
-                      ? 'border-emerald-400/30 scale-110'
-                      : 'border-[#ec5b13]/10'
+                      ? 'border-cyan-400/30 scale-110'
+                      : 'border-blue-200/10'
                   ]">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                       stroke="currentColor" class="size-20">
@@ -61,9 +62,9 @@
 
                   <!-- decorative dots -->
                   <div class="absolute top-4 right-8 w-4 h-4 rounded-full bg-indigo-400/40 animate-pulse"></div>
-                  <div class="absolute bottom-10 left-6 w-6 h-6 rounded-full bg-[#ec5b13]/30 animate-bounce"
+                  <div class="absolute bottom-10 left-6 w-6 h-6 rounded-full bg-blue-300/30 animate-bounce"
                     style="animation-delay: 0.2s"></div>
-                  <div class="absolute top-1/2 left-4 w-3 h-3 rounded-full bg-[#ec5b13]/20 animate-pulse"
+                  <div class="absolute top-1/2 left-4 w-3 h-3 rounded-full bg-cyan-200/20 animate-pulse"
                     style="animation-delay: 0.4s"></div>
 
                 </div>
@@ -92,7 +93,7 @@
             </transition>
 
             <button @click="handleVerify" :disabled="loading || !token"
-              class="w-full h-14 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-lg font-bold shadow-lg shadow-indigo-400/40 hover:shadow-xl hover:shadow-indigo-400/50 hover:from-indigo-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mb-4 group">
+              class="w-full h-14 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-lg font-bold shadow-lg shadow-blue-400/40 hover:shadow-xl hover:shadow-blue-400/50 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mb-4 group">
               <span class="transition-transform group-hover:scale-110">
                 <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>

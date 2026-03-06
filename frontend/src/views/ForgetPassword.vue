@@ -111,7 +111,7 @@ async function handlePasswordResetToken() {
   try {
     loading.value = true;
     await forgotPassword(email.value);
-    router.push("/event-sent-reset-password");
+    router.push("/email-sent-reset-password");
   } catch (error) {
     const detail =
       typeof error?.response?.data?.detail === "string"
