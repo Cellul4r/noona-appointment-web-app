@@ -12,7 +12,9 @@ import NotFound from '../views/NotFound.vue';
 import { useAuthStore } from '../store/authStore';
 import LoginSuccess from '../views/LoginSuccess.vue';
 import EventRegistration from '../views/EventRegistration.vue';
-import VarifyEmail from '../views/VarifyEmail.vue';
+import CreateAccount from '../views/CreateAccount.vue';
+import VerifyEmail from '../views/VerifyEmail.vue';
+import EmailSent from '../views/EmailSent.vue';
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { hideNavbar: true } },
@@ -76,17 +78,29 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/create-account',
+    name: 'CreateAccount',
+    component: CreateAccount,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/verify-email',
+    name: 'VerifyEmail',
+    component: VerifyEmail,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/email-sent',
+    name: 'EmailSent',
+    component: EmailSent,
+    meta: { hideNavbar: true }
+  },
+  {
     path: '/:patchMatch(.*)*',
     name: 'NotFound',
     component: NotFound,
     meta: { hideNavbar: true }
     // catch-all route, should be last in the list
-  },
-  {
-    path: '/varify-email',
-    name: 'VarifyEmail',
-    component: VarifyEmail,
-    meta: { requiresAuth: true, hideNavbar: true }
   }
 ];
 

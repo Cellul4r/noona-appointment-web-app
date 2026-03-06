@@ -19,42 +19,87 @@
         </div>
 
         <h2 class="text-center text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
-          Verify your email
+          {{ hasToken ? 'Verify Email' : 'Verify your email' }}
         </h2>
         <p class="text-center text-gray-500 text-sm mb-8 leading-relaxed">
-          Enter your email address to get started with your account verification
+          {{ hasToken ? 'Click the button to verify your email address' : 'Enter your email address to get started with your account verification' }}
         </p>
 
-        <!-- Email Input with Icon -->
-        <div class="relative mb-6">
-          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
-            </svg>
+        <!-- Token Verification Section -->
+        <template v-if="hasToken">
+          <!-- Token Display -->
+          <div class="relative mb-6">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <input 
+              :value="token" 
+              type="text" 
+              disabled
+              placeholder="Token"
+              class="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-4 focus:outline-none bg-gray-50 text-gray-700 placeholder-gray-400"
+            />
           </div>
-          <input 
-            v-model="email" 
-            type="email" 
-            placeholder="hello@example.com"
-            class="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-300 text-gray-700 placeholder-gray-400"
-          />
-        </div>
 
-        <!-- Continue Button -->
-        <button 
-          @click="handleContinue"
-          :disabled="loading"
-          class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span>{{ loading ? 'Processing...' : 'Continue' }}</span>
-          <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-          </svg>
-          <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </button>
+          <!-- Verify Button -->
+          <button 
+            @click="handleVerifyToken"
+            :disabled="loading"
+            class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>{{ loading ? 'Verifying...' : 'Verify Email' }}</span>
+            <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+
+          <button 
+            @click="goBackToEmail"
+            class="w-full mt-3 bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all duration-300"
+          >
+            Back to Email
+          </button>
+        </template>
+
+        <!-- Email Verification Section -->
+        <template v-else>
+          <!-- Email Input with Icon -->
+          <div class="relative mb-6">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+              </svg>
+            </div>
+            <input 
+              v-model="email" 
+              type="email" 
+              placeholder="hello@example.com"
+              class="w-full border-2 border-gray-200 rounded-xl pl-12 pr-4 py-4 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all duration-300 text-gray-700 placeholder-gray-400"
+            />
+          </div>
+
+          <!-- Continue Button -->
+          <button 
+            @click="handleContinue"
+            :disabled="loading"
+            class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>{{ loading ? 'Processing...' : 'Continue' }}</span>
+            <svg v-if="!loading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+            <svg v-else class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </button>
+        </template>
 
         <!-- Divider -->
         <div class="relative my-8">
@@ -117,76 +162,80 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle, loginWithGithub } from "@/services/auth";
+import { loginWithGoogle, loginWithGithub, requestSignUp, verifyEmail } from "@/services/auth";
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore();
 const email = ref("");
-const password = ref("");
+const token = ref("");
+const hasToken = ref(false);
 const router = useRouter();
 const loading = ref(false);
 
-function saveTokenFromUrl() {
+function checkTokenFromUrl() {
   const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get("token");
+  const urlToken = urlParams.get("token");
 
-  if (token) {
-    auth.login(token);
-    window.history.replaceState({}, document.title, "/events");
+  if (urlToken) {
+    token.value = urlToken;
+    hasToken.value = true;
   }
 }
 
-async function goToSignup() {
-  router.push("/signup");
+async function handleVerifyToken() {
+  if (!token.value) return;
+
+  try {
+    loading.value = true;
+    // POST the token to the backend to verify email
+    const response = await verifyEmail(token.value);
+    
+    // Extract JWT from response and store it
+    if (response && response.access_token) {
+      auth.login(response.access_token);
+    }
+    
+    // Clear token from URL
+    window.history.replaceState({}, document.title, "/events");
+    
+    // Redirect to events or dashboard
+    router.push("/events");
+  } catch (error) {
+    const errMsg = 
+      error?.response?.data?.detail || 
+      "Email verification failed. Please try again.";
+    alert(errMsg);
+  } finally {
+    loading.value = false;
+  }
+}
+
+function goBackToEmail() {
+  token.value = "";
+  hasToken.value = false;
+  window.history.replaceState({}, document.title, "/verify-email");
 }
 
 async function handleContinue() {
   if (!email.value) return;
-  // Handle email verification logic here
-  console.log('Email:', email.value);
-}
 
-async function handleLogin() {
   try {
     loading.value = true;
-
-    const formData = new URLSearchParams();
-    formData.append("username", email.value);
-    formData.append("password", password.value);
-
-    const response = await fetch("http://localhost:56733/auth/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: formData.toString(),
-      credentials: "include"
-    });
-
-    if (!response.ok) {
-      throw new Error("Login failed");
-    }
-
-    // หลัง login สำเร็จ → ดึง user
-    const me = await fetch("http://localhost:56733/auth/me", {
-      credentials: "include"
-    });
-
-    const userData = await me.json();
-    auth.user = userData;
-
-    router.replace("/events");
-
+    await requestSignUp(email.value);
+    router.push("/email-sent");
   } catch (error) {
-    alert("Don't have an account, login first.");
-    router.push("/signup");
+    const detail =
+      typeof error?.response?.data?.detail === "string"
+        ? error.response.data.detail
+        : "Unable to send verification email right now.";
+    alert(detail);
   } finally {
     loading.value = false;
   }
 }
 
 onMounted(() => {
-  saveTokenFromUrl();
+  checkTokenFromUrl();
 });
 </script>
 
