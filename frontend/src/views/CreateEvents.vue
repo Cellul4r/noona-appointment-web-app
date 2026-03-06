@@ -755,6 +755,11 @@ function addSession() {
   const interval = Number(repeatsChoose.value.interval) || 1
 
   if (type !== "Does not repeat" && repeatEndEnabled.value) {
+    if (!["date", "count"].includes(repeatEnd.value.type)) {
+      alert("Please choose Repeat until option: Until date or Number of times.")
+      return
+    }
+
     if (repeatEnd.value.type === "count" && repeatCountError.value) {
       alert(repeatCountError.value)
       return
