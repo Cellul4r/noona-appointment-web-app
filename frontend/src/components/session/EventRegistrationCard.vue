@@ -25,13 +25,13 @@
       </div>
 
       <!-- Location -->
-      <p v-if="session.location" class="text-sm text-gray-500 flex items-center gap-1">
+      <p v-if="session.location || event?.location" class="text-sm text-gray-500 flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd"
             d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
             clip-rule="evenodd" />
         </svg>
-        {{ session.location }}
+        {{ session.location || event?.location }}
       </p>
     </div>
 
@@ -109,6 +109,7 @@ import { computed } from "vue"
 
 const props = defineProps({
   session: { type: Object, required: true },
+  event: { type: Object, default: null },
   isSelected: { type: Boolean, default: false },
   isWaitlisted: { type: Boolean, default: false },
   isReserved: { type: Boolean, default: false },
