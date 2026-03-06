@@ -1,153 +1,157 @@
 <template>
-    <div class="min-h-screen flex flex-col bg-[#fffefa] text-slate-900">
-        <!-- font-[Inter] -->
-        <!-- Center container -->
-        <div class="flex-grow flex items-center justify-center px-6 py-12">
-            <div class="w-full max-w-[440px] flex flex-col items-center">
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-indigo-50 flex items-center justify-center p-4 relative">
+        <!-- Decorative background elements -->
+        <div class="absolute top-0 left-0 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div class="absolute top-0 right-0 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-0 left-1/2 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        
+        <div class="w-full max-w-md relative">
 
-                <!-- Logo -->
-                <div class="mb-10 flex flex-col items-center gap-2">
-                    <img src="/src/assets/boy.png" class="h-13" />
-                    <img src="/src/assets/noona_pink.png" class="h-13" />
-                </div>
+            <!-- Main Card -->
+            <div class="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-8 md:p-10 transform transition-all duration-500 hover:shadow-3xl">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-3">
+                        Create New Password
+                    </h1>
 
-                <!-- Card -->
-                <div class="w-full bg-white p-8 md:p-10 rounded-xl border border-slate-100 shadow-sm">
-
-                    <!-- Header -->
-                    <div class="text-center mb-8">
-                        <h1 class="text-3xl font-bold mb-3">
-                            Create New Password
-                        </h1>
-
-                        <p class="text-slate-500 text-base">
-                            Please choose a strong password that you haven't used before.
-                        </p>
-                    </div>
-
-                    <!-- Form -->
-                    <form class="space-y-6" @submit.prevent="handleReset">
-
-                        <!-- Email (readonly) -->
-                        <div class="space-y-2">
-
-                            <label class="text-sm font-semibold ml-1">
-                                Email Address
-                            </label>
-
-                            <input v-model="email" type="email" readonly
-                                class="w-full px-5 py-4 bg-slate-100 border-none rounded-2xl outline-none text-slate-600 cursor-not-allowed"
-                                placeholder="your@email.com" />
-
-                        </div>
-
-                        <!-- New password -->
-                        <div class="space-y-2">
-
-                            <label class="text-sm font-semibold ml-1">
-                                New Password
-                            </label>
-
-                            <div class="relative">
-                                <input v-model="password" :type="showPassword ? 'text' : 'password'"
-                                    class="w-full px-5 py-4 pr-12 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-zinc-700/20 outline-none"
-                                    placeholder="••••••••" />
-                            </div>
-
-                        </div>
-
-                        <!-- Confirm password -->
-                        <div class="space-y-2">
-
-                            <label class="text-sm font-semibold ml-1">
-                                Confirm New Password
-                            </label>
-
-                            <div class="relative">
-                                <input v-model="confirmPassword" :type="showConfirm ? 'text' : 'password'"
-                                    class="w-full px-5 py-4 pr-12 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-zinc-700/20 outline-none"
-                                    placeholder="••••••••" />
-                            </div>
-
-                        </div>
-
-                        <!-- Password rules -->
-                        <div class="space-y-2 py-2">
-
-                            <div class="flex items-center gap-2 text-sm">
-                                <!-- Unchecked -->
-                                <svg v-if="!validLength" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                    class="size-5 text-slate-300">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                                <!-- Checked -->
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-
-                                At least 8 characters
-                            </div>
-
-                            <div class="flex items-center gap-2 text-sm">
-                                <!-- Unchecked -->
-                                <svg v-if="!hasSpecial" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-                                    class="size-5 text-slate-300">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                                <!-- Checked -->
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-
-                                One special character
-                            </div>
-
-                        </div>
-
-                        <!-- Reset button -->
-                        <button type="submit" :disabled="!isValid || loading"
-                            class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-4 rounded-full shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            {{ loading ? 'Resetting...' : 'Reset Password' }}
-                        </button>
-
-                    </form>
-
-                    <!-- Back -->
-                    <div class="mt-8 pt-6 border-t flex justify-center">
-
-                        <RouterLink to="/login"
-                            class="flex items-center gap-2 text-zinc-800 font-semibold hover:underline">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
-                            </svg>
-
-                            Back to Sign In
-                        </RouterLink>
-
-                    </div>
-
-                </div>
-
-                <!-- Footer -->
-                <div class="mt-10 text-center">
-                    <p class="text-slate-400 text-sm">
-                        © 2024 Noona Inc. All rights reserved.
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Please choose a strong password that you haven't used before.
                     </p>
                 </div>
 
+                <!-- Form -->
+                <form class="space-y-5" @submit.prevent="handleReset">
+
+                    <!-- Email (readonly) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                        </label>
+                        <input v-model="email" type="email" readonly
+                            class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl outline-none text-gray-700 cursor-not-allowed"
+                            placeholder="your@email.com" />
+                    </div>
+
+                    <!-- New password -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            New Password
+                        </label>
+                        <div class="relative">
+                            <input v-model="password" :type="showPassword ? 'text' : 'password'"
+                                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-gray-700 placeholder-gray-400"
+                                placeholder="••••••••" />
+                        </div>
+                    </div>
+
+                    <!-- Confirm password -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Confirm New Password
+                        </label>
+                        <div class="relative">
+                            <input v-model="confirmPassword" :type="showConfirm ? 'text' : 'password'"
+                                class="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-300 text-gray-700 placeholder-gray-400"
+                                placeholder="••••••••" />
+                        </div>
+                    </div>
+
+                    <!-- Password rules -->
+                    <div class="space-y-2">
+
+                        <div class="flex items-center gap-2 text-sm">
+                            <!-- Unchecked -->
+                            <svg v-if="!validLength" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="size-5 text-gray-300">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- Checked -->
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span class="text-gray-600">At least 8 characters</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-sm">
+                            <!-- Unchecked -->
+                            <svg v-if="!hasNumber" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="size-5 text-gray-300">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- Checked -->
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span class="text-gray-600">One number</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-sm">
+                            <!-- Unchecked -->
+                            <svg v-if="!hasLowercase" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="size-5 text-gray-300">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- Checked -->
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span class="text-gray-600">One lowercase letter</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-sm">
+                            <!-- Unchecked -->
+                            <svg v-if="!hasUppercase" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="size-5 text-gray-300">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <!-- Checked -->
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke-width="1.5" stroke="currentColor" class="size-5 text-green-500">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                            <span class="text-gray-600">One uppercase letter</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Reset button -->
+                    <button type="submit" :disabled="!isValid || loading"
+                        class="btn btn-active btn-primary w-full transition duration-300 hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {{ loading ? 'Resetting...' : 'Reset Password' }}
+                    </button>
+
+                </form>
+
+                <!-- Back to Login -->
+                <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                    <RouterLink to="/login"
+                        class="flex items-center justify-center gap-2 text-blue-600 font-semibold hover:text-blue-800 hover:underline transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
+                        </svg>
+                        Back to Sign In
+                    </RouterLink>
+                </div>
             </div>
         </div>
-
     </div>
 </template>
 
@@ -206,13 +210,17 @@ onMounted(async () => {
 
 const validLength = computed(() => password.value.length >= 8)
 
-const hasSpecial = computed(() =>
-    /[!@#$%^&*(),.?":{}|<>]/.test(password.value)
-)
+const hasNumber = computed(() => /\d/.test(password.value))
+
+const hasLowercase = computed(() => /[a-z]/.test(password.value))
+
+const hasUppercase = computed(() => /[A-Z]/.test(password.value))
 
 const isValid = computed(() =>
     validLength.value &&
-    hasSpecial.value &&
+    hasNumber.value &&
+    hasLowercase.value &&
+    hasUppercase.value &&
     password.value === confirmPassword.value &&
     password.value.length > 0
 )
@@ -245,3 +253,32 @@ async function handleReset() {
     }
 }
 </script>
+
+<style scoped>
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+</style>
