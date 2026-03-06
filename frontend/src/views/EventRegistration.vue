@@ -222,6 +222,7 @@ const selectedSessionsCount = computed(() =>
   sessions.value.filter(s => s.registration_status === "confirmed").length
 )
 const isFull = (session) => {
+  if (session.seat_capacity == null) return false
   const isMine = session.registration_status === "confirmed"
   const takenByOthers = session.seat_taken - (isMine ? 1 : 0)
   return takenByOthers >= session.seat_capacity
@@ -493,7 +494,7 @@ const toggleAccept = async (session) => {
 
 const toggleWaitlist = async (session) => {
   if (loadingSessions.value.has(session.uuid)) return
-  if (session.seat_taken < session.seat_capacity) return
+  if (session.seat_capacity == null || session.seat_taken < session.seat_capacity) return
 
   const prevStatus = session.registration_status
   const wasWaitlisted = prevStatus === "waitlist"

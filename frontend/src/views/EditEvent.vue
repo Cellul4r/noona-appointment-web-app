@@ -320,14 +320,19 @@ const submitPayload = async () => {
   const sessionsPayload = sessions.value.map(s => {
     // Only include sessions with explicit actions
     if (!s.action) return null;
-    
+
+    const normalizedCapacity =
+      s.capacity === null || s.capacity === undefined || s.capacity === ""
+        ? null
+        : Number(s.capacity);
+
     // s.start & s.end are actual Date objects, .toISOString() returns UTC
     const data = {
       start_datetime: s.start ? s.start.toISOString() : null,
       end_datetime: s.end ? s.end.toISOString() : null,
+      seat_capacity: normalizedCapacity,
     };
     
-    if (s.capacity) data.seat_capacity = Number(s.capacity);
     if (s.location) data.location = s.location;
     if (s.description) data.description = s.description;
 
