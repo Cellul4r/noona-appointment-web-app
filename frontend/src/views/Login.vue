@@ -44,7 +44,7 @@
               Remember me
             </label> -->
           <div class="text-right">
-            <a href="..." class="text-blue-600 hover:text-blue-800 hover:underline transition">Forgot password?</a>
+            <router-link to="/forgot-password" class="text-blue-600 hover:text-blue-800 hover:underline transition">Forgot password?</router-link>
           </div>
 
           <button
@@ -70,7 +70,7 @@
 
         <p class="w-full py-3 flex text-center justify-center">
           Don’t have an account?
-          <a @click.prevent="goToSignup" href="..." class="px-2 text-blue-600 hover:text-blue-800 hover:underline transition">Sign up</a>
+          <router-link to="/signup" class="px-2 text-blue-600 hover:text-blue-800 hover:underline transition">Sign up</router-link>
         </p>
       </div>
 
@@ -102,9 +102,6 @@ export default {
         auth.login(token);
         window.history.replaceState({}, document.title, "/events");
       }
-    }
-    async function goToSignup() {
-      router.push("/verify-email");
     }
 
     async function handleLogin() {
@@ -176,7 +173,6 @@ export default {
       errorMessage,
       loading,
       handleLogin,
-      goToSignup,
       loginWithGoogle,
       loginWithGithub,
     };

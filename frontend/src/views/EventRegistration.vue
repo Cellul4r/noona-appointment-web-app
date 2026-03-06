@@ -198,7 +198,7 @@ import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
 import EventRegistrationCard from "@/components/session/EventRegistrationCard.vue"
-import { TZDate } from "@vvo/tzdate"
+import { formatInTimeZone } from "@date-fns/tz"
 import { useAuthStore } from "@/store/authStore"
 
 const route = useRoute()
@@ -604,21 +604,17 @@ const eventTimezone = computed(() => timezoneLabel.value)
 // ─── Formatters ───────────────────────────────────────────────────────────────
 
 const formatTime = (date) => {
-  const tzDate = new TZDate(new Date(date), eventTimezone.value)
-  return tzDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+  return formatInTimeZone(new Date(date), eventTimezone.value, "HH:mm")
 }
 
 const formatDate = (date) => {
-  const tzDate = new TZDate(new Date(date), eventTimezone.value)
-  return tzDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return formatInTimeZone(new Date(date), eventTimezone.value, "MMM d")
 }
 
 const minStartDateTime = computed(() => {
-  const nowTz = new TZDate(new Date(), eventTimezone.value)
-
-  const pad = (n) => String(n).padStart(2, "0")
-
-  return `${nowTz.getFullYear()}-${pad(nowTz.getMonth() + 1)}-${pad(nowTz.getDate())}T${pad(nowTz.getHours())}:${pad(nowTz.getMinutes())}`
+  const now = new Date()
+  const tzString = formatInTimeZone(now, eventTimezone.value, "yyyy-MM-dd'T'HH:mm")
+  return tzString
 })
 
 onMounted(async () => {
