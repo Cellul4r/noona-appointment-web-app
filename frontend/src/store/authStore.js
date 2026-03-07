@@ -22,7 +22,6 @@ export const useAuthStore = defineStore("auth", {
       await this.updateUser();
     },
     async logout() {
-      setCsrfToken(null);
       await logout();
       this.user = null;
     },
