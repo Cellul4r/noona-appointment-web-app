@@ -10,6 +10,14 @@
           </svg>
 
           <span class="font-bold text-lg">Edit Event</span>
+          <span v-if="event.is_draft" class="badge badge-warning gap-1 text-xs font-semibold ml-1">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+            Draft
+          </span>
+          <span v-else class="badge badge-success gap-1 text-xs font-semibold ml-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+            Active
+          </span>
         </button>
         <dialog id="my_modal_3" class="modal">
           <div class="modal-box">
