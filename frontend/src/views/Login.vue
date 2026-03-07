@@ -116,7 +116,7 @@
 
         <p class="w-full py-3 flex text-center justify-center">
           Don’t have an account?
-          <router-link to="/signup" class="px-2 text-blue-600 hover:text-blue-800 hover:underline transition">Sign
+          <router-link to="/verify-email" class="px-2 text-blue-600 hover:text-blue-800 hover:underline transition">Sign
             up</router-link>
         </p>
       </div>
