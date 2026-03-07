@@ -156,7 +156,7 @@ class CsrfSettings(BaseSettings):
     secret_key: str = "my_csrf_secret"
     cookie_samesite: str = "lax"
     httponly: bool = True
-    cookie_secure: bool = False
+    cookie_secure: bool = True
 
     class Config:
         env_file = ".env"
