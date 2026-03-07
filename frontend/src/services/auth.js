@@ -27,6 +27,7 @@ export async function getUser() {
 }
 
 export async function requestSignUp(email) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/request/sign-up`, null, {
     params: { email },
   });
@@ -34,6 +35,7 @@ export async function requestSignUp(email) {
 }
 
 export async function signup(payload) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/signup`, payload);
   return res.data;
 }
@@ -70,6 +72,7 @@ export function loginWithGithub() {
 
 // Verify Email with Token
 export async function verifyEmail(token) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/verify-email`, null, {
     params: { token },
   });
@@ -77,6 +80,7 @@ export async function verifyEmail(token) {
 }
 
 export async function forgotPassword(email) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/request/password-reset`, null, {
     params: { email },
   });
@@ -84,6 +88,7 @@ export async function forgotPassword(email) {
 }
 
 export async function createNewPassword(token) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/verify-password-reset-token`, null, {
     params: { token },
   });
@@ -91,6 +96,7 @@ export async function createNewPassword(token) {
 }
 
 export async function resetPassword(new_password) {
+  await ensureCsrfToken();
   const res = await axios.post(`${API_URL}/auth/reset-password`, null, {
     params: { new_password },
   });
@@ -98,6 +104,7 @@ export async function resetPassword(new_password) {
 }
 // Logout & Clear JWT
 export async function logout() {
+  await ensureCsrfToken();
   setCsrfToken(null);
   await axios.post(`${API_URL}/auth/logout`, null);
 }

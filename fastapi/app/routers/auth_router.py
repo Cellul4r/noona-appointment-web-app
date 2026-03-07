@@ -43,7 +43,11 @@ auth_service = AuthService(user_service)
 FRONTEND_LOGIN_SUCCESS_URI = settings.frontend_login_success_uri
 
 
-@router.post("/request/sign-up", status_code=status.HTTP_200_OK)
+@router.post(
+    "/request/sign-up",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
+)
 async def request_sign_up(
     email: str,
     db: Annotated[Session, Depends(get_db)],
@@ -62,7 +66,7 @@ async def request_sign_up(
     return {"message": "Registration confirmation email sent."}
 
 
-@router.post("/verify-email")
+@router.post("/verify-email", dependencies=[Depends(csrf_protect)])
 def verify_email(
     token: str,
     db: Annotated[Session, Depends(get_db)],
@@ -107,6 +111,7 @@ def verify_email(
 @router.post(
     "/signup",
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(csrf_protect)],
 )
 def create_user(
     request: Request,
@@ -147,7 +152,11 @@ def create_user(
     return response
 
 
-@router.post("/request/password-reset", status_code=status.HTTP_200_OK)
+@router.post(
+    "/request/password-reset",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
+)
 async def request_password_reset(
     email: str,
     db: Annotated[Session, Depends(get_db)],
@@ -166,7 +175,7 @@ async def request_password_reset(
     return {"message": "Password reset email sent."}
 
 
-@router.post("/verify-password-reset-token")
+@router.post("/verify-password-reset-token", dependencies=[Depends(csrf_protect)])
 def verify_password_reset_token(
     token: str,
     db: Annotated[Session, Depends(get_db)],
@@ -208,7 +217,11 @@ def verify_password_reset_token(
     return response
 
 
-@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(csrf_protect)],
+)
 def reset_password(
     request: Request,
     new_password: str,
@@ -426,7 +439,7 @@ async def github_auth(
             return response
 
 
-@router.post("/logout")
+@router.post("/logout", dependencies=[Depends(csrf_protect)])
 async def logout():
     # To logout remove jwt token from cookies
 
