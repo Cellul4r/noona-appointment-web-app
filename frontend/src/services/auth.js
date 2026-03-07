@@ -105,6 +105,5 @@ export async function resetPassword(new_password) {
 // Logout & Clear JWT
 export async function logout() {
   await ensureCsrfToken();
-  setCsrfToken(null);
   await axios.post(`${API_URL}/auth/logout`, null);
 }
