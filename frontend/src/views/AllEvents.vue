@@ -142,6 +142,7 @@
                   </svg>
                   Ended
                 </div>
+                <div v-else-if="checkingEnded[event.share_uuid]" class="skeleton h-5 w-14 rounded-full shrink-0"></div>
                 <div v-else class="badge badge-success gap-1 shrink-0">
                   <span class="w-1.5 h-1.5 rounded-full bg-green-50 inline-block animate-pulse"></span>
                   Active
@@ -257,6 +258,7 @@ const nextCursor = ref(null);
 const errorMsg = ref(null);
 const toastMsg = ref(null);
 const endedEvents = ref({}); // { [share_uuid]: true } for events where all sessions have ended
+const checkingEnded = ref({}); // { [share_uuid]: true } while ended-check is in flight
 
 // Filters
 const currentScope = ref('all'); 
@@ -293,6 +295,7 @@ const fetchEvents = async (reset = false) => {
     if (reset) {
       events.value = response.items;
       endedEvents.value = {};
+      checkingEnded.value = {};
       // reset visible count when we reset the list
       visibleCount.value = eventsPerPage;
     } else {
@@ -320,6 +323,10 @@ const fetchEvents = async (reset = false) => {
 // Check which published events have all sessions ended (no upcoming sessions)
 const checkEndedStatus = async (eventList) => {
   const publishedEvents = eventList.filter(e => !e.is_draft);
+  // Mark all published events as "checking" before any API calls
+  publishedEvents.forEach(e => { checkingEnded.value[e.share_uuid] = true; });
+  checkingEnded.value = { ...checkingEnded.value };
+
   const checks = publishedEvents.map(async (event) => {
     try {
       // Fetch with upcoming_only=true and size=1: if 0 items, all sessions ended
@@ -328,12 +335,15 @@ const checkEndedStatus = async (eventList) => {
         endedEvents.value[event.share_uuid] = true;
       }
     } catch {
-      // silently ignore — badge will default to "Live"
+      // silently ignore — badge will default to "Active"
+    } finally {
+      delete checkingEnded.value[event.share_uuid];
     }
   });
   await Promise.all(checks);
   // Trigger reactivity
   endedEvents.value = { ...endedEvents.value };
+  checkingEnded.value = { ...checkingEnded.value };
 };
 
 const loadUserSettings = async () => {
