@@ -130,7 +130,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle, loginWithGithub, setCsrfToken } from "@/services/auth";
+import { login, getUser, loginWithGoogle, loginWithGithub, setCsrfToken } from "@/services/auth";
 import { useRouter } from 'vue-router'
 export default {
 
@@ -147,52 +147,23 @@ export default {
         loading.value = true;
         errorMessage.value = "";
 
-        const formData = new URLSearchParams();
-        formData.append("username", email.value);
-        formData.append("password", password.value);
-
-        const response = await fetch("http://localhost:56733/auth/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formData.toString(),
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          const detail = typeof payload?.detail === "string"
-            ? payload.detail
-            : Array.isArray(payload?.detail)
-              ? payload.detail.map((item) => item?.msg).filter(Boolean).join(", ")
-              : "";
-
-          if (response.status === 401) {
-            throw new Error(detail || "Invalid email or password.");
-          }
-          if (response.status === 422) {
-            throw new Error(detail || "Please check your email and password format.");
-          }
-
-          throw new Error(detail || "Unable to log in right now. Please try again.");
-        }
-
-        const loginPayload = await response.json().catch(() => null);
+        const loginPayload = await login(email.value, password.value);
         setCsrfToken(loginPayload?.csrf_token);
 
-        // หลัง login สำเร็จ → ดึง user
-        const me = await fetch("http://localhost:56733/auth/me", {
-          credentials: "include"
-        });
-
-        const userData = await me.json();
+        const userData = await getUser();
         auth.user = userData;
 
         router.replace("/dashboard");
 
       } catch (error) {
-        errorMessage.value = error?.message || "Unable to log in right now. Please try again.";
+        const detail = error?.response?.data?.detail;
+        if (typeof detail === "string") {
+          errorMessage.value = detail;
+        } else if (Array.isArray(detail)) {
+          errorMessage.value = detail.map((item) => item?.msg).filter(Boolean).join(", ") || "Unable to log in right now. Please try again.";
+        } else {
+          errorMessage.value = error?.message || "Unable to log in right now. Please try again.";
+        }
       } finally {
         loading.value = false;
       }
