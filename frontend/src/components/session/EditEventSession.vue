@@ -504,15 +504,32 @@ const loadSessions = async (cursor, isNavigation = false) => {
     }
   });
 
-  // Preserve newly added sessions (those without UUID) and merge with server data
+  // Preserve newly added sessions (those without UUID)
   const newlyAdded = props.sessions.filter(s => !s.uuid);
-  const allSessions = [...newlyAdded, ...mappedSessions];
+
+  // Preserve locally modified/deleted existing sessions from OTHER pages
+  const fetchedUuids = new Set(mappedSessions.map(s => s.uuid));
+  const modifiedFromOtherPages = props.sessions.filter(
+    s => s.uuid && s.action && !fetchedUuids.has(s.uuid)
+  );
+
+  // For sessions on the CURRENT page, re-apply any local modifications
+  const modifiedByUuid = new Map(
+    props.sessions.filter(s => s.uuid && s.action).map(s => [s.uuid, s])
+  );
+  const mergedCurrentPage = mappedSessions.map(s => {
+    const modified = modifiedByUuid.get(s.uuid);
+    return modified || s;
+  });
+
+  const allSessions = [...newlyAdded, ...mergedCurrentPage, ...modifiedFromOtherPages];
   
   emit('sessionsChange', allSessions);
   
   nextCursor.value = sessionsRes.next_page;
   prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
-  hasUnsavedSessionChanges.value = newlyAdded.length > 0; // Keep true only if we have unsaved new sessions
+  const hasModifications = newlyAdded.length > 0 || modifiedFromOtherPages.length > 0 || modifiedByUuid.size > 0;
+  hasUnsavedSessionChanges.value = hasModifications;
   
   // Only reset on initial load, not on navigation
   if (!isNavigation) {
@@ -801,14 +818,6 @@ const isSessionEnded = (endObj) => {
   return endObj < new Date();
 }
 
-function formatDay(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'd');
-}
-function formatMonth(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'MMM').toUpperCase(); 
-}
 function formatTime(dateObj) { 
   if(!dateObj) return '';
   return format(dateObj, 'hh:mm a'); 
