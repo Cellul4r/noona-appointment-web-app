@@ -157,12 +157,18 @@ export default {
 
       } catch (error) {
         const detail = error?.response?.data?.detail;
-        if (typeof detail === "string") {
+        const status = error?.response?.status;
+
+        if (typeof detail === "string" && detail.trim()) {
           errorMessage.value = detail;
-        } else if (Array.isArray(detail)) {
+        } else if (Array.isArray(detail) && detail.length > 0) {
           errorMessage.value = detail.map((item) => item?.msg).filter(Boolean).join(", ") || "Unable to log in right now. Please try again.";
+        } else if (status === 401) {
+          errorMessage.value = "Invalid email or password.";
+        } else if (status === 422) {
+          errorMessage.value = "Invalid input.";
         } else {
-          errorMessage.value = error?.message || "Unable to log in right now. Please try again.";
+          errorMessage.value = "Login failed.";
         }
       } finally {
         loading.value = false;
