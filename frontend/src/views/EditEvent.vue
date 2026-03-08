@@ -255,7 +255,7 @@ onMounted(async () => {
 
     // Load sessions via component
     if (sessionComponentRef.value?.loadSessions) {
-      await sessionComponentRef.value.loadSessions(null);
+      await sessionComponentRef.value.loadSessions();
     }
 
   } catch (error) {

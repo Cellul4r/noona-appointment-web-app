@@ -382,18 +382,11 @@ const duplicateModalRef = ref(null)
 const pageSize = 10
 const localPageIndexNew = ref(0)
 const localPageIndexExisting = ref(0)
-
-// Server Pagination State
-const currentCursorIndex = ref(0)
-const nextCursor = ref(null)
-const prevCursor = ref(null)
-const hasUnsavedSessionChanges = ref(false)
+const loadingSessionsInit = ref(false)
 
 // Computed to separate new from existing sessions
 const newlyAddedSessions = computed(() => props.sessions.filter(s => !s.uuid && s.action !== "delete"))
 const existingSessions = computed(() => props.sessions.filter(s => s.uuid && s.action !== "delete"))
-
-const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
 
 // Pagination for newly added sessions
 const displayedNewSessions = computed(() => {
@@ -406,57 +399,29 @@ const displayedNewSessions = computed(() => {
 const newSessionsPageSize = computed(() => Math.max(1, Math.ceil(newlyAddedSessions.value.length / pageSize)))
 const shouldShowNewPagination = computed(() => newlyAddedSessions.value.length > pageSize)
 
-// Pagination for existing sessions (from server)
+// Pagination for existing sessions (client-side)
 const displayedExistingSessions = computed(() => {
-  if (!isUsingLocalPagination.value) return existingSessions.value
   const start = localPageIndexExisting.value * pageSize
   const end = start + pageSize
   return existingSessions.value.slice(start, end)
 })
 
 const existingSessionsPageSize = computed(() => Math.max(1, Math.ceil(existingSessions.value.length / pageSize)))
-const shouldShowExistingPagination = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return existingSessions.value.length > pageSize || !!prevCursor.value || !!nextCursor.value
-  }
-  return !!prevCursor.value || !!nextCursor.value
-})
+const shouldShowExistingPagination = computed(() => existingSessions.value.length > pageSize)
 
 const isNewPrevDisabled = computed(() => localPageIndexNew.value === 0)
 const isNewNextDisabled = computed(() => localPageIndexNew.value >= newSessionsPageSize.value - 1)
 const displayedNewPageNumber = computed(() => localPageIndexNew.value + 1)
 
-const isExistingPrevDisabled = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return localPageIndexExisting.value === 0 && !prevCursor.value
-  }
-  return !prevCursor.value
-})
-
-const isExistingNextDisabled = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return localPageIndexExisting.value >= existingSessionsPageSize.value - 1 && !nextCursor.value
-  }
-  return !nextCursor.value
-})
-
-const displayedExistingPageNumber = computed(() => {
-  if (isUsingLocalPagination.value) {
-    // If on first local page but navigating server pages, show server page number
-    if (localPageIndexExisting.value === 0 && currentCursorIndex.value > 0) {
-      return currentCursorIndex.value + 1
-    }
-    return localPageIndexExisting.value + 1
-  }
-  return currentCursorIndex.value + 1
-})
+const isExistingPrevDisabled = computed(() => localPageIndexExisting.value === 0)
+const isExistingNextDisabled = computed(() => localPageIndexExisting.value >= existingSessionsPageSize.value - 1)
+const displayedExistingPageNumber = computed(() => localPageIndexExisting.value + 1)
 
 const getAbsoluteNewIndex = (visibleIndex) => {
   return localPageIndexNew.value * pageSize + visibleIndex
 }
 
 const getAbsoluteExistingIndex = (visibleIndex) => {
-  if (!isUsingLocalPagination.value) return visibleIndex
   return localPageIndexExisting.value * pageSize + visibleIndex
 }
 
@@ -482,96 +447,61 @@ const newSession = ref({
 const repeatEnd = ref({ type: "never", date: "", count: null })
 const repeatsChoose = ref({ type: "Does not repeat", interval: "" })
 
-// --- SERVER PAGINATION LOGIC ---
-const loadSessions = async (cursor, isNavigation = false) => {
-  const sessionsRes = await getSessions(props.eventId, cursor, 10) 
-  const sessionsData = sessionsRes.items || [];
+// --- LOAD ALL SESSIONS UPFRONT ---
+const loadSessions = async () => {
+  loadingSessionsInit.value = true;
+  try {
+    let allServerSessions = [];
+    let cursor = null;
 
-  const mappedSessions = sessionsData.map(s => {
-    const startObj = s.start_datetime ? new TZDate(s.start_datetime, props.userTimezone) : null;
-    const endObj = s.end_datetime ? new TZDate(s.end_datetime, props.userTimezone) : null;
+    // Fetch all pages by following cursors
+    do {
+      const res = await getSessions(props.eventId, cursor, 50);
+      const items = res.items || [];
+      allServerSessions.push(...items);
+      cursor = res.next_page || null;
+    } while (cursor);
 
-    return {
-      id: s.id,
-      uuid: s.uuid,
-      start: startObj,
-      end: endObj,
-      capacity: s.seat_capacity,
-      taken: s.seat_taken,
-      action: null,
-      location: s.location || "",
-      description: s.description || ""
-    }
-  });
+    const mappedSessions = allServerSessions.map(s => {
+      const startObj = s.start_datetime ? new TZDate(s.start_datetime, props.userTimezone) : null;
+      const endObj = s.end_datetime ? new TZDate(s.end_datetime, props.userTimezone) : null;
 
-  // Preserve newly added sessions (those without UUID)
-  const newlyAdded = props.sessions.filter(s => !s.uuid);
+      return {
+        id: s.id,
+        uuid: s.uuid,
+        start: startObj,
+        end: endObj,
+        capacity: s.seat_capacity,
+        taken: s.seat_taken,
+        action: null,
+        location: s.location || "",
+        description: s.description || ""
+      };
+    });
 
-  // Preserve locally modified/deleted existing sessions from OTHER pages
-  const fetchedUuids = new Set(mappedSessions.map(s => s.uuid));
-  const modifiedFromOtherPages = props.sessions.filter(
-    s => s.uuid && s.action && !fetchedUuids.has(s.uuid)
-  );
+    // Preserve any newly added sessions (those without UUID)
+    const newlyAdded = props.sessions.filter(s => !s.uuid);
+    emit('sessionsChange', [...newlyAdded, ...mappedSessions]);
 
-  // For sessions on the CURRENT page, re-apply any local modifications
-  const modifiedByUuid = new Map(
-    props.sessions.filter(s => s.uuid && s.action).map(s => [s.uuid, s])
-  );
-  const mergedCurrentPage = mappedSessions.map(s => {
-    const modified = modifiedByUuid.get(s.uuid);
-    return modified || s;
-  });
-
-  const allSessions = [...newlyAdded, ...mergedCurrentPage, ...modifiedFromOtherPages];
-  
-  emit('sessionsChange', allSessions);
-  
-  nextCursor.value = sessionsRes.next_page;
-  prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
-  const hasModifications = newlyAdded.length > 0 || modifiedFromOtherPages.length > 0 || modifiedByUuid.size > 0;
-  hasUnsavedSessionChanges.value = hasModifications;
-  
-  // Only reset on initial load, not on navigation
-  if (!isNavigation) {
     localPageIndexNew.value = 0;
     localPageIndexExisting.value = 0;
+  } catch (err) {
+    console.error('Failed to load sessions:', err);
+  } finally {
+    loadingSessionsInit.value = false;
   }
 }
 
-const goNext = async () => {
-  if (isUsingLocalPagination.value) {
-    if (localPageIndexExisting.value < existingSessionsPageSize.value - 1) {
-      localPageIndexExisting.value++;
-      return;
-    }
-    if (nextCursor.value) {
-      currentCursorIndex.value++;
-      await loadSessions(nextCursor.value, true);
-    }
-    return;
+const goNext = () => {
+  if (localPageIndexExisting.value < existingSessionsPageSize.value - 1) {
+    localPageIndexExisting.value++;
   }
-  if (!nextCursor.value) return;
-  
-  currentCursorIndex.value++;
-  await loadSessions(nextCursor.value, true);
 }
 
-const goPrev = async () => {
-  if (isUsingLocalPagination.value) {
-    if (localPageIndexExisting.value > 0) {
-      localPageIndexExisting.value--;
-      return;
-    }
-    if (prevCursor.value) {
-      currentCursorIndex.value--;
-      await loadSessions(prevCursor.value, true);
-    }
-    return;
+const goPrev = () => {
+  if (localPageIndexExisting.value > 0) {
+    localPageIndexExisting.value--;
   }
-  if (!prevCursor.value) return;
-  
-  currentCursorIndex.value--;
-  await loadSessions(prevCursor.value, true);
 }
 
 // --- MODAL CONTROLS ---
@@ -625,9 +555,7 @@ const confirmDuplicateInline = () => {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   activeCopyIndex.value = null
 }
 
@@ -641,9 +569,7 @@ const confirmDuplicate = () => {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   closeDuplicateModal()
 }
 
@@ -728,9 +654,7 @@ function addSession() {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   sessionModalRef.value.close()
   resetForm()
 }
@@ -750,10 +674,11 @@ function saveEdit() {
   markSessionAsModified(editingIndex.value)
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
-  localPageIndexExisting.value = 0;
   if (localPageIndexNew.value >= newSessionsPageSize.value) {
-    localPageIndexNew.value = newSessionsPageSize.value - 1
+    localPageIndexNew.value = Math.max(0, newSessionsPageSize.value - 1)
+  }
+  if (localPageIndexExisting.value >= existingSessionsPageSize.value) {
+    localPageIndexExisting.value = Math.max(0, existingSessionsPageSize.value - 1)
   }
   sessionModalRef.value.close()
   resetForm()
@@ -778,7 +703,6 @@ function removeSession(index) {
       props.sessions.splice(index, 1)
     }
     emit('sessionsChange', [...props.sessions])
-    hasUnsavedSessionChanges.value = true;
     if (newlyAddedSessions.value.length === 0) {
       localPageIndexNew.value = 0
     } else if (localPageIndexNew.value >= newSessionsPageSize.value) {
