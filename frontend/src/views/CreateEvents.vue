@@ -434,7 +434,8 @@ import { useRouter } from 'vue-router'
 import { createEvent } from "@/services/event"
 import { TZDate } from '@date-fns/tz'
 import { useAuthStore } from "@/store/authStore"
-import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
+import { format } from "date-fns"
+import { RRule } from "rrule"
 import { useOffsetPagination } from '@vueuse/core'
 
 const router = useRouter()
@@ -771,24 +772,6 @@ function addSession() {
     }
   }
 
-  const addByType = (dateStr) => {
-    const [datePart, timePart] = dateStr.split("T")
-    const [year, month, day] = datePart.split("-").map(Number)
-    const [hour, minute] = timePart.split(":").map(Number)
-
-    const d = new Date(Date.UTC(year, month - 1, day, hour, minute))
-
-    let next;
-    if (type === "Daily") next = addDays(d, interval)
-    else if (type === "Weekly") next = addWeeks(d, interval)
-    else if (type === "Monthly") next = addMonths(d, interval)
-    else if (type === "Yearly") next = addYears(d, interval)
-    else next = d;
-
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}T${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}`
-  }
-
   if (type === "Does not repeat") {
     sessions.value.push({
       ...newSession.value,
@@ -796,38 +779,56 @@ function addSession() {
       end: endDate,
     })
   } else {
+    const freqMap = {
+      Daily: RRule.DAILY,
+      Weekly: RRule.WEEKLY,
+      Monthly: RRule.MONTHLY,
+      Yearly: RRule.YEARLY,
+    }
+
+    const ruleOptions = {
+      freq: freqMap[type],
+      interval,
+      dtstart: new Date(startDate),
+    }
+
     const effectiveRepeatEndType = repeatEndEnabled.value ? repeatEnd.value.type : "never"
-    const repeatCount = Number(repeatEnd.value.count)
 
-    let currentStartStr = newSession.value.start
-    let currentEndStr = newSession.value.end
-    let i = 0
+    if (effectiveRepeatEndType === "count") {
+      ruleOptions.count = Number(repeatEnd.value.count)
+    } else if (effectiveRepeatEndType === "date" && repeatEnd.value.date) {
+      ruleOptions.until = new Date(parseDatetimeLocal(`${repeatEnd.value.date}T23:59`, eventTimezone.value))
+    } else {
+      ruleOptions.count = 100
+    }
 
-    while (true) {
-      const currentStart = parseDatetimeLocal(currentStartStr, eventTimezone.value)
-      const currentEnd = parseDatetimeLocal(currentEndStr, eventTimezone.value)
+    const toDateTimeLocalString = (dateObj) => {
+      const pad = (n) => String(n).padStart(2, "0")
+      return `${dateObj.getUTCFullYear()}-${pad(dateObj.getUTCMonth() + 1)}-${pad(dateObj.getUTCDate())}T${pad(dateObj.getUTCHours())}:${pad(dateObj.getUTCMinutes())}`
+    }
 
+    const toLocalDateString = (dateObj) => {
+      const pad = (n) => String(n).padStart(2, "0")
+      return `${dateObj.getUTCFullYear()}-${pad(dateObj.getUTCMonth() + 1)}-${pad(dateObj.getUTCDate())}`
+    }
+
+    const rule = new RRule(ruleOptions)
+    const occurrenceStarts = rule.all()
+    const boundedOccurrenceStarts = occurrenceStarts.filter((occurrenceStart) => {
+      if (!(effectiveRepeatEndType === "date" && repeatEnd.value.date)) return true
+      return toLocalDateString(occurrenceStart) <= repeatEnd.value.date
+    })
+    const durationMs = endDate.getTime() - startDate.getTime()
+
+    boundedOccurrenceStarts.forEach((occurrenceStart) => {
+      const occurrenceStartTz = parseDatetimeLocal(toDateTimeLocalString(occurrenceStart), eventTimezone.value)
       sessions.value.push({
         ...newSession.value,
-        start: currentStart,
-        end: currentEnd,
+        start: occurrenceStartTz,
+        end: new Date(occurrenceStartTz.getTime() + durationMs),
         recurring: type
       })
-      i++
-
-      if (effectiveRepeatEndType === "count") {
-        if (i >= repeatCount) break
-      }
-      if (effectiveRepeatEndType === "date" && repeatEnd.value.date) {
-        // Evaluate limit cleanly by adding end-of-day time to the repeat limit
-        const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", eventTimezone.value)
-        if (currentStart >= limitDate) break
-      }
-      if (i >= 100) break
-
-      currentStartStr = addByType(currentStartStr)
-      currentEndStr = addByType(currentEndStr)
-    }
+    })
   }
 
   resetForm()
