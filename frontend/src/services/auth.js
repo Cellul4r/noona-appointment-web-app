@@ -40,6 +40,19 @@ export async function signup(payload) {
   return res.data;
 }
 
+export async function login(username, password) {
+  const formData = new URLSearchParams();
+  formData.append("username", username);
+  formData.append("password", password);
+
+  const res = await axios.post(`${API_URL}/auth/token`, formData.toString(), {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  });
+  return res.data;
+}
+
 export function getCsrfToken() {
   return csrfToken;
 }
