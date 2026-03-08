@@ -161,8 +161,12 @@ class CsrfSettings(BaseSettings):
     max_age: int = 1440  # 1 day in seconds
     cookie_secure: bool = True  # Set to True in production
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 try:
