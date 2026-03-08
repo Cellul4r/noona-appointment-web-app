@@ -84,8 +84,29 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="isInitialSessionsLoading" class="flex justify-center py-10">
+      <LoadingSpinner />
+    </div>
+
+    <!-- No Sessions Found -->
+    <div v-else-if="!isInitialSessionsLoading && (!Array.isArray(sessions) || sessions.length === 0)"
+      class="flex min-h-85 flex-col items-center justify-center px-4 py-16">
+      <div class="mb-6 flex h-32 w-32 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          stroke-width="1.5" stroke="currentColor" class="h-16 w-16 text-gray-300">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">No sessions found</h3>
+      <p class="text-gray-500 text-center">
+        This event doesn't have any sessions yet. {{ isCurrentUserHost ? 'Add sessions to get started!' : 'Check back later.' }}
+      </p>
+    </div>
+
     <!-- Grid -->
-    <TransitionGroup name="session-grid" tag="div" class="grid grid-cols-2 xl:grid-cols-3 gap-6">
+    <TransitionGroup v-else name="session-grid" tag="div" class="grid grid-cols-2 xl:grid-cols-3 gap-6">
 
       <EventRegistrationCard v-for="session in filteredSessions" :key="session.uuid" :session="session"
         :event="event" :isSelected="isSelected(session)" :isWaitlisted="isWaitlisted(session)" :isAvailable="isAvailable(session)"
@@ -198,6 +219,7 @@ import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
 import EventRegistrationCard from "@/components/session/EventRegistrationCard.vue"
+import LoadingSpinner from "@/components/LoadingSpinner.vue"
 import { TZDate } from "@date-fns/tz"
 import { format } from "date-fns"
 import { useAuthStore } from "@/store/authStore"
@@ -242,6 +264,16 @@ const isAccepted = (session) => session.registration_status === "accepted"
 const hasSavedSession = computed(() =>
   sessions.value.some((s) => s.registration_status === "confirmed")
 )
+
+const isCurrentUserHost = computed(() => {
+  const hostId = event.value?.host?.id
+  const currentUserId = authStore.user?.id
+
+  if (hostId == null || currentUserId == null) return false
+  return hostId === currentUserId
+})
+
+const isInitialSessionsLoading = computed(() => sessionsLoading.value && sessions.value.length === 0)
 
 const formatReminderOption = (minute) => {
   if (minute === -1) return "None"
