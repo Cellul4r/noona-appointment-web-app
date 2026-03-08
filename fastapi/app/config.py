@@ -159,7 +159,7 @@ class CsrfSettings(BaseSettings):
     cookie_samesite: str = "lax"
     httponly: bool = True
     max_age: int = 1440  # 1 day in seconds
-    cookie_secure: bool = False  # Set to True in production
+    cookie_secure: bool = True  # Set to True in production
 
     class Config:
         env_file = ".env"
