@@ -418,17 +418,14 @@ export default {
 
     async fetchUserData() {
       try {
-        console.log("Fetching user data from API...");
 
         const data = await fetchUserSettings();
 
-        console.log("API Response Object:", data);
 
         if (!data) {
           throw new Error("No data received from API");
         }
 
-        console.log("Parsed Data:", data);
         this.formData.email = data.email;
         this.formData.full_name = data.full_name;
         this.formData.profile_image = data.profile_image;
@@ -492,14 +489,11 @@ export default {
           data.password = this.new_password;
         }
 
-        console.log("Submitting form data:", data);
         let updatedUser = await updateUserProfile(data);
 
         if (this.selectedProfileImage) {
           updatedUser = await updateProfileImage(this.selectedProfileImage);
         }
-
-        console.log("Update successful:", updatedUser);
 
         // refresh fields from server in case backend modified anything
         if (updatedUser) {
@@ -569,9 +563,7 @@ export default {
           return;
         }
 
-        console.log("verifying password", this.current_password);
         const verifyResult = await verifyUserPassword(this.current_password);
-        console.log("verify-password response", verifyResult);
 
         if (verifyResult?.verified) {
           this.passwordVerified = true;

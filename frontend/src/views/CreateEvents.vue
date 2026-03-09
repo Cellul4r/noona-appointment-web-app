@@ -942,8 +942,6 @@ const submit = async () => {
     }))
   }
 
-  console.log("Payload:", payload)
-
   try {
     const createdEvent = await createEvent(payload)
     const eventUuid = createdEvent?.share_uuid || createdEvent?.uuid || createdEvent?.event_uuid
