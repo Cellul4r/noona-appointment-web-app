@@ -745,7 +745,6 @@ function addSession() {
   // Parse the local datetime strings strictly into TZDate objects
   const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
   const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
-    ("Parsed startDate:", startDate.toString(), "Parsed endDate:", endDate.toString())
   // Safe validation using exact object comparison
   const now = parseDatetimeLocal(format(new Date(), "yyyy-MM-dd'T'HH:mm"), eventTimezone.value)
   if (startDate < now) {
@@ -754,7 +753,12 @@ function addSession() {
   }
 
   const type = repeatsChoose.value.type
-  const interval = Number(repeatsChoose.value.interval) || 1
+  const interval = Number(repeatsChoose.value.interval) || null
+  if (type !== "Does not repeat" && (interval === null || interval < 1)) {
+    alert("Please enter a valid repeat interval.")
+    return
+  }
+
   if (type !== "Does not repeat" && repeatEndEnabled.value) {
     if (!["date", "count"].includes(repeatEnd.value.type)) {
       alert("Please choose Repeat until option: Until date or Number of times.")
@@ -770,6 +774,7 @@ function addSession() {
       alert("Please select an until date for repeat session.")
       return
     }
+
   }
 
   if (type === "Does not repeat") {
