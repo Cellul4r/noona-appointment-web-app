@@ -3,7 +3,7 @@
   "crons": [
     {
       "path": "/api/notifications/dispatch?size=50",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/1 * * * *"
     }
   ],
   "builds": [
