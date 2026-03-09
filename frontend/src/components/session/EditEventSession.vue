@@ -314,7 +314,7 @@
               type="number" 
               min="1" 
               v-model="repeatsChoose.interval" 
-              :placeholder="repeatsChoose.type !== 'Does not repeat' ? `Every X ${repeatsChoose.type.toLowerCase()}` : 'Every X'" 
+              :placeholder="repeatsChoose.type !== 'Does not repeat' ? `Every X ${mapped_datetype(repeatsChoose.type)}` : 'Every X'" 
               class="input input-bordered w-full"
               :disabled="repeatsChoose.type === 'Does not repeat'" 
             />
@@ -687,6 +687,15 @@ function addSession() {
   localPageIndexNew.value = newSessionsPageSize.value - 1;
   sessionModalRef.value.close()
   resetForm()
+}
+
+function mapped_datetype(datetype){
+  datetype = datetype.toLowerCase()
+  if (datetype === "daily") return "day(s)"
+  else if (datetype === "weekly") return "week(s)"
+  else if (datetype === "monthly") return "month(s)"
+  else if (datetype === "yearly") return "year(s)"
+  else return ""
 }
 
 function saveEdit() {
