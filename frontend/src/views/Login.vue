@@ -130,7 +130,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { login, getUser, loginWithGoogle, loginWithGithub, setCsrfToken } from "@/services/auth";
+import { login, getUser, loginWithGoogle, loginWithGithub } from "@/services/auth";
 import { useRouter } from 'vue-router'
 export default {
 
@@ -148,7 +148,7 @@ export default {
         errorMessage.value = "";
 
         const loginPayload = await login(email.value, password.value);
-        setCsrfToken(loginPayload?.csrf_token);
+        auth.setCsrfToken(loginPayload?.csrf_token);
 
         const userData = await getUser();
         auth.user = userData;

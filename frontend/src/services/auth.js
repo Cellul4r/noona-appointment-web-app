@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
-let csrfToken = null;
+let getCsrfTokenHandler = () => null;
+let setCsrfTokenHandler = () => { };
 
 // Ensure Axios sends cookies with every request
 axios.defaults.withCredentials = true;
@@ -11,7 +12,7 @@ axios.interceptors.request.use(
   (config) => {
     const method = (config.method || "GET").toUpperCase();
     if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-      config.headers["X-CSRF-Token"] = csrfToken;
+      config.headers["X-CSRF-Token"] = getCsrfToken();
     }
     // No Authorization header needed since JWT is in cookie
     return config;
@@ -54,22 +55,32 @@ export async function login(username, password) {
 }
 
 export function getCsrfToken() {
-  return csrfToken;
+  return getCsrfTokenHandler() || null;
 }
 
 export function setCsrfToken(token) {
-  csrfToken = token || null;
+  setCsrfTokenHandler(token || null);
+}
+
+export function registerCsrfTokenHandlers({ getToken, setToken }) {
+  if (typeof getToken === "function") {
+    getCsrfTokenHandler = getToken;
+  }
+  if (typeof setToken === "function") {
+    setCsrfTokenHandler = setToken;
+  }
 }
 
 export async function refreshCsrfToken() {
   const res = await axios.get(`${API_URL}/auth/csrf`);
   setCsrfToken(res.data?.csrf_token);
-  return csrfToken;
+  return getCsrfToken();
 }
 
 export async function ensureCsrfToken() {
-  if (csrfToken) {
-    return csrfToken;
+  const token = getCsrfToken();
+  if (token) {
+    return token;
   }
   return refreshCsrfToken();
 }
