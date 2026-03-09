@@ -107,7 +107,7 @@ class NotificationService:
 
     def enqueue_registration_summary_job(self, user_id: int, event_uuid: uuid.UUID):
         now = datetime.utcnow()
-        run_at = now + timedelta(minutes=2)
+        run_at = now  # run now
         dedupe_window = run_at.strftime("%Y%m%d%H") + (
             "00" if run_at.minute < 30 else "30"
         )

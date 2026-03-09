@@ -54,7 +54,23 @@ export async function registerForSession(sessionUuid, reminder = []) {
   const res = await axios.post(
     `${API_URL}/sessions/${sessionUuid}/registration`,
     null,
-    { params }
+    {
+      params,
+      paramsSerializer: (paramsObj) => {
+        const searchParams = new URLSearchParams();
+
+        Object.keys(paramsObj).forEach(key => {
+          const value = paramsObj[key];
+          if (Array.isArray(value)) {
+            value.forEach(val => searchParams.append(key, val));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, value);
+          }
+        });
+
+        return searchParams.toString();
+      },
+    }
   );
   return res.data;
 }
@@ -64,7 +80,23 @@ export async function confirmSession(sessionUuid, reminder = []) {
   const res = await axios.post(
     `${API_URL}/sessions/${sessionUuid}/confirm`,
     null,
-    { params }
+    {
+      params,
+      paramsSerializer: (paramsObj) => {
+        const searchParams = new URLSearchParams();
+
+        Object.keys(paramsObj).forEach(key => {
+          const value = paramsObj[key];
+          if (Array.isArray(value)) {
+            value.forEach(val => searchParams.append(key, val));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, value);
+          }
+        });
+
+        return searchParams.toString();
+      },
+    }
   );
   return res.data;
 }
