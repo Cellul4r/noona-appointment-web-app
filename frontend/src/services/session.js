@@ -52,7 +52,9 @@ export async function getUserSessions(params = {}) {
 export async function registerForSession(sessionUuid, reminder = []) {
   const params = { reminder_minutes_before: reminder };
   const res = await axios.post(
-    `${API_URL}/sessions/${sessionUuid}/registration`, { params }
+    `${API_URL}/sessions/${sessionUuid}/registration`,
+    null,
+    { params }
   );
   return res.data;
 }
@@ -60,7 +62,9 @@ export async function registerForSession(sessionUuid, reminder = []) {
 export async function confirmSession(sessionUuid, reminder = []) {
   const params = { reminder_minutes_before: reminder };
   const res = await axios.post(
-    `${API_URL}/sessions/${sessionUuid}/confirm`, { params }
+    `${API_URL}/sessions/${sessionUuid}/confirm`,
+    null,
+    { params }
   );
   return res.data;
 }
