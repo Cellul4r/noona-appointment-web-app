@@ -3,21 +3,69 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
 let getCsrfTokenHandler = () => null;
 let setCsrfTokenHandler = () => { };
+let csrfRefreshPromise = null;
 
 // Ensure Axios sends cookies with every request
 axios.defaults.withCredentials = true;
 
 // Axios interceptor to include X-CSRF-Token header
 axios.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const method = (config.method || "GET").toUpperCase();
     if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-      config.headers["X-CSRF-Token"] = getCsrfToken();
+      const requestUrl = String(config.url || "");
+      const isCsrfEndpoint = requestUrl.includes("/auth/csrf");
+      const isLoginTokenEndpoint = requestUrl.includes("/auth/token");
+
+      if (!isCsrfEndpoint && !isLoginTokenEndpoint) {
+        if (!getCsrfToken()) {
+          await ensureCsrfToken();
+        }
+        const token = getCsrfToken();
+        if (token) {
+          config.headers = config.headers || {};
+          config.headers["X-CSRF-Token"] = token;
+        }
+      }
     }
     // No Authorization header needed since JWT is in cookie
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const status = error?.response?.status;
+    const config = error?.config;
+    const method = (config?.method || "GET").toUpperCase();
+    const requestUrl = String(config?.url || "");
+
+    const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    const isCsrfEndpoint = requestUrl.includes("/auth/csrf");
+    const isLoginTokenEndpoint = requestUrl.includes("/auth/token");
+
+    if (
+      config &&
+      !config._csrfRetried &&
+      isMutating &&
+      !isCsrfEndpoint &&
+      !isLoginTokenEndpoint &&
+      (status === 401 || status === 403)
+    ) {
+      config._csrfRetried = true;
+      await ensureCsrfToken(true);
+      const token = getCsrfToken();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers["X-CSRF-Token"] = token;
+      }
+      return axios(config);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -72,14 +120,24 @@ export function registerCsrfTokenHandlers({ getToken, setToken }) {
 }
 
 export async function refreshCsrfToken() {
-  const res = await axios.get(`${API_URL}/auth/csrf`);
-  setCsrfToken(res.data?.csrf_token);
-  return getCsrfToken();
+  if (!csrfRefreshPromise) {
+    csrfRefreshPromise = (async () => {
+      const res = await axios.get(`${API_URL}/auth/csrf`);
+      setCsrfToken(res.data?.csrf_token);
+      return getCsrfToken();
+    })();
+  }
+
+  try {
+    return await csrfRefreshPromise;
+  } finally {
+    csrfRefreshPromise = null;
+  }
 }
 
-export async function ensureCsrfToken() {
+export async function ensureCsrfToken(forceRefresh = false) {
   const token = getCsrfToken();
-  if (token) {
+  if (token && !forceRefresh) {
     return token;
   }
   return refreshCsrfToken();
@@ -129,5 +187,15 @@ export async function resetPassword(new_password) {
 // Logout & Clear JWT
 export async function logout() {
   await ensureCsrfToken();
-  await axios.post(`${API_URL}/auth/logout`, null);
+  try {
+    await axios.post(`${API_URL}/auth/logout`, null);
+  } catch (error) {
+    const status = error?.response?.status;
+    if (status === 401 || status === 403) {
+      await ensureCsrfToken(true);
+      await axios.post(`${API_URL}/auth/logout`, null);
+      return;
+    }
+    throw error;
+  }
 }
