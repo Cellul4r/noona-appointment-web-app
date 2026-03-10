@@ -1,8 +1,16 @@
 <script setup>
+import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
 
 const route = useRoute()
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('app-theme')
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme)
+  }
+})
 </script>
 <template>
   <div>
