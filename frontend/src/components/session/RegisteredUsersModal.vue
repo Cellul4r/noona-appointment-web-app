@@ -31,7 +31,7 @@
                                 <img :src="user.profile_image" class="w-6 h-6 rounded-full inline"> {{ user.full_name }}
                                 ({{ user.email }})
                             </div>
-                            <button @click="unregisterUserByHost(user.id)"
+                            <button v-if="!isPastSession" @click="unregisterUserByHost(user.id)"
                                 :disabled="unregisteringUserId === user.id || isInitialLoading"
                                 class="btn btn-ghost btn-circle btn-xs hover:border-red-500" title="Delete Participant"
                                 aria-label="Delete Participant from session">
