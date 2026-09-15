@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCsrfToken } from "./auth";
+import { ensureCsrfToken, getCsrfToken } from "./auth";
 
 
 const API_URL =
@@ -50,16 +50,61 @@ export async function getUserSessions(params = {}) {
 }
 
 export async function registerForSession(sessionUuid, reminder = []) {
-  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/registration`, reminder);
+  await ensureCsrfToken();
+  const params = { reminder_minutes_before: reminder };
+  const res = await axios.post(
+    `${API_URL}/sessions/${sessionUuid}/registration`,
+    null,
+    {
+      params,
+      paramsSerializer: (paramsObj) => {
+        const searchParams = new URLSearchParams();
+
+        Object.keys(paramsObj).forEach(key => {
+          const value = paramsObj[key];
+          if (Array.isArray(value)) {
+            value.forEach(val => searchParams.append(key, val));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, value);
+          }
+        });
+
+        return searchParams.toString();
+      },
+    }
+  );
   return res.data;
 }
 
 export async function confirmSession(sessionUuid, reminder = []) {
-  const res = await axios.post(`${API_URL}/sessions/${sessionUuid}/confirm`, reminder);
+  await ensureCsrfToken();
+  const params = { reminder_minutes_before: reminder };
+  const res = await axios.post(
+    `${API_URL}/sessions/${sessionUuid}/confirm`,
+    null,
+    {
+      params,
+      paramsSerializer: (paramsObj) => {
+        const searchParams = new URLSearchParams();
+
+        Object.keys(paramsObj).forEach(key => {
+          const value = paramsObj[key];
+          if (Array.isArray(value)) {
+            value.forEach(val => searchParams.append(key, val));
+          } else if (value !== undefined && value !== null) {
+            searchParams.append(key, value);
+          }
+        });
+
+        return searchParams.toString();
+      },
+    }
+  );
   return res.data;
 }
 
 export async function unregisterUserByHost(sessionUuid, userId) {
+  await ensureCsrfToken();
   const res = await axios.delete(`${API_URL}/sessions/${sessionUuid}/registrations/${userId}`);
   return res;
 }
@@ -78,6 +123,7 @@ export async function getSessionByUuid(sessionUuid) {
 }
 
 export async function cancelSession(sessionUuid) {
+  await ensureCsrfToken();
   const res = await axios.delete(
     `${API_URL}/sessions/${sessionUuid}/registration`
   );

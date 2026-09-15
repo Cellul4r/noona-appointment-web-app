@@ -188,65 +188,66 @@
 
               <fieldset :disabled="isEditing" class="space-y-4">
 
-              <!-- content -->
-              <div class="grid md:grid-cols-3 gap-3">
-                <div>
-                  <select class="select select-bordered w-full" v-model="repeatsChoose.type">
-                    <option value="Does not repeat">Does not repeat</option>
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Yearly">Yearly</option>
-                  </select>
-                </div>
-                <div>
-                  <input type="number" min="1" v-model="repeatsChoose.interval" :placeholder="repeatsChoose.type === 'Does not repeat' || !repeatsChoose.type
-                    ? 'Repeat interval if repeat session'
-                    : repeatsChoose.type === 'Daily' ? 'Every N day(s)'
-                      : repeatsChoose.type === 'Weekly' ? 'Every N week(s)'
-                        : repeatsChoose.type === 'Monthly' ? 'Every N month(s)'
-                          : repeatsChoose.type === 'Yearly' ? 'Every N year(s)'
-                            : 'Interval'" class="input input-bordered w-full"
-                    :disabled="!repeatsChoose.type || repeatsChoose.type === 'Does not repeat'" />
-                </div>
-                <div class="text-sm p-2">
-                  <!-- เปิด/ปิด -->
-                  <label class="flex items-center gap-2">
-                    <input type="checkbox" v-model="repeatEndEnabled"
-                      :disabled="!repeatsChoose.type || repeatsChoose.type === 'Does not repeat'"
-                      class="checkbox checkbox-success checkbox-sm" />
-                    <span class="font-semibold">Repeat until</span>
-                  </label>
+                <!-- content -->
+                <div class="grid md:grid-cols-3 gap-3">
+                  <div>
+                    <select class="select select-bordered w-full" v-model="repeatsChoose.type">
+                      <option value="Does not repeat">Does not repeat</option>
+                      <option value="Daily">Daily</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  </div>
+                  <div>
+                    <input type="number" min="1" v-model="repeatsChoose.interval" :placeholder="repeatsChoose.type === 'Does not repeat' || !repeatsChoose.type
+                      ? 'Repeat interval if repeat session'
+                      : repeatsChoose.type === 'Daily' ? 'Every N day(s)'
+                        : repeatsChoose.type === 'Weekly' ? 'Every N week(s)'
+                          : repeatsChoose.type === 'Monthly' ? 'Every N month(s)'
+                            : repeatsChoose.type === 'Yearly' ? 'Every N year(s)'
+                              : 'Interval'" class="input input-bordered w-full"
+                      :disabled="!repeatsChoose.type || repeatsChoose.type === 'Does not repeat'" />
+                  </div>
+                  <div class="text-sm p-2">
+                    <!-- เปิด/ปิด -->
+                    <label class="flex items-center gap-2">
+                      <input type="checkbox" v-model="repeatEndEnabled"
+                        :disabled="!repeatsChoose.type || repeatsChoose.type === 'Does not repeat'"
+                        class="checkbox checkbox-success checkbox-sm" />
+                      <span class="font-semibold">Repeat until</span>
+                    </label>
 
-                  <!-- โผล่เมื่อเปิด -->
-                  <div v-if="repeatEndEnabled" class="mt-3 space-y-3">
+                    <!-- โผล่เมื่อเปิด -->
+                    <div v-if="repeatEndEnabled" class="mt-3 space-y-3">
 
-                    <!-- เลือก type -->
-                    <div class="flex gap-4 items-center">
-                      <label class="flex items-center gap-2">
-                        <input type="radio" value="date" v-model="repeatEnd.type" />
-                        <span>Until date</span>
-                      </label>
+                      <!-- เลือก type -->
+                      <div class="flex gap-4 items-center">
+                        <label class="flex items-center gap-2">
+                          <input type="radio" value="date" v-model="repeatEnd.type" />
+                          <span>Until date</span>
+                        </label>
+                      </div>
+                      <div>
+                        <label class="flex items-center gap-2">
+                          <input type="radio" value="count" v-model="repeatEnd.type" />
+                          <span>Number of times</span>
+                        </label>
+                      </div>
+
+                      <!-- input ตาม type -->
+                      <input v-if="repeatEnd.type === 'date'" type="date" v-model="repeatEnd.date"
+                        class="input input-bordered w-full" />
+
+                      <input v-if="repeatEnd.type === 'count'" type="number" min="1" max="100"
+                        v-model.number="repeatEnd.count" placeholder="Number of times" pattern="[0-9]*"
+                        class="input input-bordered w-full validator" />
+                      <p v-if="repeatCountError" class="text-error text-xs mt-1">
+                        {{ repeatCountError }}
+                      </p>
                     </div>
-                    <div>
-                      <label class="flex items-center gap-2">
-                        <input type="radio" value="count" v-model="repeatEnd.type" />
-                        <span>Number of times</span>
-                      </label>
-                    </div>
-
-                    <!-- input ตาม type -->
-                    <input v-if="repeatEnd.type === 'date'" type="date" v-model="repeatEnd.date"
-                      class="input input-bordered w-full" />
-
-                    <input v-if="repeatEnd.type === 'count'" type="number" min="1" max="100" v-model.number="repeatEnd.count"
-                      placeholder="Number of times" pattern="[0-9]*" class="input input-bordered w-full validator" />
-                    <p v-if="repeatCountError" class="text-error text-xs mt-1">
-                      {{ repeatCountError }}
-                    </p>
                   </div>
                 </div>
-              </div>
               </fieldset>
             </div>
 
@@ -359,20 +360,20 @@
               </div>
             </div>
             <div v-if="pageCount > 1" class="mt-4 flex items-center justify-between w-full">
-                <button class="btn btn-sm btn-ghost" @click="prev" :disabled="isFirstPage">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="size-4 mr-1">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                  </svg>
-                  Prev
-                </button>
-                <button class="btn btn-sm btn-ghost" @click="next" :disabled="isLastPage">
-                  Next
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                    stroke="currentColor" class="size-4 ml-1">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </button>
+              <button class="btn btn-sm btn-ghost" @click="prev" :disabled="isFirstPage">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                  stroke="currentColor" class="size-4 mr-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg>
+                Prev
+              </button>
+              <button class="btn btn-sm btn-ghost" @click="next" :disabled="isLastPage">
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                  stroke="currentColor" class="size-4 ml-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -434,7 +435,8 @@ import { useRouter } from 'vue-router'
 import { createEvent } from "@/services/event"
 import { TZDate } from '@date-fns/tz'
 import { useAuthStore } from "@/store/authStore"
-import { format, addDays, addWeeks, addMonths, addYears } from "date-fns"
+import { addMilliseconds, format } from "date-fns"
+import { RRule } from "rrule"
 import { useOffsetPagination } from '@vueuse/core'
 
 const router = useRouter()
@@ -743,7 +745,6 @@ function addSession() {
   // Parse the local datetime strings strictly into TZDate objects
   const startDate = parseDatetimeLocal(newSession.value.start, eventTimezone.value)
   const endDate = parseDatetimeLocal(newSession.value.end, eventTimezone.value)
-
   // Safe validation using exact object comparison
   const now = parseDatetimeLocal(format(new Date(), "yyyy-MM-dd'T'HH:mm"), eventTimezone.value)
   if (startDate < now) {
@@ -752,7 +753,11 @@ function addSession() {
   }
 
   const type = repeatsChoose.value.type
-  const interval = Number(repeatsChoose.value.interval) || 1
+  const interval = Number(repeatsChoose.value.interval) || null
+  if (type !== "Does not repeat" && (interval === null || interval < 1)) {
+    alert("Please enter a valid repeat interval.")
+    return
+  }
 
   if (type !== "Does not repeat" && repeatEndEnabled.value) {
     if (!["date", "count"].includes(repeatEnd.value.type)) {
@@ -769,24 +774,7 @@ function addSession() {
       alert("Please select an until date for repeat session.")
       return
     }
-  }
 
-  const addByType = (dateStr) => {
-    const [datePart, timePart] = dateStr.split("T")
-    const [year, month, day] = datePart.split("-").map(Number)
-    const [hour, minute] = timePart.split(":").map(Number)
-
-    const d = new Date(Date.UTC(year, month - 1, day, hour, minute))
-
-    let next;
-    if (type === "Daily") next = addDays(d, interval)
-    else if (type === "Weekly") next = addWeeks(d, interval)
-    else if (type === "Monthly") next = addMonths(d, interval)
-    else if (type === "Yearly") next = addYears(d, interval)
-    else next = d;
-
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}T${pad(next.getUTCHours())}:${pad(next.getUTCMinutes())}`
   }
 
   if (type === "Does not repeat") {
@@ -796,38 +784,42 @@ function addSession() {
       end: endDate,
     })
   } else {
+    const freqMap = {
+      Daily: RRule.DAILY,
+      Weekly: RRule.WEEKLY,
+      Monthly: RRule.MONTHLY,
+      Yearly: RRule.YEARLY,
+    }
+
+    const ruleOptions = {
+      freq: freqMap[type],
+      interval,
+      dtstart: startDate,
+    }
+
     const effectiveRepeatEndType = repeatEndEnabled.value ? repeatEnd.value.type : "never"
-    const repeatCount = Number(repeatEnd.value.count)
+    if (effectiveRepeatEndType === "count") {
+      ruleOptions.count = Number(repeatEnd.value.count)
+    } else if (effectiveRepeatEndType === "date" && repeatEnd.value.date) {
+      ruleOptions.until = parseDatetimeLocal(`${repeatEnd.value.date}T23:59`, eventTimezone.value)
+    } else {
+      ruleOptions.count = 100
+    }
 
-    let currentStartStr = newSession.value.start
-    let currentEndStr = newSession.value.end
-    let i = 0
+    const rule = new RRule(ruleOptions)
+    const occurrenceStarts = rule.all()
 
-    while (true) {
-      const currentStart = parseDatetimeLocal(currentStartStr, eventTimezone.value)
-      const currentEnd = parseDatetimeLocal(currentEndStr, eventTimezone.value)
+    const durationMs = endDate.getTime() - startDate.getTime()
 
+    occurrenceStarts.forEach((occurrenceStart) => {
+      occurrenceStart = new TZDate(occurrenceStart.toString(), eventTimezone.value)
       sessions.value.push({
         ...newSession.value,
-        start: currentStart,
-        end: currentEnd,
+        start: occurrenceStart,
+        end: addMilliseconds(occurrenceStart, durationMs),
         recurring: type
       })
-      i++
-
-      if (effectiveRepeatEndType === "count") {
-        if (i >= repeatCount) break
-      }
-      if (effectiveRepeatEndType === "date" && repeatEnd.value.date) {
-        // Evaluate limit cleanly by adding end-of-day time to the repeat limit
-        const limitDate = parseDatetimeLocal(repeatEnd.value.date + "T23:59", eventTimezone.value)
-        if (currentStart >= limitDate) break
-      }
-      if (i >= 100) break
-
-      currentStartStr = addByType(currentStartStr)
-      currentEndStr = addByType(currentEndStr)
-    }
+    })
   }
 
   resetForm()
@@ -940,8 +932,6 @@ const submit = async () => {
       seat_capacity: s.capacity ? Number(s.capacity) : null
     }))
   }
-
-  console.log("Payload:", payload)
 
   try {
     const createdEvent = await createEvent(payload)

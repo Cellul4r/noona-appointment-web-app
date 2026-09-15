@@ -21,7 +21,8 @@
         <div class="flex justify-center mb-6">
           <div
             class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg id="Layer_1" class="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1">
+            <svg id="Layer_1" class="w-6 h-6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
+              data-name="Layer 1">
               <path fill="white"
                 d="m15 6c0 3.309-2.691 6-6 6s-6-2.691-6-6 2.691-6 6-6 6 2.691 6 6zm2 16h-1c-.552 0-1-.449-1-1v-6c0-.551.448-1 1-1h1c.553 0 1-.448 1-1s-.447-1-1-1h-1c-1.654 0-3 1.346-3 3v6c0 1.654 1.346 3 3 3h1c.553 0 1-.448 1-1s-.447-1-1-1zm6.404-5.245-2.207-1.946c-.411-.363-1.046-.326-1.411.089-.365.414-.325 1.046.089 1.411l.783.691h-2.658c-.553 0-1 .448-1 1s.447 1 1 1h2.792l-.917.809c-.414.365-.454.997-.089 1.411.366.416.999.453 1.411.089l2.199-1.939c.384-.331.604-.809.604-1.311s-.22-.98-.596-1.304zm-12.404-1.755c0-.256.038-.503.076-.749-.668-.158-1.36-.251-2.076-.251-4.963 0-9 4.038-9 9 0 .552.447 1 1 1h11.026c-.635-.838-1.026-1.87-1.026-3z" />
             </svg>
@@ -129,7 +130,7 @@
 <script>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/store/authStore";
-import { loginWithGoogle, loginWithGithub, setCsrfToken } from "@/services/auth";
+import { login, getUser, loginWithGoogle, loginWithGithub } from "@/services/auth";
 import { useRouter } from 'vue-router'
 export default {
 
@@ -141,77 +142,38 @@ export default {
     const loading = ref(false);
     const errorMessage = ref("");
 
-    function saveTokenFromUrl() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get("token");
-
-      if (token) {
-        auth.login(token);
-        window.history.replaceState({}, document.title, "/events");
-      }
-    }
-
     async function handleLogin() {
       try {
         loading.value = true;
         errorMessage.value = "";
 
-        const formData = new URLSearchParams();
-        formData.append("username", email.value);
-        formData.append("password", password.value);
+        const loginPayload = await login(email.value, password.value);
+        auth.setCsrfToken(loginPayload?.csrf_token);
 
-        const response = await fetch("http://localhost:56733/auth/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formData.toString(),
-          credentials: "include"
-        });
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          const detail = typeof payload?.detail === "string"
-            ? payload.detail
-            : Array.isArray(payload?.detail)
-              ? payload.detail.map((item) => item?.msg).filter(Boolean).join(", ")
-              : "";
-
-          if (response.status === 401) {
-            throw new Error(detail || "Invalid email or password.");
-          }
-          if (response.status === 422) {
-            throw new Error(detail || "Please check your email and password format.");
-          }
-
-          throw new Error(detail || "Unable to log in right now. Please try again.");
-        }
-
-        const loginPayload = await response.json().catch(() => null);
-        setCsrfToken(loginPayload?.csrf_token);
-
-        // หลัง login สำเร็จ → ดึง user
-        const me = await fetch("http://localhost:56733/auth/me", {
-          credentials: "include"
-        });
-
-        const userData = await me.json();
+        const userData = await getUser();
         auth.user = userData;
 
         router.replace("/dashboard");
 
       } catch (error) {
-        errorMessage.value = error?.message || "Unable to log in right now. Please try again.";
+        const detail = error?.response?.data?.detail;
+        const status = error?.response?.status;
+
+        if (typeof detail === "string" && detail.trim()) {
+          errorMessage.value = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          errorMessage.value = detail.map((item) => item?.msg).filter(Boolean).join(", ") || "Unable to log in right now. Please try again.";
+        } else if (status === 401) {
+          errorMessage.value = "Invalid email or password.";
+        } else if (status === 422) {
+          errorMessage.value = "Invalid input.";
+        } else {
+          errorMessage.value = "Login failed.";
+        }
       } finally {
         loading.value = false;
       }
     }
-
-
-
-    onMounted(() => {
-      saveTokenFromUrl();
-    });
 
     return {
       auth,

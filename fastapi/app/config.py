@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     supabase_url: Optional[str] = None
     supabase_key: Optional[str] = None
     bucket_name: Optional[str] = None
-    default_profile_image_url: str = "https://img.icons8.com/?size=100&id=z-JBA_KtSkxG&format=png&color=000000"
+    default_profile_image_url: str = (
+        "https://img.icons8.com/?size=100&id=z-JBA_KtSkxG&format=png&color=000000"
+    )
 
     @validator("database_url", pre=True, always=True)
     def check_supabase_url(cls, v, values):
@@ -156,10 +158,16 @@ class CsrfSettings(BaseSettings):
     secret_key: str = "my_csrf_secret"
     cookie_samesite: str = "lax"
     httponly: bool = True
-    cookie_secure: bool = True
 
-    class Config:
-        env_file = ".env"
+    max_age: int = 1440  # 1 day in seconds
+    cookie_secure: bool = True  # Set to True in production
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 try:

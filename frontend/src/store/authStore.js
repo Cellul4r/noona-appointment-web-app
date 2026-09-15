@@ -1,16 +1,28 @@
 import { defineStore } from "pinia";
-import { ensureCsrfToken, logout, setCsrfToken } from "@/services/auth";
+import { ensureCsrfToken, logout, registerCsrfTokenHandlers } from "@/services/auth";
 import { getUser } from "../services/auth";
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
+    csrfToken: null,
   }),
 
   getters: {
     isAuthenticated: (state) => state.user !== null,
   },
   actions: {
+    initializeCsrfTokenBinding() {
+      registerCsrfTokenHandlers({
+        getToken: () => this.csrfToken,
+        setToken: (token) => {
+          this.csrfToken = token || null;
+        },
+      });
+    },
+    setCsrfToken(token) {
+      this.csrfToken = token || null;
+    },
     async updateUser() {
       this.user = await getUser();
       await ensureCsrfToken();
@@ -22,9 +34,9 @@ export const useAuthStore = defineStore("auth", {
       await this.updateUser();
     },
     async logout() {
-      setCsrfToken(null);
       await logout();
       this.user = null;
+      this.csrfToken = null;
     },
   },
 });

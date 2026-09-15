@@ -27,6 +27,7 @@
             maxSessionsPerUser }}</span> sessions
         </p>
       </div>
+      
 
       <!-- Control Panel -->
       <div class="w-fit space-y-3">
@@ -50,8 +51,11 @@
         </div>
 
         <!-- Row 2: Set Reminders and Summary -->
-        <div v-if="hasSavedReminderSettings" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm justify-end">
-          <button class="group flex items-center gap-1 text-sm text-gray-700 hover:text-indigo-600 transition-all duration-200 hover:scale-105 active:scale-95" @click="openReminderModal">
+        <div v-if="hasSavedReminderSettings"
+          class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm justify-end">
+          <button
+            class="group flex items-center gap-1 text-sm text-gray-700 hover:text-indigo-600 transition-all duration-200 hover:scale-105 active:scale-95"
+            @click="openReminderModal">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
               stroke="currentColor" class="size-5 transition-all duration-300 group-hover:animate-bell-ring">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -64,8 +68,10 @@
             <div class="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
               {{ reminderSummaryText }}
             </div>
-            <button @click="clearReminderSettings" class="text-xs text-red-600 hover:text-red-800 transition-colors" title="Clear reminders">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+            <button @click="clearReminderSettings" class="text-xs text-red-600 hover:text-red-800 transition-colors"
+              title="Clear reminders">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="size-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
               </svg>
             </button>
@@ -73,7 +79,9 @@
         </div>
 
         <!-- Set Reminders Button (when no reminders saved) -->
-        <button v-else class="group bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center gap-1 text-sm text-gray-700 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 shadow-sm" @click="openReminderModal">
+        <button v-else
+          class="group bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 flex items-center justify-center gap-1 text-sm text-gray-700 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95 shadow-sm"
+          @click="openReminderModal">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor" class="size-5 transition-all duration-300 group-hover:animate-bell-ring">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -84,11 +92,32 @@
       </div>
     </div>
 
-    <!-- Grid -->
-    <TransitionGroup name="session-grid" tag="div" class="grid grid-cols-2 xl:grid-cols-3 gap-6">
+    <!-- Loading State -->
+    <div v-if="isInitialSessionsLoading" class="flex justify-center py-10">
+      <LoadingSpinner />
+    </div>
 
-      <EventRegistrationCard v-for="session in filteredSessions" :key="session.uuid" :session="session"
-        :event="event" :isSelected="isSelected(session)" :isWaitlisted="isWaitlisted(session)" :isAvailable="isAvailable(session)"
+    <!-- No Sessions Found -->
+    <div v-else-if="!isInitialSessionsLoading && (!Array.isArray(sessions) || sessions.length === 0)"
+      class="flex min-h-85 flex-col items-center justify-center px-4 py-16">
+      <div class="mb-6 flex h-32 w-32 items-center justify-center rounded-full border border-gray-200 bg-white shadow">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+          class="h-16 w-16 text-gray-300">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+        </svg>
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">No sessions found</h3>
+      <p class="text-gray-500 text-center">
+        Sessions for this event may have been removed. Please check back next time.
+      </p>
+    </div>
+
+    <!-- Grid -->
+    <TransitionGroup v-else name="session-grid" tag="div" class="grid grid-cols-2 xl:grid-cols-3 gap-6">
+
+      <EventRegistrationCard v-for="session in filteredSessions" :key="session.uuid" :session="session" :event="event"
+        :isSelected="isSelected(session)" :isWaitlisted="isWaitlisted(session)" :isAvailable="isAvailable(session)"
         :isAccepted="isAccepted(session)" :isLoading="loadingSessions.has(session.uuid)" :formatDate="formatDate"
         :formatTime="formatTime" @toggle-select="toggleSelect" @toggle-waitlist="toggleWaitlist"
         @toggle-accept="toggleAccept" />
@@ -102,11 +131,29 @@
 
     <div
       class="fixed left-0 right-0 bottom-0 z-50 bg-gradient-to-b from-gray-50 to-gray-100 p-4 shadow-xl border-t border-gray-200">
-      <div class="flex justify-end">
-        <button type="button" class="btn btn-primary self-end mr-1 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95" :disabled="summaryLoading"
-          @click="openConfirmModal">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center justify-center p-1 rounded-lg
+            bg-blue-50 dark:bg-blue-900/20
+            text-blue-700 dark:text-blue-300
+            border border-blue-100 dark:border-blue-800
+            text-xs font-medium">
+          <span class="text-xs mr-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              stroke="currentColor" class="size-5">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+          </span>
+          All times are in {{ timezoneLabel }}
+        </div>
+
+        <div class="flex justify-end">
+        <button type="button"
+          class="btn btn-primary self-end mr-1 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95"
+          :disabled="summaryLoading" @click="openConfirmModal">
           {{ summaryLoading ? "Loading..." : "Send Registration Summary" }}
         </button>
+        </div>
       </div>
     </div>
 
@@ -114,27 +161,23 @@
     <div v-if="showConfirmModal" class="fixed inset-0 z-[60] flex items-center justify-center">
       <!-- Backdrop with blur -->
       <div class="absolute inset-0 bg-black/20 backdrop-blur-sm" @click="cancelSendSummary"></div>
-      
+
       <!-- Modal content -->
-      <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200">
+      <div
+        class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200">
         <h3 class="text-lg font-semibold text-gray-900 mb-3">Send Registration Summary</h3>
         <p class="text-sm text-gray-600 mb-6">
           This will send your registration summary to your email. Do you want to continue?
         </p>
         <div class="flex gap-3 justify-end">
-          <button
-            type="button"
+          <button type="button"
             class="btn btn-ghost transition-all duration-200 hover:bg-gray-100 hover:scale-105 active:scale-95"
-            @click="cancelSendSummary"
-          >
+            @click="cancelSendSummary">
             Cancel
           </button>
-          <button
-            type="button"
+          <button type="button"
             class="btn btn-primary transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95"
-            @click="fetchRegistrationSummary"
-            :disabled="summaryLoading"
-          >
+            @click="fetchRegistrationSummary" :disabled="summaryLoading">
             {{ summaryLoading ? "Sending..." : "Confirm" }}
           </button>
         </div>
@@ -145,14 +188,18 @@
     <div v-if="showReminderModal" class="fixed inset-0 z-[60] flex items-center justify-center">
       <div class="absolute inset-0 bg-black/20 backdrop-blur-sm reminder-backdrop" @click="closeReminderModal"></div>
 
-      <div class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200 reminder-modal-pop">
+      <div
+        class="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-200 reminder-modal-pop">
         <h3 class="text-lg font-semibold text-gray-900 mb-1">Set Reminders</h3>
-        <p class="text-sm text-gray-600 mb-5">Choose reminder times before the session starts. First alert is required.</p>
+        <p class="text-sm text-gray-600 mb-5">Choose reminder times before the session starts. First alert is required.
+        </p>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">First Alert <span class="text-red-500">*</span></label>
-            <select v-model.number="firstAlertMinutes" class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">First Alert <span
+                class="text-red-500">*</span></label>
+            <select v-model.number="firstAlertMinutes"
+              class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01]">
               <option :value="-1">None</option>
               <option :value="0">When event starts</option>
               <option v-for="minute in reminderOptions" :key="`first-${minute}`" :value="minute">
@@ -166,23 +213,32 @@
               <span>Second Alert (Optional)</span>
               <span v-if="firstAlertMinutes === -1" class="text-xs text-gray-500">Select first alert first</span>
             </label>
-            <select v-model.number="secondAlertMinutes" :disabled="firstAlertMinutes === -1" class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed">
+            <select v-model.number="secondAlertMinutes" :disabled="firstAlertMinutes === -1"
+              class="select select-bordered w-full transition-all duration-200 focus:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed">
               <option :value="-1">None</option>
               <option :value="0">When event starts</option>
-              <option v-for="minute in reminderOptions" :key="`second-${minute}`" :value="minute" :disabled="minute <= firstAlertMinutes">
+              <option v-for="minute in reminderOptions" :key="`second-${minute}`" :value="minute"
+                :disabled="minute <= firstAlertMinutes">
                 {{ formatReminderOption(minute) }}
               </option>
             </select>
           </div>
         </div>
+        
 
         <div class="flex gap-3 justify-between mt-6">
-          <button v-if="hasSavedReminderSettings" type="button" class="btn btn-error btn-outline transition-all duration-200 hover:scale-105 active:scale-95" @click="clearReminderSettings">
+          <button v-if="hasSavedReminderSettings" type="button"
+            class="btn btn-error btn-outline transition-all duration-200 hover:scale-105 active:scale-95"
+            @click="clearReminderSettings">
             Clear
           </button>
           <div class="flex gap-3 ml-auto">
-            <button type="button" class="btn btn-ghost transition-all duration-200 hover:bg-gray-100 hover:scale-105 active:scale-95" @click="closeReminderModal">Cancel</button>
-            <button type="button" class="btn btn-primary transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95" @click="saveReminderSettings">Save</button>
+            <button type="button"
+              class="btn btn-ghost transition-all duration-200 hover:bg-gray-100 hover:scale-105 active:scale-95"
+              @click="closeReminderModal">Cancel</button>
+            <button type="button"
+              class="btn btn-primary transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95"
+              @click="saveReminderSettings">Save</button>
           </div>
         </div>
       </div>
@@ -198,6 +254,7 @@ import { getSessions } from "../services/event"
 import { getEvent, getEventRegistrationSummary } from "@/services/event"
 import { registerForSession, cancelSession, confirmSession } from "@/services/session"
 import EventRegistrationCard from "@/components/session/EventRegistrationCard.vue"
+import LoadingSpinner from "@/components/LoadingSpinner.vue"
 import { TZDate } from "@date-fns/tz"
 import { format } from "date-fns"
 import { useAuthStore } from "@/store/authStore"
@@ -242,6 +299,16 @@ const isAccepted = (session) => session.registration_status === "accepted"
 const hasSavedSession = computed(() =>
   sessions.value.some((s) => s.registration_status === "confirmed")
 )
+
+const isCurrentUserHost = computed(() => {
+  const hostId = event.value?.host?.id
+  const currentUserId = authStore.user?.id
+
+  if (hostId == null || currentUserId == null) return false
+  return hostId === currentUserId
+})
+
+const isInitialSessionsLoading = computed(() => sessionsLoading.value && sessions.value.length === 0)
 
 const formatReminderOption = (minute) => {
   if (minute === -1) return "None"
@@ -655,8 +722,13 @@ onMounted(async () => {
 }
 
 @keyframes reminderBackdropFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes reminderModalPop {
@@ -664,6 +736,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(6px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -671,17 +744,49 @@ onMounted(async () => {
 }
 
 @keyframes bell-ring {
-  0% { transform: rotate(0deg); }
-  10% { transform: rotate(15deg); }
-  20% { transform: rotate(-12deg); }
-  30% { transform: rotate(15deg); }
-  40% { transform: rotate(-12deg); }
-  50% { transform: rotate(10deg); }
-  60% { transform: rotate(-8deg); }
-  70% { transform: rotate(6deg); }
-  80% { transform: rotate(-4deg); }
-  90% { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  10% {
+    transform: rotate(15deg);
+  }
+
+  20% {
+    transform: rotate(-12deg);
+  }
+
+  30% {
+    transform: rotate(15deg);
+  }
+
+  40% {
+    transform: rotate(-12deg);
+  }
+
+  50% {
+    transform: rotate(10deg);
+  }
+
+  60% {
+    transform: rotate(-8deg);
+  }
+
+  70% {
+    transform: rotate(6deg);
+  }
+
+  80% {
+    transform: rotate(-4deg);
+  }
+
+  90% {
+    transform: rotate(2deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .animate-bell-ring {

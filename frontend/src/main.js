@@ -4,10 +4,16 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import VueCookies from "vue-cookies";
+import { useAuthStore } from "@/store/authStore";
 
 
 const app = createApp(App);
-app.use(createPinia()); // Add Pinia
+const pinia = createPinia();
+app.use(pinia); // Add Pinia
+
+const authStore = useAuthStore(pinia);
+authStore.initializeCsrfTokenBinding();
+
 app.use(router);
 app.use(VueCookies);
 app.mount("#app");

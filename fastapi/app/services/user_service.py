@@ -134,9 +134,7 @@ class UserService:
                 if k == "full_name" and v != user.full_name:
                     name_changed = True
                 setattr(user, k, v)
-        # update avatar to match the name changes
-        if name_changed:
-            user.profile_image = self.gen_avatar_url(user.full_name)
+
         db.commit()
         db.refresh(user)
         return user

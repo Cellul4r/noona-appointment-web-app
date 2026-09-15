@@ -72,6 +72,7 @@ const routes = [
     path: '/about-us',
     name: 'AboutUs',
     component: () => import('../views/AboutUs.vue'),
+    alias: '',
   },
   {
     path: `/event/register/:event_uuid`,

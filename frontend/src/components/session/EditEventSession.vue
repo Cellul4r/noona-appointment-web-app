@@ -126,11 +126,30 @@
     <!-- EXISTING SESSIONS -->
     <div v-if="existingSessions.length > 0" class="space-y-4">
       <div v-for="(s, index) in displayedExistingSessions" :key="'existing-' + s.uuid"
-        class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border border-base-300 bg-base-200 hover:border-primary/50 transition-colors"
-        :class="isSessionEnded(s.end) ? 'opacity-60 grayscale' : ''">
+        class="group relative flex flex-col sm:flex-row items-center gap-4 p-4 rounded-lg border transition-colors"
+        :class="[
+          s.action === 'delete' ? 'border-error/30 bg-error/5' :
+          s.action === 'update' ? 'border-warning/50 bg-warning/5 hover:border-warning' :
+          'border-base-300 bg-base-200 hover:border-primary/50',
+          isSessionEnded(s.end) && s.action !== 'delete' ? 'opacity-60 grayscale' : ''
+        ]">
+
+        <!-- Pending Change Indicator -->
+        <div v-if="s.action === 'delete'" class="absolute top-2 right-2 z-10 flex items-center gap-1">
+          <span class="badge badge-error badge-sm gap-1 font-semibold">Will be deleted</span>
+          <button @click.stop="undoChange(s.uuid)" class="btn btn-xs btn-circle btn-ghost hover:bg-error/20" title="Undo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+          </button>
+        </div>
+        <div v-else-if="s.action === 'update'" class="absolute top-2 right-2 z-10 flex items-center gap-1">
+          <span class="badge badge-warning badge-sm gap-1 font-semibold">Modified</span>
+          <button @click.stop="undoChange(s.uuid)" class="btn btn-xs btn-circle btn-ghost hover:bg-warning/20" title="Undo">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>
+          </button>
+        </div>
 
         <!-- LEFT -->
-        <div class="flex-1 min-w-0 w-full">
+        <div class="flex-1 min-w-0 w-full" :class="s.action === 'delete' ? 'line-through opacity-50' : ''">
           <div class="flex flex-col gap-2">
 
             <!-- TIME -->
@@ -173,16 +192,16 @@
           </div>
         </div>
 
-        <!-- RIGHT -->
-        <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+        <!-- RIGHT (hidden for deleted sessions) -->
+        <div v-if="s.action !== 'delete'" class="flex items-center gap-2 self-end sm:self-center shrink-0">
           <div class="flex items-center gap-2">
-            <template v-if="activeCopyIndex === getAbsoluteExistingIndex(index)">
-              <input v-if="activeCopyIndex === getAbsoluteExistingIndex(index)" ref="copyInput" type="number" v-model.number="duplicateCount"
+            <template v-if="activeCopyIndex === s.uuid">
+              <input v-if="activeCopyIndex === s.uuid" ref="copyInput" type="number" v-model.number="duplicateCount"
                 min="1" class="input input-bordered w-20" />
-              <button v-if="activeCopyIndex === getAbsoluteExistingIndex(index)" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
+              <button v-if="activeCopyIndex === s.uuid" class="btn btn-sm btn-primary" @click="confirmDuplicateInline">Duplicate</button>
             </template>
             <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
-              @click="handleCopyClick(s, getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+              @click="handleCopyClick(s, s.uuid)" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
               stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
@@ -190,14 +209,14 @@
           </div>
 
           <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-blue-500"
-            @click="openEditModal(s, getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            @click="openEditModal(s)" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
           </svg>
 
           <svg v-if="!isSessionEnded(s.end)" xmlns="http://www.w3.org/2000/svg" class="size-6 cursor-pointer hover:text-red-500"
-            @click="removeSession(getAbsoluteExistingIndex(index))" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            @click="removeSession(s)" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -295,7 +314,7 @@
               type="number" 
               min="1" 
               v-model="repeatsChoose.interval" 
-              :placeholder="repeatsChoose.type !== 'Does not repeat' ? `Every X ${repeatsChoose.type.toLowerCase()}` : 'Every X'" 
+              :placeholder="repeatsChoose.type !== 'Does not repeat' ? `Every X ${mapped_datetype(repeatsChoose.type)}` : 'Every X'" 
               class="input input-bordered w-full"
               :disabled="repeatsChoose.type === 'Does not repeat'" 
             />
@@ -381,19 +400,19 @@ const duplicateModalRef = ref(null)
 
 const pageSize = 10
 const localPageIndexNew = ref(0)
-const localPageIndexExisting = ref(0)
 
 // Server Pagination State
 const currentCursorIndex = ref(0)
 const nextCursor = ref(null)
 const prevCursor = ref(null)
-const hasUnsavedSessionChanges = ref(false)
+
+// Pending changes map: uuid → { action: 'delete'|'update', original: {...}, modified?: {...} }
+// Survives server page navigation so edits/deletes persist across pages
+const pendingChanges = ref(new Map())
 
 // Computed to separate new from existing sessions
 const newlyAddedSessions = computed(() => props.sessions.filter(s => !s.uuid && s.action !== "delete"))
-const existingSessions = computed(() => props.sessions.filter(s => s.uuid && s.action !== "delete"))
-
-const isUsingLocalPagination = computed(() => hasUnsavedSessionChanges.value)
+const existingSessions = computed(() => props.sessions.filter(s => !!s.uuid))
 
 // Pagination for newly added sessions
 const displayedNewSessions = computed(() => {
@@ -406,58 +425,20 @@ const displayedNewSessions = computed(() => {
 const newSessionsPageSize = computed(() => Math.max(1, Math.ceil(newlyAddedSessions.value.length / pageSize)))
 const shouldShowNewPagination = computed(() => newlyAddedSessions.value.length > pageSize)
 
-// Pagination for existing sessions (from server)
-const displayedExistingSessions = computed(() => {
-  if (!isUsingLocalPagination.value) return existingSessions.value
-  const start = localPageIndexExisting.value * pageSize
-  const end = start + pageSize
-  return existingSessions.value.slice(start, end)
-})
-
-const existingSessionsPageSize = computed(() => Math.max(1, Math.ceil(existingSessions.value.length / pageSize)))
-const shouldShowExistingPagination = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return existingSessions.value.length > pageSize || !!prevCursor.value || !!nextCursor.value
-  }
-  return !!prevCursor.value || !!nextCursor.value
-})
+// Existing sessions: display current server page directly (no local pagination)
+const displayedExistingSessions = computed(() => existingSessions.value)
+const shouldShowExistingPagination = computed(() => !!prevCursor.value || !!nextCursor.value)
 
 const isNewPrevDisabled = computed(() => localPageIndexNew.value === 0)
 const isNewNextDisabled = computed(() => localPageIndexNew.value >= newSessionsPageSize.value - 1)
 const displayedNewPageNumber = computed(() => localPageIndexNew.value + 1)
 
-const isExistingPrevDisabled = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return localPageIndexExisting.value === 0 && !prevCursor.value
-  }
-  return !prevCursor.value
-})
-
-const isExistingNextDisabled = computed(() => {
-  if (isUsingLocalPagination.value) {
-    return localPageIndexExisting.value >= existingSessionsPageSize.value - 1 && !nextCursor.value
-  }
-  return !nextCursor.value
-})
-
-const displayedExistingPageNumber = computed(() => {
-  if (isUsingLocalPagination.value) {
-    // If on first local page but navigating server pages, show server page number
-    if (localPageIndexExisting.value === 0 && currentCursorIndex.value > 0) {
-      return currentCursorIndex.value + 1
-    }
-    return localPageIndexExisting.value + 1
-  }
-  return currentCursorIndex.value + 1
-})
+const isExistingPrevDisabled = computed(() => !prevCursor.value)
+const isExistingNextDisabled = computed(() => !nextCursor.value)
+const displayedExistingPageNumber = computed(() => currentCursorIndex.value + 1)
 
 const getAbsoluteNewIndex = (visibleIndex) => {
   return localPageIndexNew.value * pageSize + visibleIndex
-}
-
-const getAbsoluteExistingIndex = (visibleIndex) => {
-  if (!isUsingLocalPagination.value) return visibleIndex
-  return localPageIndexExisting.value * pageSize + visibleIndex
 }
 
 // Duplicate State
@@ -468,8 +449,9 @@ const copyInput = ref(null)
 
 // Form state for modal
 const isEditing = ref(false)
-const editingIndex = ref(null)
-const backupSession = ref(null)
+const editingIndex = ref(null)  // For new sessions (index-based)
+const editingUuid = ref(null)   // For existing sessions (UUID-based)
+const backupSession = ref(null) // For new sessions only
 
 const newSession = ref({
   start: "",
@@ -491,7 +473,7 @@ const loadSessions = async (cursor, isNavigation = false) => {
     const startObj = s.start_datetime ? new TZDate(s.start_datetime, props.userTimezone) : null;
     const endObj = s.end_datetime ? new TZDate(s.end_datetime, props.userTimezone) : null;
 
-    return {
+    const mapped = {
       id: s.id,
       uuid: s.uuid,
       start: startObj,
@@ -501,58 +483,42 @@ const loadSessions = async (cursor, isNavigation = false) => {
       action: null,
       location: s.location || "",
       description: s.description || ""
+    };
+
+    // Re-apply any pending changes for this session
+    const pending = pendingChanges.value.get(mapped.uuid);
+    if (pending) {
+      if (pending.action === 'delete') {
+        mapped.action = 'delete';
+      } else if (pending.action === 'update' && pending.modified) {
+        Object.assign(mapped, pending.modified);
+        mapped.action = 'update';
+      }
     }
+
+    return mapped;
   });
 
-  // Preserve newly added sessions (those without UUID) and merge with server data
+  // Preserve newly added sessions
   const newlyAdded = props.sessions.filter(s => !s.uuid);
-  const allSessions = [...newlyAdded, ...mappedSessions];
-  
-  emit('sessionsChange', allSessions);
-  
+  emit('sessionsChange', [...newlyAdded, ...mappedSessions]);
+
   nextCursor.value = sessionsRes.next_page;
   prevCursor.value = sessionsRes.prev_page ?? sessionsRes.previous_page ?? null;
-  hasUnsavedSessionChanges.value = newlyAdded.length > 0; // Keep true only if we have unsaved new sessions
-  
-  // Only reset on initial load, not on navigation
+
   if (!isNavigation) {
     localPageIndexNew.value = 0;
-    localPageIndexExisting.value = 0;
   }
 }
 
 const goNext = async () => {
-  if (isUsingLocalPagination.value) {
-    if (localPageIndexExisting.value < existingSessionsPageSize.value - 1) {
-      localPageIndexExisting.value++;
-      return;
-    }
-    if (nextCursor.value) {
-      currentCursorIndex.value++;
-      await loadSessions(nextCursor.value, true);
-    }
-    return;
-  }
   if (!nextCursor.value) return;
-  
   currentCursorIndex.value++;
   await loadSessions(nextCursor.value, true);
 }
 
 const goPrev = async () => {
-  if (isUsingLocalPagination.value) {
-    if (localPageIndexExisting.value > 0) {
-      localPageIndexExisting.value--;
-      return;
-    }
-    if (prevCursor.value) {
-      currentCursorIndex.value--;
-      await loadSessions(prevCursor.value, true);
-    }
-    return;
-  }
   if (!prevCursor.value) return;
-  
   currentCursorIndex.value--;
   await loadSessions(prevCursor.value, true);
 }
@@ -571,16 +537,27 @@ const openEditModal = (s, index) => {
     end: s.end ? format(s.end, "yyyy-MM-dd'T'HH:mm") : ""
   }
   isEditing.value = true
-  editingIndex.value = index
-  backupSession.value = { ...s }
-  
-  props.sessions.splice(index, 1)
-  emit('sessionsChange', [...props.sessions])
+
+  if (s.uuid) {
+    // Existing session: track by UUID, don't splice from array
+    editingUuid.value = s.uuid
+    editingIndex.value = null
+    backupSession.value = null
+  } else {
+    // New session: track by index, splice out for editing
+    editingUuid.value = null
+    editingIndex.value = index
+    backupSession.value = { ...s }
+    props.sessions.splice(index, 1)
+    emit('sessionsChange', [...props.sessions])
+  }
+
   sessionModalRef.value.showModal()
 }
 
 const closeSessionModal = () => {
-  if (isEditing.value && backupSession.value) {
+  // Only restore for new sessions (they were spliced out of the array)
+  if (isEditing.value && editingIndex.value !== null && backupSession.value) {
     props.sessions.splice(editingIndex.value, 0, backupSession.value)
     emit('sessionsChange', [...props.sessions])
   }
@@ -608,9 +585,7 @@ const confirmDuplicateInline = () => {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   activeCopyIndex.value = null
 }
 
@@ -624,9 +599,7 @@ const confirmDuplicate = () => {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   closeDuplicateModal()
 }
 
@@ -711,33 +684,71 @@ function addSession() {
   }
   
   emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
   localPageIndexNew.value = newSessionsPageSize.value - 1;
-  localPageIndexExisting.value = 0;
   sessionModalRef.value.close()
   resetForm()
+}
+
+function mapped_datetype(datetype){
+  datetype = datetype.toLowerCase()
+  if (datetype === "daily") return "day(s)"
+  else if (datetype === "weekly") return "week(s)"
+  else if (datetype === "monthly") return "month(s)"
+  else if (datetype === "yearly") return "year(s)"
+  else return ""
 }
 
 function saveEdit() {
   if (!newSession.value.start || !newSession.value.end) return alert("Please provide both start and end times.")
   if (newSession.value.start >= newSession.value.end) return alert("End time must be after start time.")
-  if (newSession.value.capacity != null && newSession.value.taken > newSession.value.capacity) return alert("Capacity cannot be less than the number of taken seats.")
-  
-  props.sessions.splice(editingIndex.value, 0, { 
-    ...newSession.value,
-    start: parseDatetimeLocal(newSession.value.start, props.userTimezone),
-    end: parseDatetimeLocal(newSession.value.end, props.userTimezone)
-  })
-  
-  // Mark as modified if it's an existing session
-  markSessionAsModified(editingIndex.value)
-  
-  emit('sessionsChange', [...props.sessions])
-  hasUnsavedSessionChanges.value = true;
-  localPageIndexExisting.value = 0;
-  if (localPageIndexNew.value >= newSessionsPageSize.value) {
-    localPageIndexNew.value = newSessionsPageSize.value - 1
+
+  const parsedStart = parseDatetimeLocal(newSession.value.start, props.userTimezone)
+  const parsedEnd = parseDatetimeLocal(newSession.value.end, props.userTimezone)
+
+  if (editingUuid.value) {
+    // Existing session: update in-place, store in pendingChanges
+    const session = props.sessions.find(s => s.uuid === editingUuid.value)
+    if (session) {
+      if (newSession.value.capacity != null && session.taken > newSession.value.capacity) {
+        return alert("Capacity cannot be less than the number of taken seats.")
+      }
+      // Store original data for undo (only on first modification)
+      if (!pendingChanges.value.has(editingUuid.value)) {
+        pendingChanges.value.set(editingUuid.value, {
+          action: 'update',
+          original: { start: session.start, end: session.end, capacity: session.capacity, location: session.location, description: session.description }
+        })
+      }
+      const pending = pendingChanges.value.get(editingUuid.value)
+      pending.action = 'update'
+      pending.modified = {
+        start: parsedStart, end: parsedEnd,
+        capacity: newSession.value.capacity,
+        location: newSession.value.location || "",
+        description: newSession.value.description || ""
+      }
+      Object.assign(session, pending.modified)
+      session.action = 'update'
+      pendingChanges.value = new Map(pendingChanges.value)
+      emit('sessionsChange', [...props.sessions])
+    }
+  } else {
+    // New session: splice back at index
+    if (newSession.value.capacity != null && newSession.value.taken > newSession.value.capacity) {
+      return alert("Capacity cannot be less than the number of taken seats.")
+    }
+    props.sessions.splice(editingIndex.value, 0, {
+      ...newSession.value,
+      start: parsedStart,
+      end: parsedEnd
+    })
+    markSessionAsModified(editingIndex.value)
+    emit('sessionsChange', [...props.sessions])
+    if (localPageIndexNew.value >= newSessionsPageSize.value) {
+      localPageIndexNew.value = newSessionsPageSize.value - 1
+    }
   }
+
   sessionModalRef.value.close()
   resetForm()
 }
@@ -750,27 +761,32 @@ function parseDatetimeLocal(dateStr, timezone) {
   return new TZDate(year, month - 1, day, hour, minute, 0, timezone)
 }
 
-function removeSession(index) {
-  if(confirm("Remove this session?")) {
-    const session = props.sessions[index]
-    if (session.uuid) {
-      // Mark existing session as deleted
-      session.action = "delete"
+function removeSession(indexOrSession) {
+  if (!confirm("Remove this session?")) return
+
+  if (typeof indexOrSession === 'object' && indexOrSession.uuid) {
+    // Existing session: mark as deleted + store in pendingChanges
+    const session = indexOrSession
+    if (!pendingChanges.value.has(session.uuid)) {
+      pendingChanges.value.set(session.uuid, {
+        action: 'delete',
+        original: { start: session.start, end: session.end, capacity: session.capacity, location: session.location, description: session.description }
+      })
     } else {
-      // Remove newly added session from array
-      props.sessions.splice(index, 1)
+      pendingChanges.value.get(session.uuid).action = 'delete'
     }
+    session.action = 'delete'
+    pendingChanges.value = new Map(pendingChanges.value)
     emit('sessionsChange', [...props.sessions])
-    hasUnsavedSessionChanges.value = true;
+  } else {
+    // New session: remove by index
+    const index = indexOrSession
+    props.sessions.splice(index, 1)
+    emit('sessionsChange', [...props.sessions])
     if (newlyAddedSessions.value.length === 0) {
       localPageIndexNew.value = 0
     } else if (localPageIndexNew.value >= newSessionsPageSize.value) {
       localPageIndexNew.value = newSessionsPageSize.value - 1
-    }
-    if (existingSessions.value.length === 0) {
-      localPageIndexExisting.value = 0
-    } else if (localPageIndexExisting.value >= existingSessionsPageSize.value) {
-      localPageIndexExisting.value = existingSessionsPageSize.value - 1
     }
   }
 }
@@ -781,6 +797,7 @@ function resetForm() {
   repeatEnd.value = { type: "never", date: "", count: null }
   isEditing.value = false
   editingIndex.value = null
+  editingUuid.value = null
   backupSession.value = null
 }
 
@@ -789,6 +806,21 @@ function markSessionAsModified(index) {
   if (session.uuid && session.action !== "update") {
     session.action = "update"
   }
+}
+
+function undoChange(uuid) {
+  const pending = pendingChanges.value.get(uuid)
+  if (!pending) return
+
+  const session = props.sessions.find(s => s.uuid === uuid)
+  if (session && pending.original) {
+    Object.assign(session, pending.original)
+    session.action = null
+  }
+
+  pendingChanges.value.delete(uuid)
+  pendingChanges.value = new Map(pendingChanges.value)
+  emit('sessionsChange', [...props.sessions])
 }
 
 const closeDuplicateModal = () => {
@@ -801,14 +833,6 @@ const isSessionEnded = (endObj) => {
   return endObj < new Date();
 }
 
-function formatDay(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'd');
-}
-function formatMonth(dateObj) { 
-  if(!dateObj) return '';
-  return format(dateObj, 'MMM').toUpperCase(); 
-}
 function formatTime(dateObj) { 
   if(!dateObj) return '';
   return format(dateObj, 'hh:mm a'); 

@@ -22,6 +22,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 
 async def csrf_protect(request: Request, csrf: CsrfProtect = Depends()):
+    logger.debug("Validating CSRF token")
     await csrf.validate_csrf(request)
 
 

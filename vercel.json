@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "crons": [
+    {
+      "path": "/api/notifications/dispatch?size=50",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "builds": [
     {
       "src": "package.json",
@@ -25,5 +31,8 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
+  ],
+  "regions": [
+    "sin1"
   ]
 }

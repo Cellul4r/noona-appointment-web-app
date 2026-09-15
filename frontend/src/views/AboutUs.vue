@@ -49,7 +49,7 @@
                         Join thousands of teams who trust Noona to handle their most important appointments with
                         precision and ease.
                     </p>
-                    <button class="btn btn-primary btn-lg px-10" @click="$router.push('/signup')">
+                    <button class="btn btn-primary btn-lg px-10" @click="$router.push('/verify-email')">
                         Get Started for Free
                     </button>
                 </div>

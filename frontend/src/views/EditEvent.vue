@@ -10,6 +10,14 @@
           </svg>
 
           <span class="font-bold text-lg">Edit Event</span>
+          <span v-if="event.is_draft" class="badge badge-warning gap-1 text-xs font-semibold ml-1">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-3"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+            Draft
+          </span>
+          <span v-else class="badge badge-success gap-1 text-xs font-semibold ml-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>
+            Active
+          </span>
         </button>
         <dialog id="my_modal_3" class="modal">
           <div class="modal-box">
@@ -150,13 +158,6 @@
         </div>
 
         <div class="flex gap-2 justify-end pt-6 pb-6 pr-6">
-          <div class="pl-4"></div>
-          <button @click="onDeleteEvent" :disabled="deletingEvent" class="btn btn-outline btn-error">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.166L18.16 19.673A2.25 2.25 0 0 1 15.916 21.75H8.084a2.25 2.25 0 0 1-2.245-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-            </svg>
-            {{ deletingEvent ? 'Deleting...' : 'Delete Event' }}
-          </button>
           <div class="flex-1"></div>
           <button @click="goToPreviousPage" class="btn btn-ghost">
             Cancel
@@ -179,7 +180,7 @@
 import { ref, watch, onMounted, computed } from "vue"
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/store/authStore'
-import { getEvent, updateEvent, deleteEvent } from '@/services/event.js'
+import { getEvent, updateEvent } from '@/services/event.js'
 import EditEventSession from '@/components/session/EditEventSession.vue'
 
 const router = useRouter()
@@ -204,7 +205,6 @@ const limitEnabled = ref(false)
 const limit = ref(1)
 const maxSessionsPerUserOriginal = ref(null)
 const pendingSubmitWithNotify = ref(false)
-const deletingEvent = ref(false)
 
 // Store original values for change detection
 const originalEvent = ref({
@@ -388,24 +388,6 @@ const submitPayload = async () => {
       errorMsg += "\nDetails: " + JSON.stringify(err.response.data.detail);
     }
     alert(errorMsg);
-  }
-}
-
-const onDeleteEvent = async () => {
-  if (deletingEvent.value) return
-
-  const confirmed = window.confirm('Delete this event? This action cannot be undone.')
-  if (!confirmed) return
-
-  deletingEvent.value = true
-  try {
-    await deleteEvent(route.params.event_uuid)
-    router.replace({ name: 'AllEvents' })
-  } catch (err) {
-    console.error('Failed to delete event:', err)
-    alert('Failed to delete event.')
-  } finally {
-    deletingEvent.value = false
   }
 }
 

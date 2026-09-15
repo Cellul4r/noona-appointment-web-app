@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getCsrfToken } from "./auth";
+import { ensureCsrfToken, getCsrfToken } from "./auth";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:56733";
 
@@ -54,20 +54,24 @@ export async function getEventOverview(uuid) {
 }
 
 export async function createEvent(payload) {
+    await ensureCsrfToken();
     const res = await axios.post(`${API_URL}/events/`, payload);
     return res.data;
 }
 
 export async function updateEvent(uuid, payload, notify = false) {
+    await ensureCsrfToken();
     const res = await axios.patch(`${API_URL}/events/${uuid}`, payload, { params: { notify } });
     return res.data;
 }
 
 export async function deleteEvent(uuid) {
+    await ensureCsrfToken();
     await axios.delete(`${API_URL}/events/${uuid}`);
 }
 
 export async function getEventRegistrationSummary(uuid) {
+    await ensureCsrfToken();
     const res = await axios.post(`${API_URL}/events/${uuid}/registration-summary`);
     return res.data;
 }
