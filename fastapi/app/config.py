@@ -158,6 +158,7 @@ class CsrfSettings(BaseSettings):
     secret_key: str = "my_csrf_secret"
     cookie_samesite: str = "lax"
     httponly: bool = True
+
     max_age: int = 1440  # 1 day in seconds
     cookie_secure: bool = True  # Set to True in production
 
