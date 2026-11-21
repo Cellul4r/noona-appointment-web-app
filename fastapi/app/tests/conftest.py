@@ -37,5 +37,12 @@ def client(db):
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    # The app sets every cookie with Secure, so talk to it over https or the
+    # client will never send the cookies back.
+    test_client = TestClient(app, base_url="https://testserver")
+    # State-changing routes require a CSRF token: the signed cookie from
+    # GET /auth/csrf plus the raw token in the X-CSRF-Token header.
+    response = test_client.get("/auth/csrf")
+    test_client.headers["X-CSRF-Token"] = response.json()["csrf_token"]
+    yield test_client
     app.dependency_overrides.clear()

@@ -140,8 +140,6 @@ export GITHUB_CLIENT_ID= GITHUB_CLIENT_SECRET= SUPABASE_URL=http://localhost:543
 pytest --ignore=app/tests/concurrency
 ```
 
-> Note: 8 of the 10 auth and calendar tests currently fail. CSRF validation was added to the auth routes after the tests were written, and the tests don't send a CSRF token yet.
-
 **Concurrency tests (PostgreSQL).** SQLite ignores `SELECT … FOR UPDATE`, so these need a real Postgres database. They create and drop their own tables, so use a throwaway database:
 ```sh
 docker run --rm -d --name noona-test-pg -p 55432:5432 -e POSTGRES_PASSWORD=test postgres:16-alpine

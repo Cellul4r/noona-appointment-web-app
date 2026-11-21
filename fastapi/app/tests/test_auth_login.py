@@ -1,16 +1,12 @@
 from fastapi.testclient import TestClient
 
+from app.tests.helpers import signup
 
-def test_auth_login(client: TestClient):
+
+def test_auth_login(client: TestClient, db):
     # First, create a user to log in with
-    signup_response = client.post(
-        "/auth/signup",
-        json={
-            "email": "test@example.com",
-            "full_name": "Test User",
-            "password": "stringst",
-        },
-    )
+    signup_response = signup(client, db, password="stringst")
+    assert signup_response.status_code == 200, signup_response.text
 
     # wrong email but right password
     response = client.post(

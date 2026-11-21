@@ -3,19 +3,13 @@ from tracemalloc import start
 from fastapi.testclient import TestClient
 from datetime import datetime, timedelta, date
 
+from app.tests import helpers
+from app.tests.helpers import signup
 
-def login(client: TestClient):
-    signup_response = client.post(
-        "/auth/signup",
-        json={
-            "email": "test@example.com",
-            "full_name": "Test User",
-            "password": "stringst",
-        },
-    )
-    login_response = client.post(
-        "/auth/token", data={"username": "test@example.com", "password": "stringst"}
-    )
+
+def login(client: TestClient, db):
+    assert signup(client, db).status_code == 200
+    assert helpers.login(client).status_code == 200
 
 
 def create_events(client: TestClient):
@@ -46,14 +40,14 @@ def test_not_logged_in_calendar(client: TestClient):
     assert response.status_code == 401
 
 
-def test_logged_in_calendar(client: TestClient):
-    login(client)
+def test_logged_in_calendar(client: TestClient, db):
+    login(client, db)
     response = client.get("/calendar")
     assert response.status_code == 200
 
 
-def test_daily_calendar_events(client: TestClient):
-    login(client)
+def test_daily_calendar_events(client: TestClient, db):
+    login(client, db)
     create_events(client)
     response = client.get("/calendar")
     print(response.json())
