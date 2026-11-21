@@ -1,0 +1,60 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    # Throwaway Postgres container: GitHub starts it fresh for this job and
+    # deletes it when the job ends. The concurrency tests create and drop
+    # their schema in it.
+    services:
+      test_db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: noona_test
+          POSTGRES_PASSWORD: noona_test
+          POSTGRES_DB: noona_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U noona_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: fastapi
+
+    env:
+      TEST_DATABASE_URL: postgresql://noona_test:noona_test@localhost:5432/noona_test
+      # Settings and the Supabase client are built at import time; these
+      # placeholders let the app import. No test calls GitHub or Supabase.
+      GITHUB_CLIENT_ID: ""
+      GITHUB_CLIENT_SECRET: ""
+      SUPABASE_URL: http://localhost:54321
+      SUPABASE_KEY: test-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: fastapi/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Concurrency tests (PostgreSQL)
+        run: pytest -v app/tests/concurrency
+
+      - name: Unit tests (SQLite)
+        if: always()
+        run: pytest -v --ignore=app/tests/concurrency
