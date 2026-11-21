@@ -23,9 +23,11 @@ dependencies = [
     "pydantic[email,timezone]==2.12.5",
     "python-dotenv==1.0.1",
     "python-jose==3.4.0",
+    "python-multipart==0.0.22",
     "sqlakeyset==2.0.1762907931",
     "sqlalchemy==2.0.29",
     "sqlalchemy-serializer==1.4.22",
+    "supabase==2.28.0",
     "uvicorn==0.34.0",
 ]
 
