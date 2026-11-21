@@ -1,0 +1,176 @@
+// Noona Appointment: database schema
+// Generated from fastapi/app/models/*.py (SQLAlchemy 2.0). Paste into https://dbdiagram.io
+
+Project noona {
+  database_type: 'PostgreSQL'
+  Note: 'Hosted on Supabase. Migrations via Alembic.'
+}
+
+// ---------- Enums (SQLAlchemy stores enum names) ----------
+
+Enum registration_status {
+  CONFIRMED  [note: 'Holds a seat (counted in sessions.seat_taken)']
+  WAITLIST   [note: 'Session was full when the user registered']
+  AVAILABLE  [note: 'A seat opened up: the first AVAILABLE user to confirm gets it']
+}
+
+Enum auth_token_type {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+Enum notification_type {
+  SESSION_REMINDER
+  WAITLIST_AVAILABLE
+  REGISTRATION_SUMMARY
+  EVENT_UPDATED
+  EVENT_CANCELLED
+  REGISTRATION_REMOVED_BY_HOST
+}
+
+Enum notification_job_status {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+// ---------- Users & auth ----------
+
+Table users {
+  id integer [pk, increment]
+  email varchar(120) [unique, not null]
+  password_hash varchar(200) [note: 'NULL for OAuth-only accounts']
+  full_name varchar(100) [not null]
+  profile_image text [note: 'Public URL in Supabase Storage']
+  timezone varchar(64) [not null, default: 'Europe/London']
+  email_notifications boolean [default: true]
+  created_at timestamptz
+}
+
+Table user_oauth_accounts {
+  id integer [pk, increment]
+  user_id integer [not null]
+  provider varchar(50) [not null, note: 'google | github']
+  provider_user_id varchar(255) [not null]
+
+  indexes {
+    (provider, provider_user_id) [unique, name: 'unique_oauth_provider']
+  }
+}
+
+Table auth_tokens {
+  id integer [pk, increment]
+  email varchar(320) [not null, note: 'Linked by email, no FK']
+  type auth_token_type [not null]
+  hashed_token varchar(256) [unique, not null, note: 'Only the hash is stored']
+  used_at timestamptz [note: 'Single use']
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null]
+
+  indexes {
+    email
+  }
+}
+
+// ---------- Events, sessions, registrations ----------
+
+Table events {
+  id integer [pk, increment]
+  share_uuid uuid [unique, not null, note: 'Public share link']
+  owner_id integer [not null, note: 'Host = event owner (no separate role)']
+  title varchar(255) [not null]
+  location text
+  description text
+  is_draft boolean [default: true]
+  max_sessions_per_user integer [note: 'Max CONFIRMED sessions per user in this event; NULL = no limit']
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table sessions {
+  id integer [pk, increment]
+  uuid uuid [unique, not null]
+  event_id integer [not null]
+  start_datetime timestamptz [not null]
+  end_datetime timestamptz [not null]
+  location varchar(255) [not null]
+  seat_capacity integer [note: 'NULL = unlimited']
+  seat_taken integer [not null, default: 0, note: 'Locked with SELECT ... FOR UPDATE on register / confirm / cancel']
+  created_at timestamptz
+
+  Note: 'The row lock on this table is what prevents overbooking.'
+}
+
+Table session_registrations {
+  id integer [pk, increment]
+  session_id integer [not null]
+  user_id integer [not null]
+  status registration_status [not null]
+  last_available_notified_at timestamptz [note: 'Throttles seat-available emails to 1 per hour']
+
+  indexes {
+    (session_id, user_id) [unique, name: 'unique_user_session_registration']
+  }
+}
+
+// ---------- Notifications (Postgres-backed job queue) ----------
+
+Table notification_jobs {
+  id integer [pk, increment]
+  type notification_type [not null]
+  status notification_job_status [not null, default: 'PENDING']
+  user_id integer [not null]
+  event_id integer
+  session_id integer
+  payload json [not null]
+  dedupe_key varchar(255) [unique, note: 'Prevents duplicate jobs']
+  run_at timestamptz [not null, note: 'When the job is due']
+  attempts integer [not null, default: 0]
+  max_attempts integer [not null, default: 5]
+  next_retry_at timestamptz
+  last_error text
+  sent_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    type
+    status
+    user_id
+    event_id
+    session_id
+    run_at
+  }
+
+  Note: 'Vercel Cron calls /api/notifications/dispatch every 5 minutes; due jobs are sent via Gmail SMTP.'
+}
+
+// ---------- Relationships ----------
+
+Ref: user_oauth_accounts.user_id > users.id [delete: cascade]
+Ref: events.owner_id > users.id
+Ref: sessions.event_id > events.id
+Ref: session_registrations.session_id > sessions.id
+Ref: session_registrations.user_id > users.id
+Ref: notification_jobs.user_id > users.id [delete: cascade]
+Ref: notification_jobs.event_id > events.id [delete: cascade]
+Ref: notification_jobs.session_id > sessions.id [delete: cascade]
+
+// ---------- Layout groups ----------
+
+TableGroup accounts {
+  users
+  user_oauth_accounts
+  auth_tokens
+}
+
+TableGroup booking {
+  events
+  sessions
+  session_registrations
+}
+
+TableGroup notifications {
+  notification_jobs
+}
