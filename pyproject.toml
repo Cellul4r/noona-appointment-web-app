@@ -1,7 +1,7 @@
 [project]
-name = "25cs212g05repo"
+name = "noona-appointment"
 version = "0.1.0"
-description = "Add your description here"
+description = "A registration platform for multi-session events, built so the last seat can only go to one person."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -21,7 +21,6 @@ dependencies = [
     "pydantic-extra-types==2.10.6",
     "pydantic-settings==2.8.1",
     "pydantic[email,timezone]==2.12.5",
-    "pytest==9.0.2",
     "python-dotenv==1.0.1",
     "python-jose==3.4.0",
     "sqlakeyset==2.0.1762907931",
